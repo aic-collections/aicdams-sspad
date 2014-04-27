@@ -1,0 +1,39 @@
+#!/usr/bin/python
+
+import argparse
+import sys
+import util
+from importlib import import_module
+
+from config import conf
+
+parser = argparse.ArgumentParser(description = 'Shared Service Provider for AIC DAMS (SSPAD)')
+parser.add_argument('modl_name', metavar = 'module', default = 'image')
+parser.add_argument('action', default = '')
+parser.add_argument('--params', default = '', help = 'List of parametes in this form: name=value[,name=value][...]')
+
+args = parser.parse_args()
+print(args.__dict__)
+
+try:
+	mod = import_module('edu.artic.sspad.modules.' + args.modl_name)
+	#print(mod.__dict__)
+	cls = eval('mod.' + str.title(args.modl_name) + '()')
+	action = args.action if hasattr(args, 'action') else cls.default_action
+
+except ImportError:
+	print("No module with name", args.modl_name)
+	sys.exit()
+
+except IndexError:
+	util.showUsage()
+
+
+try:
+	if hasattr(cls,action) and callable(getattr(cls,action)):
+		eval('cls.' + action + '(' + args.params + ')')
+	else: 
+		raise Exception('Module \'' + args.modl_name + '\' has no action \'' + action + '\'.')
+except Exception as e:
+	print("Error running action.")
+	raise e

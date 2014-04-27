@@ -1,0 +1,9 @@
+#!/usr/bin/python
+from bottle import request, route, run
+
+@route('/test', method='POST')
+def test():
+	source = request.files.get('file')
+	source.save('/tmp/blah', overwrite=True)
+
+run(host = 'localhost', port = 5100)
