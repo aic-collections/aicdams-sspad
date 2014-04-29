@@ -1,4 +1,3 @@
-#!/usr/bin/python
 import cherrypy
 
 from edu.artic.sspad.config import host, server
