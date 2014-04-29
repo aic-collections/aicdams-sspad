@@ -1,6 +1,7 @@
-import bottle
 from http.client import HTTPConnection, HTTPSConnection
 from itertools import chain
+import magic, mimetypes
+from os.path import basename
 from rdflib import Graph, URIRef, Literal
 from rdflib.plugins.sparql.processor import prepareQuery
 
@@ -11,16 +12,18 @@ from edu.artic.sspad.resources.rdf_lexicon import ns_mgr
 
 class FedoraConnector:
 	
-	def __init__(self):
-		self.auth = bottle.request.headers.get('Authorization')
-		self.headers = {'Authorization': self.auth}
+	def __init__(self, auth):
+		self.headers = {'Authorization': auth}
+		print('Headers:', self.headers)
 
 	def openSession(self):
-		session = \
-			HTTPSConnection(fedora_rest_api['host'], fedora_rest_api['port']) \
-			if fedora_rest_api['ssl'] \
-			else \
-			HTTPConnection(fedora_rest_api['host'], fedora_rest_api['port'])
+		session = HTTPSConnection(
+				fedora_rest_api['host'],
+				fedora_rest_api['port']) \
+					if fedora_rest_api['ssl'] \
+					else \
+					HTTPConnection(fedora_rest_api['host'],
+				fedora_rest_api['port'])
 		if host.app_env != 'prod':
 			session.set_debuglevel(1)
 		return session
@@ -28,9 +31,9 @@ class FedoraConnector:
 
 	def openTransaction(self):
 		session = self.openSession()
-		session.request(\
-			'POST', fedora_rest_api['root'] + 'fcr:tx', \
-			headers = self.headers\
+		session.request(
+			'POST', fedora_rest_api['root'] + 'fcr:tx', 
+			headers = self.headers
 		)
 		res = session.getresponse()
 		print('Response:', res.msg)
@@ -46,20 +49,44 @@ class FedoraConnector:
 				g.add((URIRef(''), t[0], t[1]))
 
 			body = g.serialize(format='turtle')
-		elif ds != None:
-			body = ds
-		elif file != None:
-			body = open(file)
 		else:
 			body = ''
-		print('Body:', body)
+		#print('Body:', body)
 
-		session.request(\
-			'PUT', uri, \
-			body = body,\
-			headers = dict(chain(self.headers.items(),\
-				[('Content-type', 'text/turtle')]\
-			))\
+		session.request(
+			'PUT', uri, 
+			body = body,
+			headers = dict(chain(self.headers.items(),
+				[('Content-type', 'text/turtle')]
+			))
+		)
+		res = session.getresponse()
+		print('Response:', res.msg)
+		session.close()
+
+		return res.msg['location']
+	
+
+	def createOrUpdateDStream(self, uri, ds=None, file=None):
+		session = self.openSession()
+		body = ds.read()\
+			if ds != None\
+			else\
+			open(file)
+
+		# Guess MIME type
+		with magic.Magic(flags=magic.MAGIC_MIME_TYPE) as m:
+			mimetype = m.id_buffer(body[:256])
+
+		session.request(
+			'POST', uri + '/fcr:content', 
+			body = body,
+			headers = dict(chain(self.headers.items(),
+				[(
+					'content-disposition',
+					'inline; filename="' + basename(uri) + '.' + mimetypes.guess_extension(mimetype) + '"'
+				)]
+			))
 		)
 		res = session.getresponse()
 		print('Response:', res.msg)
@@ -73,18 +100,18 @@ class FedoraConnector:
 		g = Graph(namespace_manager = ns_mgr)
 		triples = ''
 		for t in props:
-			triples += '\n<> ' + t[0].n3() + ' ' + t[1].n3() + ' .'
+			triples += '\n<> {} {} .'.format(t[0].n3(), t[1].n3())
 		#print('Triples:', triples)
 
 		# @TODO Use namespaces
 		body = 'INSERT {' + triples + '\n} WHERE {}'
-		print('Body:', body)
-		session.request(\
-			'PATCH', uri, \
-			body = body,\
-			headers = dict(chain(self.headers.items(),\
-				[('Content-type', 'application/sparql-update')]\
-			))\
+		#print('Body:', body)
+		session.request(
+			'PATCH', uri, 
+			body = body,
+			headers = dict(chain(self.headers.items(),
+				[('Content-type', 'application/sparql-update')]
+			))
 		)
 		res = session.getresponse()
 		print('Response:', res.msg)
