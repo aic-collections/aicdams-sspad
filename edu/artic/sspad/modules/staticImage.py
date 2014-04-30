@@ -50,15 +50,9 @@ class StaticImage(Resource):
 
 		# Validate source
 		format, size = self.validateDStream(source.file)
-		#print('File:',source.file.peek()[:64]) 
-		#print('Multipart:', cherrypy.request.body)
-		#print('Multipart dict:', cherrypy.request.body.__dict__)
-		#print('Source:', source)
-		#print('Source dict:', source.__dict__)
 
 		if master == None:
 			# Generate master if not present
-			#TODO
 			master = self.generateMasterFile(source.file, uid + '_master.jpg')
 
 		else:
@@ -123,16 +117,15 @@ class StaticImage(Resource):
 		# Commit transaction
 		self.fconn.commitTransaction(tx_uri)
 
-		cherrypy.response.headers['Status'] = "201 Created"
+		cherrypy.response.headers['Status'] = 201
 		cherrypy.response.headers['Location'] = img_uri
 
-		return
+		return {"message": "Image created"}
 
 
 	def generateMasterFile(self, file, fname):
 		''' @TODO '''
 		return self.dgconn.resizeImageFromData(file, fname, 200, 200)
-		#pass
 
 
 	def validateDStream(self, ds, rules={}):
