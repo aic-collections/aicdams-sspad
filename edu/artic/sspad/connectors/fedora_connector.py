@@ -1,6 +1,5 @@
-from http.client import HTTPConnection, HTTPSConnection
 from itertools import chain
-import magic, mimetypes
+import mimetypes, requests
 from os.path import basename
 from rdflib import Graph, URIRef, Literal
 from rdflib.plugins.sparql.processor import prepareQuery
@@ -12,37 +11,28 @@ from edu.artic.sspad.resources.rdf_lexicon import ns_mgr
 
 class FedoraConnector:
 	
+	conf = fedora_rest_api
+	base_url = '{}://{}{}'. format(conf['proto'], conf['host'], conf['root'])
+
+
 	def __init__(self, auth):
 		self.headers = {'Authorization': auth}
-		print('Headers:', self.headers)
-
-	def openSession(self):
-		session = HTTPSConnection(
-				fedora_rest_api['host'],
-				fedora_rest_api['port']) \
-					if fedora_rest_api['ssl'] \
-					else \
-					HTTPConnection(fedora_rest_api['host'],
-				fedora_rest_api['port'])
-		if host.app_env != 'prod':
-			session.set_debuglevel(1)
-		return session
+		#print('Headers:', self.headers)
 
 
 	def openTransaction(self):
-		session = self.openSession()
-		session.request(
-			'POST', fedora_rest_api['root'] + 'fcr:tx', 
+		res = requests.post(
+			self.base_url + 'fcr:tx', 
 			headers = self.headers
 		)
-		res = session.getresponse()
-		print('Response:', res.msg)
-		session.close()
-		return res.msg['location']
+		print('Requesting URL:', res.url)
+		print('Open transaction response:', res.status_code)
+		res.raise_for_status()
+
+		return res.headers['location']
 
 
 	def createOrUpdateNode(self, uri, props=None, ds=None, file=None):
-		session = self.openSession()
 		if props != None:
 			g = Graph(namespace_manager = ns_mgr)
 			for t in props:
@@ -51,52 +41,46 @@ class FedoraConnector:
 			body = g.serialize(format='turtle')
 		else:
 			body = ''
-		#print('Body:', body)
 
-		session.request(
-			'PUT', uri, 
-			body = body,
+		res = requests.put(
+			uri, 
+			data = body,
 			headers = dict(chain(self.headers.items(),
 				[('Content-type', 'text/turtle')]
 			))
 		)
-		res = session.getresponse()
-		print('Response:', res.msg)
-		session.close()
+		print('Requesting URL:', res.url)
+		print('Create/update node response:', res.status_code)
+		res.raise_for_status()
 
-		return res.msg['location']
+		return res.headers['location']
 	
 
-	def createOrUpdateDStream(self, uri, ds=None, file=None):
-		session = self.openSession()
+	def createOrUpdateDStream(self, uri, ds=None, file=None, mimetype = 'application/octet-stream'):
+		# @TODO Optimize with with
 		body = ds.read()\
 			if ds != None\
 			else\
 			open(file)
 
-		# Guess MIME type
-		with magic.Magic(flags=magic.MAGIC_MIME_TYPE) as m:
-			mimetype = m.id_buffer(body[:256])
-
-		session.request(
-			'POST', uri + '/fcr:content', 
-			body = body,
+		res = requests.post(
+			uri + '/fcr:content', 
+			data = body,
 			headers = dict(chain(self.headers.items(),
 				[(
 					'content-disposition',
-					'inline; filename="' + basename(uri) + '.' + mimetypes.guess_extension(mimetype) + '"'
+					'inline; filename="' + basename(uri) + mimetypes.guess_extension(mimetype) + '"'
 				)]
 			))
 		)
-		res = session.getresponse()
-		print('Response:', res.msg)
-		session.close()
+		print('Requesting URL:', res.url)
+		print('Create/update datastream response:', res.status_code)
+		res.raise_for_status()
 
-		return res.msg['location']
+		return res.headers['location']
 	
 
 	def updateNodeProperties(self, uri, props):
-		session = self.openSession()
 		g = Graph(namespace_manager = ns_mgr)
 		triples = ''
 		for t in props:
@@ -106,36 +90,42 @@ class FedoraConnector:
 		# @TODO Use namespaces
 		body = 'INSERT {' + triples + '\n} WHERE {}'
 		#print('Body:', body)
-		session.request(
-			'PATCH', uri, 
-			body = body,
+		res = requests.patch(
+			uri, 
+			data = body,
 			headers = dict(chain(self.headers.items(),
 				[('Content-type', 'application/sparql-update')]
 			))
 		)
-		res = session.getresponse()
-		print('Response:', res.msg)
-		session.close()
+		print('Requesting URL:', res.url)
+		print('Update datastream properties response:', res.status_code)
+		res.raise_for_status()
 
-		return res.msg['location']
+		return True
 
 
 	def commitTransaction(self, tx_uri):
 		print('Committing transaction:', tx_uri)
-		session = self.openSession()
-		session.request('POST', tx_uri + '/fcr:tx/fcr:commit',\
-			headers=self.headers)
-		res = session.getresponse()
-		print('Response:', res.msg)
-		session.close()
+		res = requests.post(
+			tx_uri + '/fcr:tx/fcr:commit',
+			headers=self.headers
+		)
+		print('Requesting URL:', res.url)
+		print('Commit transaction response:', res.status_code)
+		res.raise_for_status()
+		
+		return True
 
 
 	def rollbackTransaction(self, tx_uri):
-		session = self.openSession()
-		print('Rolling back transaction:', tx_uri)
-		session.request('POST', tx_uri + '/fcr:tx/fcr:rollback',\
-			headers=self.headers)
-		res = session.getresponse()
-		print('Response:', res.msg)
-		session.close()
+		print('Committing transaction:', tx_uri)
+		res = requests.post(
+			tx_uri + '/fcr:tx/fcr:rollback',
+			headers=self.headers
+		)
+		print('Requesting URL:', res.url)
+		print('Rollback transaction response:', res.status_code)
+		res.raise_for_status()
+		
+		return True
 

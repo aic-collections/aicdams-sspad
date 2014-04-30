@@ -1,5 +1,4 @@
-import cherrypy
-import json, requests
+import cherrypy, io, requests
 #from requests_toolbelt import MultipartEncoder
 
 from edu.artic.sspad.config.datasources import datagrinder_rest_api
@@ -8,7 +7,7 @@ from edu.artic.sspad.config.datasources import datagrinder_rest_api
 class DatagrinderConnector:
 
 	conf = datagrinder_rest_api
-	url = '{}://{}{}resize.jpg'. format(conf['proto'], conf['host'], conf['root'])
+	base_url = '{}://{}{}'. format(conf['proto'], conf['host'], conf['root'])
 
 
 	def __init__(self, auth):
@@ -19,13 +18,13 @@ class DatagrinderConnector:
 	def resizeImagefromUrl(self, url, w=None, h=None):
 		params = {'file': url, 'width': w, 'height': h}
 		res = requests.get(
-			self.url,
+			self.base_url + 'resize.jpg',
 			params = params
 		)
 
 		print('Image resize response:', res.status_code)
 		res.raise_for_status()
-		return io.BytesIO(res.read())
+		return io.BufferedReader(res.content)
 
 
 	def resizeImageFromData(self, image, fname, w=0, h=0):
@@ -40,7 +39,7 @@ class DatagrinderConnector:
 		'''
 
 		res = requests.post(
-			self.url,
+			self.base_url + 'resize.jpg',
 			data = fields,
 			files = files
 			#data=m
@@ -48,6 +47,7 @@ class DatagrinderConnector:
 
 		print('Image resize response:', res.status_code)
 		res.raise_for_status()
-		return res.content
+		print('Returned image:', res.content[:256])
+		return io.BytesIO(res.content)
 
 

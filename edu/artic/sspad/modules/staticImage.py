@@ -49,7 +49,7 @@ class StaticImage(Resource):
 		uid = self.mintUid(mid)
 
 		# Validate source
-		format, size = self.validateDStream(source.file)
+		format, size, mimetype = self.validateDStream(source.file)
 
 		if master == None:
 			# Generate master if not present
@@ -93,9 +93,13 @@ class StaticImage(Resource):
 
 		# Upload source datastream
 		#print('Source dstream:', source.__dict__)
-		source_uri = self.fconn.createOrUpdateDStream(
-			img_tx_uri + '/aic:ds_source', ds=source.file
+		source_content_uri = self.fconn.createOrUpdateDStream(
+			img_tx_uri + '/aic:ds_source',
+			ds=source.file, 
+			mimetype = mimetype
 		)
+
+		source_uri = source_content_uri.replace('/fcr:content', '')
 
 		# Set source datastream properties
 		props = [(DC.title, Literal(uid + '_source'))]
@@ -103,9 +107,13 @@ class StaticImage(Resource):
 
 		# Upload master datastream
 		source.file.seek(0)
-		master_uri = self.fconn.createOrUpdateDStream(
-			img_tx_uri + '/aic:ds_master', ds=master.file #@TODO Switch file
+		master_content_uri = self.fconn.createOrUpdateDStream(
+			img_tx_uri + '/aic:ds_master',
+			ds=master,
+			mimetype = 'image/jpeg'
 		)
+
+		master_uri = master_content_uri.replace('/fcr:content', '')
 
 		# Set master datastream properties
 		props = [
@@ -124,7 +132,6 @@ class StaticImage(Resource):
 
 
 	def generateMasterFile(self, file, fname):
-		''' @TODO '''
 		return self.dgconn.resizeImageFromData(file, fname, 200, 200)
 
 
@@ -133,7 +140,9 @@ class StaticImage(Resource):
 		#print('ds: ', ds)
 		with image.Image(file=ds) as img:
 			format = img.format
+			mimetype = img.mimetype
 			size = img.size
-			print('Image metadata:', img.__dict__)
+			print('Image format:', format, 'MIME type:', mimetype, 'size:', size)
+
 		ds.seek(0)
-		return (format, size)
+		return (format, size, mimetype)
