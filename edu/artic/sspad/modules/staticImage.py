@@ -32,6 +32,8 @@ class StaticImage(Resource):
 	def PUT(self, mid, source, master=None, meta='{}'):
 		'''Create a new image node with automatic UID by providing data and node properties.'''
 		
+		#cherrypy.request.body.processors['multipart'] = cherrypy._cpreqbody.process_multipart
+
 		# Set connectors - @TODO move this in __init__ method of super class
 		# when you figure out how to access cherrypy.request.headers there
 		self.auth_str = cherrypy.request.headers['Authorization']\
@@ -47,8 +49,12 @@ class StaticImage(Resource):
 		uid = self.mintUid(mid)
 
 		# Validate source
-		#print('File:',source.file.peek(64)) 
-		self.validateDStream(source.file)
+		format, size = self.validateDStream(source.file)
+		#print('File:',source.file.peek()[:64]) 
+		#print('Multipart:', cherrypy.request.body)
+		#print('Multipart dict:', cherrypy.request.body.__dict__)
+		#print('Source:', source)
+		#print('Source dict:', source.__dict__)
 
 		if master == None:
 			# Generate master if not present
@@ -104,7 +110,7 @@ class StaticImage(Resource):
 		# Upload master datastream
 		source.file.seek(0)
 		master_uri = self.fconn.createOrUpdateDStream(
-			img_tx_uri + '/aic:ds_master', ds=source.file #@TODO Switch file
+			img_tx_uri + '/aic:ds_master', ds=master.file #@TODO Switch file
 		)
 
 		# Set master datastream properties
@@ -125,8 +131,8 @@ class StaticImage(Resource):
 
 	def generateMasterFile(self, file, fname):
 		''' @TODO '''
-		#return self.dgconn.resizeImageFromData(file, fname, 2048, 2048)
-		pass
+		return self.dgconn.resizeImageFromData(file, fname, 200, 200)
+		#pass
 
 
 	def validateDStream(self, ds, rules={}):
@@ -137,4 +143,4 @@ class StaticImage(Resource):
 			size = img.size
 			print('Image metadata:', img.__dict__)
 		ds.seek(0)
-		return {'Format': format, 'size': size}
+		return (format, size)
