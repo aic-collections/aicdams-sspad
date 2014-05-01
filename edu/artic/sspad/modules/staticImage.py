@@ -19,7 +19,34 @@ class StaticImage(Resource):
 	"""
 	exposed = True
 
+
 	pfx = 'SI'
+
+	AIC, AICMIX, DC, RDF =\
+		ns_collection['aic'],\
+		ns_collection['aicmix'],\
+		ns_collection['dc'],\
+		ns_collection['rdf']
+
+	prop_lake_names = (
+		AIC.legacyUid,
+		AIC.citiObjUid,
+		AIC.citiObjAccNo,
+		AIC.citiAgentUid,
+		AIC.citiPlaceUid,
+		AIC.citiExhibUid,
+		AIC.citiImgDBankUid,
+	)
+
+	prop_req_names = (
+		'legacy_uid',
+		'citi_obj_pkey',
+		'citi_obj_acc_no',
+		'citi_agent_pkey',
+		'citi_place_pkey',
+		'citi_exhib_pkey',
+		'citi_imgdbank_pkey',
+	)
 
 
 	def GET(self, uid=None):
@@ -71,24 +98,20 @@ class StaticImage(Resource):
 		img_tx_uri, img_uri = self.createNodeInTx(uid, tx_uri)
 
 		# Set node properties
-		AIC, AICMIX, DC, RDF =\
-			ns_collection['aic'],\
-			ns_collection['aicmix'],\
-			ns_collection['dc'],\
-			ns_collection['rdf']
 		props = [
-			(RDF.type, AIC.image),
-			(RDF.type, AIC.citi),
-			(DC.title, Literal(uid)),
-			(AIC.uid, Literal(uid)),
+			(self.RDF.type, self.AIC.image),
+			(self.RDF.type, self.AIC.citi),
+			(self.DC.title, Literal(uid)),
+			(self.AIC.uid, Literal(uid)),
 		]
 
-		if 'legacy_uid' in meta_obj:
-			props.append((AIC.legacyUid, Literal(meta_obj['legacy_uid'])))
-		if 'citi_pkey' in meta_obj:
-			props.append((AIC.citiObjUid, Literal(meta_obj['citi_pkey'])))
-		if 'accession_number' in meta_obj:
-			props.append((AIC.citiObjAccNo, Literal(meta_obj['accession_number'])))
+		# @TODO Make smarter
+		for req_name, lake_name in zip(self.prop_req_names, self.prop_lake_names):
+			if req_name in meta_obj:
+				for value in meta_obj[req_name]:
+					props.append((lake_name, Literal(value)))
+
+		print('Props:', props)
 
 		self.fconn.updateNodeProperties(img_tx_uri, props)
 
@@ -105,7 +128,7 @@ class StaticImage(Resource):
 		source_uri = source_content_uri.replace('/fcr:content', '')
 
 		# Set source datastream properties
-		props = [(DC.title, Literal(uid + '_source'))]
+		props = [(self.DC.title, Literal(uid + '_source'))]
 		self.fconn.updateNodeProperties(source_uri, props)
 
 		# Upload master datastream
@@ -121,8 +144,8 @@ class StaticImage(Resource):
 
 		# Set master datastream properties
 		props = [
-			(RDF.type, AICMIX.imageDerivable),
-			(DC.title, Literal(uid + '_master')),
+			(self.RDF.type, self.AICMIX.imageDerivable),
+			(self.DC.title, Literal(uid + '_master')),
 		]
 		self.fconn.updateNodeProperties(master_uri, props)
 
