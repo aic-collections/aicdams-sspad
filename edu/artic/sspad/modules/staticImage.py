@@ -87,12 +87,10 @@ class StaticImage(Resource):
 			props.append((AIC.citiObjAccNo, Literal(meta_obj['accession_number'])))
 
 		self.fconn.updateNodeProperties(img_tx_uri, props)
-		
-		#print(img_uri)
-
 
 		# Upload source datastream
-		#print('Source dstream:', source.__dict__)
+		#print('Source dstream:', source.file)
+		source.file.seek(0)
 		source_content_uri = self.fconn.createOrUpdateDStream(
 			img_tx_uri + '/aic:ds_source',
 			ds=source.file, 
@@ -106,7 +104,7 @@ class StaticImage(Resource):
 		self.fconn.updateNodeProperties(source_uri, props)
 
 		# Upload master datastream
-		source.file.seek(0)
+		print('Master dstream:', master)
 		master_content_uri = self.fconn.createOrUpdateDStream(
 			img_tx_uri + '/aic:ds_master',
 			ds=master,

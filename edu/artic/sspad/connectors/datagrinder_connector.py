@@ -47,7 +47,7 @@ class DatagrinderConnector:
 
 		print('Image resize response:', res.status_code)
 		res.raise_for_status()
-		print('Returned image:', res.content[:256])
+		#print('Returned image:', res.content[:256])
 		return io.BytesIO(res.content)
 
 
