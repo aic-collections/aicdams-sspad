@@ -1,4 +1,4 @@
-import json, shutil
+import json, mimetypes
 
 import cherrypy
 from rdflib import Graph, URIRef, Literal
@@ -23,13 +23,17 @@ class StaticImage(Resource):
 
 
 	def GET(self, uid=None):
+		'''Lists all images or shows properties for an image with given uid.
+		@TODO stub
+		'''
 		if uid:
 			return {'message': 'This is image #{}'.format(uid)}
 		else:
 			return {'message': 'This is a list of images.'}
 
 
-	def PUT(self, mid, source, master=None, meta='{}'):
+	def POST(self, mid, source, master=None, meta='{}'):
+
 		'''Create a new image node with automatic UID by providing data and node properties.'''
 		
 		#cherrypy.request.body.processors['multipart'] = cherrypy._cpreqbody.process_multipart
@@ -49,15 +53,15 @@ class StaticImage(Resource):
 		uid = self.mintUid(mid)
 
 		# Validate source
-		format, size, mimetype = self.validateDStream(source.file)
+		src_format, src_size, src_mimetype = self._validateDStream(source.file)
 
 		if master == None:
 			# Generate master if not present
-			master = self.generateMasterFile(source.file, uid + '_master.jpg')
+			master = self._generateMasterFile(source.file, uid + '_master.jpg')
 
 		else:
 			# Validate master
-			self.validateDStream(master, {'mimeType': 'jpeg'})
+			self._validateDStream(master, {'mimetype': 'image/jpeg'})
 
 
 		# Open Fedora transaction
@@ -94,7 +98,8 @@ class StaticImage(Resource):
 		source_content_uri = self.fconn.createOrUpdateDStream(
 			img_tx_uri + '/aic:ds_source',
 			ds=source.file, 
-			mimetype = mimetype
+			dsname = uid + '_source' + mimetypes.guess_extension(src_mimetype),
+			mimetype = src_mimetype
 		)
 
 		source_uri = source_content_uri.replace('/fcr:content', '')
@@ -108,6 +113,7 @@ class StaticImage(Resource):
 		master_content_uri = self.fconn.createOrUpdateDStream(
 			img_tx_uri + '/aic:ds_master',
 			ds=master,
+			dsname = uid + '_master.jpg',
 			mimetype = 'image/jpeg'
 		)
 
@@ -129,12 +135,17 @@ class StaticImage(Resource):
 		return {"message": "Image created"}
 
 
-	def generateMasterFile(self, file, fname):
-		return self.dgconn.resizeImageFromData(file, fname, 200, 200)
+	def _generateMasterFile(self, file, fname):
+		'''Generate a master datastream from a source image file.'''
+
+		return self.dgconn.resizeImageFromData(file, fname, 2048, 2048)
 
 
-	def validateDStream(self, ds, rules={}):
-		''' @TODO rules '''
+	def _validateDStream(self, ds, rules={}):
+		'''Checks that the input file is a valid image.
+		@TODO more rules
+		'''
+
 		#print('ds: ', ds)
 		with image.Image(file=ds) as img:
 			format = img.format
@@ -143,4 +154,8 @@ class StaticImage(Resource):
 			print('Image format:', format, 'MIME type:', mimetype, 'size:', size)
 
 		ds.seek(0)
+
+		if 'mimetype' in rules:
+			if mimetype != rules['mimetype']:
+				return false
 		return (format, size, mimetype)

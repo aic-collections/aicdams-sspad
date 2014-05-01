@@ -1,5 +1,5 @@
 from itertools import chain
-import mimetypes, requests
+import cherrypy, requests
 from os.path import basename
 from rdflib import Graph, URIRef, Literal
 from rdflib.plugins.sparql.processor import prepareQuery
@@ -56,29 +56,30 @@ class FedoraConnector:
 		return res.headers['location']
 	
 
-	def createOrUpdateDStream(self, uri, ds=None, file=None, mimetype = 'application/octet-stream'):
+	def createOrUpdateDStream(self, uri, dsname, ds=None, path=None, mimetype = 'application/octet-stream'):
 		# @TODO Optimize with with
-		body = ds.read()\
-			if ds != None\
-			else\
-			open(file)
-
-		res = requests.post(
-			uri + '/fcr:content', 
-			data = body,
-			headers = dict(chain(self.headers.items(),
-				[(
-					'content-disposition',
-					'inline; filename="' + basename(uri) + mimetypes.guess_extension(mimetype) + '"'
-				)]
-			))
-		)
+		if not ds and not path:
+			raise cherrypy.HTTPError(500, "No datastream or file path given.")
+	
+		file = ds or open(path)
+	
+		with file as data:
+			res = requests.put(
+				uri + '/fcr:content', 
+				data = data.read(),
+				headers = dict(chain(self.headers.items(),
+					[(
+						'content-disposition',
+						'inline; filename="' + dsname + '"'
+					)]
+				))
+			)
 		print('Requesting URL:', res.url)
 		print('Create/update datastream response:', res.status_code)
 		res.raise_for_status()
 
 		return res.headers['location']
-	
+
 
 	def updateNodeProperties(self, uri, props):
 		g = Graph(namespace_manager = ns_mgr)
