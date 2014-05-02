@@ -23,21 +23,22 @@ class StaticImage(Resource):
 
 	pfx = 'SI'
 
-	NS_AIC, NS_AICMIX, NS_DC, NS_RDF =\
+	# @TODO Figure out why these show as allowed HTTP methods
+	ns_aic, ns_aicmix, ns_dc, ns_rdf =\
 		ns_collection['aic'],\
 		ns_collection['aicmix'],\
 		ns_collection['dc'],\
 		ns_collection['rdf']
 
 	prop_lake_names = (
-		NS_RDF.type,
-		NS_AIC.legacyUid,
-		NS_AIC.citiObjUid,
-		NS_AIC.citiObjAccNo,
-		NS_AIC.citiAgentUid,
-		NS_AIC.citiPlaceUid,
-		NS_AIC.citiExhibUid,
-		NS_AIC.citiImgDBankUid,
+		ns_rdf.type,
+		ns_aic.legacyUid,
+		ns_aic.citiObjUid,
+		ns_aic.citiObjAccNo,
+		ns_aic.citiAgentUid,
+		ns_aic.citiPlaceUid,
+		ns_aic.citiExhibUid,
+		ns_aic.citiImgDBankUid,
 	)
 
 	prop_req_names = (
@@ -51,20 +52,15 @@ class StaticImage(Resource):
 		'citi_imgdbank_pkey',
 	)
 
-	NS_AIC.exposed = False
-	NS_AICMIX.exposed = False
-	NS_DC.exposed = False
-	NS_RDF.exposed = False
-
 
 	def GET(self, uid=None):
 		'''Lists all images or shows properties for an image with given uid.
 		@TODO stub
 		'''
 		if uid:
-			return {'message': 'This is image #{}'.format(uid)}
+			return {'message': '*stub* This is image #{}'.format(uid)}
 		else:
-			return {'message': 'This is a list of images.'}
+			return {'message': '*stub* This is a list of images.'}
 
 
 	def POST(self, mid, source, master=None, properties='{}'):
@@ -111,10 +107,10 @@ class StaticImage(Resource):
 
 		# Set node properties
 		prop_tuples = [
-			(self.NS_RDF.type, self.NS_AIC.image),
-			(self.NS_RDF.type, self.NS_AIC.citi),
-			(self.NS_DC.title, Literal(uid)),
-			(self.NS_AIC.uid, Literal(uid)),
+			(self.ns_rdf.type, self.ns_aic.image),
+			(self.ns_rdf.type, self.ns_aic.citi),
+			(self.ns_dc.title, Literal(uid)),
+			(self.ns_aic.uid, Literal(uid)),
 		]
 
 		for req_name, lake_name in zip(self.prop_req_names, self.prop_lake_names):
@@ -139,7 +135,7 @@ class StaticImage(Resource):
 		source_uri = source_content_uri.replace('/fcr:content', '')
 
 		# Set source datastream properties
-		props = [(self.NS_DC.title, Literal(uid + '_source'))]
+		props = [(self.ns_dc.title, Literal(uid + '_source'))]
 		self.fconn.updateNodeProperties(source_uri, props)
 
 		# Upload master datastream
@@ -155,8 +151,8 @@ class StaticImage(Resource):
 
 		# Set master datastream properties
 		prop_tuples = [
-			(self.NS_RDF.type, self.NS_AICMIX.imageDerivable),
-			(self.NS_DC.title, Literal(uid + '_master')),
+			(self.ns_rdf.type, self.ns_aicmix.imageDerivable),
+			(self.ns_dc.title, Literal(uid + '_master')),
 		]
 		self.fconn.updateNodeProperties(master_uri, prop_tuples)
 
@@ -177,9 +173,10 @@ class StaticImage(Resource):
 		pass
 
 		
-	#@cherrypy.config(**{'tools.json_in.force': True})
 	def PATCH(self, uid, insert_properties='{}', delete_properties='{}'):
-		''' Add or removes properties and mixins in an image. '''
+		''' Add or removes properties and mixins in an image.
+		@TODO Figure out how to pass parameters in HTTP body instead of as URL params.
+		'''
 
 		#print('Req parameters:', cherrypy.request.params)
 		self.auth_str = cherrypy.request.headers['Authorization']\
