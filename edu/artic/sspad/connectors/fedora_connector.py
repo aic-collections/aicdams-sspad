@@ -81,7 +81,7 @@ class FedoraConnector:
 		return res.headers['location']
 
 
-	def updateNodeProperties(self, uri, delete_props={}, insert_props={}, where_props={}):
+	def updateNodeProperties(self, uri, insert_props={}, delete_props={}, where_props={}):
 		''' Modifies node properties using a SPARQL-update query. '''
 
 		g = Graph(namespace_manager = ns_mgr)

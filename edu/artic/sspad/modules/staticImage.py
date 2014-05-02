@@ -23,26 +23,30 @@ class StaticImage(Resource):
 
 	pfx = 'SI'
 
-	# @TODO Figure out why these show as allowed HTTP methods
 	ns_aic, ns_aicmix, ns_dc, ns_rdf =\
 		ns_collection['aic'],\
 		ns_collection['aicmix'],\
 		ns_collection['dc'],\
 		ns_collection['rdf']
 
+	''' Tuples of LAKE namespaces and data types.
+		Data type string can be 'literal', 'uri' or 'variable'.
+		'''
 	prop_lake_names = (
-		ns_rdf.type,
-		ns_aic.legacyUid,
-		ns_aic.citiObjUid,
-		ns_aic.citiObjAccNo,
-		ns_aic.citiAgentUid,
-		ns_aic.citiPlaceUid,
-		ns_aic.citiExhibUid,
-		ns_aic.citiImgDBankUid,
+		(ns_rdf.type, 'uri'),
+		(ns_dc.title, 'literal'),
+		(ns_aic.legacyUid, 'literal'),
+		(ns_aic.citiObjUid, 'literal'),
+		(ns_aic.citiObjAccNo, 'literal'),
+		(ns_aic.citiAgentUid, 'literal'),
+		(ns_aic.citiPlaceUid, 'literal'),
+		(ns_aic.citiExhibUid, 'literal'),
+		(ns_aic.citiImgDBankUid, 'literal'),
 	)
 
 	prop_req_names = (
 		'type',
+		'title',
 		'legacy_uid',
 		'citi_obj_pkey',
 		'citi_obj_acc_no',
@@ -116,11 +120,11 @@ class StaticImage(Resource):
 		for req_name, lake_name in zip(self.prop_req_names, self.prop_lake_names):
 			if req_name in props:
 				for value in props[req_name]:
-					prop_tuples.append((lake_name, Literal(value)))
+					prop_tuples.append((lake_name[0], self._rdfObject(value, lake_name[1])))
 
 		print('Props:', prop_tuples)
 
-		self.fconn.updateNodeProperties(img_tx_uri, prop_tuples)
+		self.fconn.updateNodeProperties(img_tx_uri, insert_props=prop_tuples)
 
 		# Upload source datastream
 		#print('Source dstream:', source.file)
@@ -135,8 +139,8 @@ class StaticImage(Resource):
 		source_uri = source_content_uri.replace('/fcr:content', '')
 
 		# Set source datastream properties
-		props = [(self.ns_dc.title, Literal(uid + '_source'))]
-		self.fconn.updateNodeProperties(source_uri, props)
+		prop_tuples = [(self.ns_dc.title, Literal(uid + '_source'))]
+		self.fconn.updateNodeProperties(source_uri, insert_props=prop_tuples)
 
 		# Upload master datastream
 		print('Master dstream:', master)
@@ -195,14 +199,14 @@ class StaticImage(Resource):
 				if isinstance(delete_props[req_name], list):
 					# Delete one or more values from property
 					for value in delete_props[req_name]:
-						delete_tuples.append((lake_name, Literal(value)))
+						delete_tuples.append((lake_name[0], self._rdfObject(value, lake_name[1])))
 				elif isinstance(delete_props[req_name], str):
 					# Delete the whole property
-					delete_tuples.append((lake_name, Variable('?v')))
-					where_tuples.append((lake_name, Variable('?v')))
+					delete_tuples.append((lake_name[0], self._rdfObject('?v', 'variable')))
+					where_tuples.append((lake_name[0], self._rdfObject('?v', 'variable')))
 			if req_name in insert_props:
 				for value in insert_props[req_name]:
-					insert_tuples.append((lake_name, Literal(value)))
+					insert_tuples.append((lake_name[0], self._rdfObject(value, lake_name[1])))
 
 		#print('INSERT:',insert_tuples, 'DELETE:', delete_tuples)
 
@@ -237,3 +241,12 @@ class StaticImage(Resource):
 			if mimetype != rules['mimetype']:
 				return false
 		return (format, size, mimetype)
+
+
+	def _rdfObject(self, value, type):
+		if type == 'literal':
+			return Literal(value)
+		elif type == 'uri':
+			return URIRef(value)
+		elif type == 'variable':
+			return Variable(value)

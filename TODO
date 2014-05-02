@@ -1,5 +1,6 @@
 TODO by May 7th
 
 D - Logging
+T - Allow URI property values
 - Fix source MIME type in test
 - Daemonize and write init script
