@@ -8,7 +8,7 @@ from edu.artic.sspad.connectors.uidminter_connector import UidminterConnector
 class Resource():
 	''' Top-level class that handles resources. '''
 
-	exposed = True
+	#exposed = True
 
 	def __init__(self):
 		pass
@@ -24,7 +24,6 @@ class Resource():
 
 	def createNodeInTx(self, uid, tx_uri):
 		res_tx_uri = self.fconn.createOrUpdateNode(tx_uri + '/resources/SI/' + uid)
-		#print('Image URI in tx:', img_tx_uri)
 		res_uri = re.sub(r'/tx:[^\/]+/', '/', res_tx_uri)
-		#print('Absolute image URI:', img_uri)
+
 		return (res_tx_uri, res_uri)

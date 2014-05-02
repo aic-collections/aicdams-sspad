@@ -81,16 +81,24 @@ class FedoraConnector:
 		return res.headers['location']
 
 
-	def updateNodeProperties(self, uri, props):
+	def updateNodeProperties(self, uri, delete_props={}, insert_props={}, where_props={}):
+		''' Modifies node properties using a SPARQL-update query. '''
+
 		g = Graph(namespace_manager = ns_mgr)
-		triples = ''
-		for t in props:
-			triples += '\n<> {} {} .'.format(t[0].n3(), t[1].n3())
+		insert_triples, delete_triples, where_triples = ('','','')
+		for d in delete_props:
+			delete_triples += '\n\t<> {} {} .'.format(d[0].n3(), d[1].n3())
+		for i in insert_props:
+			insert_triples += '\n\t<> {} {} .'.format(i[0].n3(), i[1].n3())
+		for w in where_props:
+			where_triples += '\n\t<> {} {} .'.format(w[0].n3(), w[1].n3())
 		#print('Triples:', triples)
 
 		# @TODO Use namespaces
-		body = 'INSERT {' + triples + '\n} WHERE {}'
-		#print('Body:', body)
+		body = 'DELETE {{{}\n}} INSERT {{{}\n}} WHERE {{{}\n}}'\
+			.format(delete_triples, insert_triples, where_triples)
+		print('Executing SPARQL update:', body)
+		
 		res = requests.patch(
 			uri, 
 			data = body,
