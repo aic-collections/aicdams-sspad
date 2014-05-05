@@ -56,6 +56,13 @@ class StaticImage(Resource):
 		'citi_imgdbank_pkey',
 	)
 
+	mixins = [
+		'aicmix:citiPrivate',
+		'aicmix:derivable',
+		'aicmix:overlaid',
+		'aicmix:publ_web',
+	]
+
 
 	def GET(self, uid=None):
 		'''Lists all images or shows properties for an image with given uid.
@@ -152,7 +159,7 @@ class StaticImage(Resource):
 			(self.ns_rdf.type, self.ns_aicmix.imageDerivable),
 			(self.ns_dc.title, Literal(uid + '_master')),
 		]
-		self.fconn.updateNodeProperties(master_uri, prop_tuples)
+		self.fconn.updateNodeProperties(master_uri, insert_props=prop_tuples)
 
 		# Commit transaction
 		self.fconn.commitTransaction(tx_uri)
@@ -238,7 +245,12 @@ class StaticImage(Resource):
 		#print('INSERT:',insert_tuples, 'DELETE:', delete_tuples)
 
 		url = fedora_rest_api['base_url'] + 'resources/SI/' + uid
-		self.fconn.updateNodeProperties(url, delete_tuples, insert_tuples, where_tuples)
+		self.fconn.updateNodeProperties(
+			url,
+			delete_props=delete_tuples,
+			insert_props=insert_tuples,
+			where_props=where_tuples
+		)
 
 		cherrypy.response.headers['Status'] = 204
 		cherrypy.response.headers['Location'] = url
@@ -273,9 +285,13 @@ class StaticImage(Resource):
 
 
 	def _rdfObject(self, value, type):
+		cherrypy.log.error('Value: ' + value)
 		if type == 'literal':
 			return Literal(value)
 		elif type == 'uri':
-			return URIRef(value)
+			ns, tname = value.split(':')
+			if ns not in ns_collection or value not in self.mixins:
+				cherrypy.HTTPError(400, 'Relationship {} cannot be added or removed with this method.'.format(value))
+			return URIRef(ns_collection[ns] + tname)
 		elif type == 'variable':
 			return Variable(value)
