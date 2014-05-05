@@ -61,24 +61,24 @@ class FedoraConnector:
 		if not ds and not path:
 			raise cherrypy.HTTPError(500, "No datastream or file path given.")
 	
-		file = ds or open(path)
+		data = ds or open(path)
 	
-		with file as data:
-			res = requests.put(
-				uri + '/fcr:content', 
-				data = data.read(),
-				headers = dict(chain(self.headers.items(),
-					[(
-						'content-disposition',
-						'inline; filename="' + dsname + '"'
-					)]
-				))
-			)
+		res = requests.put(
+			uri + '/fcr:content', 
+			data = data,
+			headers = dict(chain(self.headers.items(),
+				[(
+					'content-disposition',
+					'inline; filename="' + dsname + '"'
+				)]
+			))
+		)
 		print('Requesting URL:', res.url)
 		print('Create/update datastream response:', res.status_code)
 		res.raise_for_status()
 
-		return res.headers['location']
+		if 'location' in res.headers:
+			return res.headers['location']
 
 
 	def updateNodeProperties(self, uri, insert_props={}, delete_props={}, where_props={}):

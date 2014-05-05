@@ -1,4 +1,4 @@
-import json, mimetypes
+import json
 
 import cherrypy
 from rdflib import Graph, URIRef, Literal, Variable
@@ -73,13 +73,7 @@ class StaticImage(Resource):
 		
 		#cherrypy.request.body.processors['multipart'] = cherrypy._cpreqbody.process_multipart
 
-		# Set connectors - @TODO move this in __init__ method of super class
-		# when you figure out how to access cherrypy.request.headers there
-		self.auth_str = cherrypy.request.headers['Authorization']\
-			if 'Authorization' in cherrypy.request.headers\
-			else None
-		self.fconn = FedoraConnector(self.auth_str)
-		self.dgconn = DatagrinderConnector(self.auth_str)
+		self._setConnection()
 
 
 		props = json.loads(properties)
@@ -132,7 +126,7 @@ class StaticImage(Resource):
 		source_content_uri = self.fconn.createOrUpdateDStream(
 			img_tx_uri + '/aic:ds_source',
 			ds=source.file, 
-			dsname = uid + '_source' + mimetypes.guess_extension(src_mimetype),
+			dsname = uid + '_source' + self._guessFileExt(src_mimetype),
 			mimetype = src_mimetype
 		)
 
@@ -167,14 +161,50 @@ class StaticImage(Resource):
 		cherrypy.response.headers['Location'] = img_uri
 
 		return {"message": "Image created"}
+		# @TODO Add 409 Conflict response if image uploaded 
+		# has a legacy_uid value that already exists in LAKE
 
 
-	def PUT(self, uid, meta={}, **kwargs):
-		''' Update datastreams or property set of an image.
-		NOTE: The sent property set will replace the existing one completely.
-		'''
+	def PUT(self, uid, properties={}, **dstreams):
+		''' Add or replace datastreams or replace the whole property set of an image. '''
 
-		pass
+		self._setConnection()
+
+		img_url = fedora_rest_api['base_url'] + 'resources/SI/' + uid
+
+		dsnames = sorted(dstreams.keys())
+		for dsname in dsnames:
+			ds = dstreams[dsname]
+			src_format, src_size, src_mimetype = self._validateDStream(ds.file)
+
+			#cherrypy.log.error('UID: ' + uid + '; dsname: ' + dsname + ' mimetype: ' + src_mimetype)
+			#cherrypy.log.error('mimetype guess: ' + self._guessFileExt(src_mimetype))
+			#ds.file.seek(0)
+			with ds.file as file:
+				src_data = file.read()
+				cherrypy.log.error('File in ctxmgr is closed: ' + str(file.closed))
+				content_uri = self.fconn.createOrUpdateDStream(
+					img_url + '/aic:ds_' + dsname,
+					ds=src_data,
+					dsname = uid + '_' + dsname + self._guessFileExt(src_mimetype),
+					mimetype = src_mimetype
+				)
+
+				if dsname == 'source' and 'master' not in dsnames:
+					# Recreate master file automatically if source is provided
+					# without master
+					cherrypy.log.error('No master file provided with source, re-creating master.')
+					cherrypy.log.error('DS: '+str(ds))
+					master = self._generateMasterFile(src_data, uid + '_master.jpg')
+					content_uri = self.fconn.createOrUpdateDStream(
+						img_url + '/aic:ds_master',
+						ds=master.read(), 
+						dsname = uid + '_master.jpg',
+						mimetype = 'image/jpeg'
+					)
+				src_data = None # Flush datastream
+
+		return {"message": "Image updated."}
 
 		
 	def PATCH(self, uid, insert_properties='{}', delete_properties='{}'):
@@ -183,10 +213,7 @@ class StaticImage(Resource):
 		'''
 
 		#print('Req parameters:', cherrypy.request.params)
-		self.auth_str = cherrypy.request.headers['Authorization']\
-			if 'Authorization' in cherrypy.request.headers\
-			else None
-		self.fconn = FedoraConnector(self.auth_str)
+		self._setConnection()
 
 		insert_props = json.loads(insert_properties)
 		delete_props = json.loads(delete_properties)
@@ -216,6 +243,8 @@ class StaticImage(Resource):
 		cherrypy.response.headers['Status'] = 204
 		cherrypy.response.headers['Location'] = url
 
+		return {"message": "Image updated."}
+
 		
 	def _generateMasterFile(self, file, fname):
 		'''Generate a master datastream from a source image file.'''
@@ -233,7 +262,7 @@ class StaticImage(Resource):
 			format = img.format
 			mimetype = img.mimetype
 			size = img.size
-			print('Image format:', format, 'MIME type:', mimetype, 'size:', size)
+			cherrypy.log.error(' Image format: ' + format + ' MIME type: ' + mimetype + ' size: ' + str(size))
 
 		ds.seek(0)
 

@@ -1,4 +1,4 @@
-import abc, re
+import abc, mimetypes, re
 import cherrypy
 
 from edu.artic.sspad.connectors.datagrinder_connector import DatagrinderConnector
@@ -9,9 +9,26 @@ class Resource():
 	''' Top-level class that handles resources. '''
 
 	#exposed = True
+	add_mimetypes = [
+		('image/psd', '.psd'),
+		('image/x-psd', '.psd'),
+		('image/vnd.adove.photoshop', '.psd'),
+		# [...]
+	]
 
 	def __init__(self):
-		pass
+		for mt, ext in self.add_mimetypes:
+			mimetypes.add_type(mt, ext)
+
+
+	def _setConnection(self):
+		# Set connectors - @TODO move this in __init__ method of super class
+		# when you figure out how to access cherrypy.request.headers there
+		self.auth_str = cherrypy.request.headers['Authorization']\
+			if 'Authorization' in cherrypy.request.headers\
+			else None
+		self.fconn = FedoraConnector(self.auth_str)
+		self.dgconn = DatagrinderConnector(self.auth_str)
 
 
 	def mintUid(self, mid=None):
@@ -27,3 +44,7 @@ class Resource():
 		res_uri = re.sub(r'/tx:[^\/]+/', '/', res_tx_uri)
 
 		return (res_tx_uri, res_uri)
+
+
+	def _guessFileExt(self, mimetype):
+		return mimetypes.guess_extension(mimetype) or ''

@@ -1,4 +1,5 @@
 import cherrypy, io, requests
+from cherrypy import log
 #from requests_toolbelt import MultipartEncoder
 
 from edu.artic.sspad.config.datasources import datagrinder_rest_api
@@ -45,7 +46,7 @@ class DatagrinderConnector:
 			#data=m
 		)
 
-		print('Image resize response:', res.status_code)
+		log.error('Image resize response: ' + str(res.status_code))
 		res.raise_for_status()
 		#print('Returned image:', res.content[:256])
 		return io.BytesIO(res.content)

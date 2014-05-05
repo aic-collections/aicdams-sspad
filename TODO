@@ -1,6 +1,7 @@
 TODO by May 7th
 
 D - Logging
-T - Allow URI property values
-- Fix source MIME type in test
-- Daemonize and write init script
+D - Allow URI property values
+D - Update datastreams (PUT)
+P - Daemonize and write init script
+? - Fix source MIME type in test
