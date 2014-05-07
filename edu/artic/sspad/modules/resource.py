@@ -3,6 +3,7 @@ import cherrypy
 
 from edu.artic.sspad.connectors.datagrinder_connector import DatagrinderConnector
 from edu.artic.sspad.connectors.fedora_connector import FedoraConnector
+from edu.artic.sspad.connectors.tstore_connector import TstoreConnector
 from edu.artic.sspad.connectors.uidminter_connector import UidminterConnector
 
 class Resource():
@@ -29,6 +30,7 @@ class Resource():
 			else None
 		self.fconn = FedoraConnector(self.auth_str)
 		self.dgconn = DatagrinderConnector(self.auth_str)
+		self.tsconn = TstoreConnector(self.auth_str)
 
 
 	def mintUid(self, mid=None):

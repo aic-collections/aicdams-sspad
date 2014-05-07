@@ -59,7 +59,7 @@ class FedoraConnector:
 	def createOrUpdateDStream(self, uri, dsname, ds=None, path=None, mimetype = 'application/octet-stream'):
 		# @TODO Optimize with with
 		if not ds and not path:
-			raise cherrypy.HTTPError(500, "No datastream or file path given.")
+			raise cherrypy.HTTPError('500 Internal Server Error', "No datastream or file path given.")
 	
 		data = ds or open(path)
 	

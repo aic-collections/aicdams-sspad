@@ -4,4 +4,4 @@ D - Logging
 D - Allow URI property values
 D - Update datastreams (PUT)
 P - Daemonize and write init script
-? - Fix source MIME type in test
+N - Fix source MIME type in test

@@ -82,12 +82,17 @@ class StaticImage(Resource):
 
 		self._setConnection()
 
-
 		props = json.loads(properties)
 
-		# @TODO Before anything else, check that if a legacy_uid parameter is
+		# Before anything else, check that if a legacy_uid parameter is
 		# provied, no other image exists with that legacy UID. In the case one exists, 
 		# the function shall return a '409 Conflict'.
+		# The function assumes that multiple legacy UIDs can be assigned.
+		if 'legacy_uid' in props:
+			for uid in props['legacy_uid']:
+				if self.tsconn.assertImageExistsByLegacyUid(uid):
+					cherrypy.HTTPError('409 Conflict', 'An image with the same legacy UID already exists. Not creating a new one.')
+
 		
 		# Create a new UID
 		uid = self.mintUid(mid)
@@ -291,7 +296,7 @@ class StaticImage(Resource):
 		elif type == 'uri':
 			ns, tname = value.split(':')
 			if ns not in ns_collection or value not in self.mixins:
-				cherrypy.HTTPError(400, 'Relationship {} cannot be added or removed with this method.'.format(value))
+				cherrypy.HTTPError('400 Bad Request', 'Relationship {} cannot be added or removed with this method.'.format(value))
 			return URIRef(ns_collection[ns] + tname)
 		elif type == 'variable':
 			return Variable(value)
