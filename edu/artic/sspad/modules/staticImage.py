@@ -82,8 +82,9 @@ class StaticImage(Resource):
 
 		'''Create a new image node with automatic UID by providing data and node properties.'''
 		
-		if 'master' not in dstreams.keys():
-			raise cherrypy.HTTPError('400 Bad Request', 'Required master datastream missing.')
+		# Raise error if source is not uploaded.
+		if 'source' not in dstreams.keys():
+			raise cherrypy.HTTPError('400 Bad Request', 'Required source datastream missing.')
 
 		#cherrypy.request.body.processors['multipart'] = cherrypy._cpreqbody.process_multipart
 		#cherrypy.log('Max. upload size: ' + str(cherrypy.server.max_request_body_size))
@@ -109,37 +110,37 @@ class StaticImage(Resource):
 		uid = self.mintUid(mid)
 
 		#print('Multipart: ', cherrypy.request.body.__dict__)
-		# Validate source
-
-		for dsname in dstreams.keys():
-			ds = dstreams[dsname]
-			cherrypy.log.error(dsname + ' data type: ' + ds.__class__.__name__)
-			# @TODO Move all datastream ingestion operations under this loop
-
-		# If source is a byte stream instead of a Part instance, wrap it in an
-		# anonymous object as a 'file' property
-		source = dstreams['source']
-		if source.__class__.__name__ == 'bytes':
-			sourceObj = lambda:0 # Kind of a hack, but it works.
-			sourceObj.file = io.BytesIO(source)
-			source = sourceObj
-
-		src_format, src_size, src_mimetype = self._validateDStream(source.file)
 
 		if 'master' not in dstreams:
 			# Generate master if not present
 			cherrypy.log.error('Master file not provided.')
-			master = self._generateMasterFile(source.file, uid + '_master.jpg')
-
+			dstreams['master'] = self._generateMasterFile(dstreams['source'].file, uid + '_master.jpg')
 		else:
 			cherrypy.log.error('Master file provided.')
-			master = dstreams['master']
-			if master.__class__.__name__ == 'bytes':
-				masterObj = lambda:0 # Kind of a hack, but it works.
-				masterObj.file = io.BytesIO(master)
-				master = masterObj
-			# Validate master
-			self._validateDStream(master.file, {'mimetype': 'image/jpeg'})
+
+		# First validate all datastreams
+		dsmeta = {}
+		for dsname in dstreams.keys():
+			ds = dstreams[dsname]
+			cherrypy.log.error(dsname + ' class name: ' + ds.__class__.__name__)
+
+			# If ds is a byte stream instead of a Part instance, wrap it in an
+			# anonymous object as a 'file' property
+			if ds.__class__.__name__ == 'bytes':
+				dsObj = lambda:0 # Kind of a hack, but it works.
+				dsObj.file = io.BytesIO(ds)
+				dstreams[dsname] = dsObj
+			elif ds.__class__.__name__ == 'BytesIO':
+				dsObj = lambda:0 # Kind of a hack, but it works.
+				dsObj.file = ds
+				dstreams[dsname] = dsObj
+			ds = dstreams[dsname]
+
+			try:
+				dsmeta[dsname] = self._validateDStream(ds.file, dsname)
+			except Exception:
+				raise cherrypy.HTTPError('415 Unsupported Media Type', 'Validation for datastream {} failed.'.format(dsname))
+			cherrypy.log.error('Validation for ' + dsname + ': ' + str(dsmeta[dsname]))
 
 		# Open Fedora transaction
 		tx_uri = self.openTransaction()
@@ -164,43 +165,28 @@ class StaticImage(Resource):
 
 		self.fconn.updateNodeProperties(img_tx_uri, insert_props=prop_tuples)
 
-		# Upload source datastream
-		#print('Source dstream:', source.file)
-		source.file.seek(0)
-		source_content_uri = self.fconn.createOrUpdateDStream(
-			img_tx_uri + '/aic:ds_source',
-			ds=source.file, 
-			dsname = uid + '_source' + self._guessFileExt(src_mimetype),
-			mimetype = src_mimetype
-		)
+		# Loop over all datastreams and ingest them
+		for dsname in dstreams.keys():
+			ds = dstreams[dsname]
+			#cherrypy.log.error('Ingestion round: ' + dsname + ' class name: ' + ds.__class__.__name__)
+			ds.file.seek(0)
+			ds_content_uri = self.fconn.createOrUpdateDStream(
+				img_tx_uri + '/aic:ds_' + dsname,
+				ds=ds.file,
+				dsname = uid + '_' + dsname + self._guessFileExt(dsmeta[dsname]['mimetype']),
+				mimetype = dsmeta[dsname]['mimetype']
+			)
 
-		source_uri = source_content_uri.replace('/fcr:content', '')
+			ds_uri = ds_content_uri.replace('/fcr:content', '')
 
-		# Set source datastream properties
-		prop_tuples = [
-                    (self.ns_rdf.type, self.ns_indexing.indexable),
-                    (self.ns_dc.title, Literal(uid + '_source')),
-                ]
-		self.fconn.updateNodeProperties(source_uri, insert_props=prop_tuples)
-
-		# Upload master datastream
-		print('Master dstream:', master)
-		master_content_uri = self.fconn.createOrUpdateDStream(
-			img_tx_uri + '/aic:ds_master',
-			ds=master.file,
-			dsname = uid + '_master.jpg',
-			mimetype = 'image/jpeg'
-		)
-
-		master_uri = master_content_uri.replace('/fcr:content', '')
-
-		# Set master datastream properties
-		prop_tuples = [
-			(self.ns_rdf.type, self.ns_aicmix.imageDerivable),
-			(self.ns_rdf.type, self.ns_indexing.indexable),
-			(self.ns_dc.title, Literal(uid + '_master')),
-		]
-		self.fconn.updateNodeProperties(master_uri, insert_props=prop_tuples)
+			# Set source datastream properties
+			prop_tuples = [
+						(self.ns_rdf.type, self.ns_indexing.indexable),
+						(self.ns_dc.title, Literal(uid + '_' + dsname)),
+					]
+			if dsname == 'master':
+				prop_tuples.append((self.ns_rdf.type, self.ns_aicmix.imageDerivable))
+			self.fconn.updateNodeProperties(ds_uri, insert_props=prop_tuples)
 
 		# Commit transaction
 		self.fconn.commitTransaction(tx_uri)
@@ -301,15 +287,16 @@ class StaticImage(Resource):
 	def _generateMasterFile(self, file, fname):
 		'''Generate a master datastream from a source image file.'''
 
-		return self.dgconn.resizeImageFromData(file, fname, 2048, 2048)
+		return self.dgconn.resizeImageFromData(file, fname, 4096, 4096)
 
 
-	def _validateDStream(self, ds, rules={}):
+	def _validateDStream(self, ds, dsname='', rules={}):
 		'''Checks that the input file is a valid image.
-		@TODO more rules
+		@TODO more rules. So far only 'mimetype' is supported.
 		'''
 
-		cherrypy.log.error('ds: ' + str(ds))
+		ds.seek(0)
+		cherrypy.log.error('Validating ds: ' + dsname + ' of type: ' + str(ds))
 		with image.Image(file=ds) as img:
 			format = img.format
 			mimetype = img.mimetype
@@ -320,8 +307,8 @@ class StaticImage(Resource):
 
 		if 'mimetype' in rules:
 			if mimetype != rules['mimetype']:
-				return false
-		return (format, size, mimetype)
+				raise TypeError('MIME type of uploaded image does not match the expected one.')
+		return {'format': format, 'size': size, 'mimetype': mimetype}
 
 
 	def _rdfObject(self, value, type):
