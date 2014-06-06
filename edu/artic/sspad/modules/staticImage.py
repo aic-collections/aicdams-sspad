@@ -78,10 +78,13 @@ class StaticImage(Resource):
 			return {'message': '*stub* This is a list of images.'}
 
 
-	def POST(self, mid, source, master=None, properties='{}'):
+	def POST(self, mid, properties='{}', **dstreams):
 
 		'''Create a new image node with automatic UID by providing data and node properties.'''
 		
+		if 'master' not in dstreams.keys():
+			raise cherrypy.HTTPError('400 Bad Request', 'Required master datastream missing.')
+
 		#cherrypy.request.body.processors['multipart'] = cherrypy._cpreqbody.process_multipart
 		#cherrypy.log('Max. upload size: ' + str(cherrypy.server.max_request_body_size))
 		self._setConnection()
@@ -108,8 +111,14 @@ class StaticImage(Resource):
 		#print('Multipart: ', cherrypy.request.body.__dict__)
 		# Validate source
 
+		for dsname in dstreams.keys():
+			ds = dstreams[dsname]
+			cherrypy.log.error(dsname + ' data type: ' + ds.__class__.__name__)
+			# @TODO Move all datastream ingestion operations under this loop
+
 		# If source is a byte stream instead of a Part instance, wrap it in an
 		# anonymous object as a 'file' property
+		source = dstreams['source']
 		if source.__class__.__name__ == 'bytes':
 			sourceObj = lambda:0 # Kind of a hack, but it works.
 			sourceObj.file = io.BytesIO(source)
@@ -117,13 +126,16 @@ class StaticImage(Resource):
 
 		src_format, src_size, src_mimetype = self._validateDStream(source.file)
 
-		if master == None:
+		if 'master' not in dstreams:
 			# Generate master if not present
+			cherrypy.log.error('Master file not provided. Generating from source.')
 			master = self._generateMasterFile(source.file, uid + '_master.jpg')
 
 		else:
+			cherrypy.log.error('Master file provided.')
+			master = dstreams['master']
 			# Validate master
-			self._validateDStream(master, {'mimetype': 'image/jpeg'})
+			self._validateDStream(master.file, {'mimetype': 'image/jpeg'})
 
 
 		# Open Fedora transaction
@@ -172,7 +184,7 @@ class StaticImage(Resource):
 		print('Master dstream:', master)
 		master_content_uri = self.fconn.createOrUpdateDStream(
 			img_tx_uri + '/aic:ds_master',
-			ds=master,
+			ds=master.file,
 			dsname = uid + '_master.jpg',
 			mimetype = 'image/jpeg'
 		)
@@ -294,7 +306,7 @@ class StaticImage(Resource):
 		@TODO more rules
 		'''
 
-		#print('ds: ', ds)
+		cherrypy.log.error('ds: ' + str(ds))
 		with image.Image(file=ds) as img:
 			format = img.format
 			mimetype = img.mimetype
