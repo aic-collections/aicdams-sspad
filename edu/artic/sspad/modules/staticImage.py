@@ -128,15 +128,18 @@ class StaticImage(Resource):
 
 		if 'master' not in dstreams:
 			# Generate master if not present
-			cherrypy.log.error('Master file not provided. Generating from source.')
+			cherrypy.log.error('Master file not provided.')
 			master = self._generateMasterFile(source.file, uid + '_master.jpg')
 
 		else:
 			cherrypy.log.error('Master file provided.')
 			master = dstreams['master']
+			if master.__class__.__name__ == 'bytes':
+				masterObj = lambda:0 # Kind of a hack, but it works.
+				masterObj.file = io.BytesIO(master)
+				master = masterObj
 			# Validate master
 			self._validateDStream(master.file, {'mimetype': 'image/jpeg'})
-
 
 		# Open Fedora transaction
 		tx_uri = self.openTransaction()
