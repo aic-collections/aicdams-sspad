@@ -1,4 +1,4 @@
-import json
+import io, json
 
 import cherrypy
 from rdflib import Graph, URIRef, Literal, Variable
@@ -13,21 +13,23 @@ from edu.artic.sspad.modules.resource import Resource
 from edu.artic.sspad.resources.rdf_lexicon import ns_collection
 
 class StaticImage(Resource):
-	"""Static Image class.
+	'''Static Image class.
 
 	This class runs and manages Image actions.
 	@TODO Make subclass of new 'Node' class and move related methods there.
-	"""
+	'''
 	exposed = True
 
 
 	pfx = 'SI'
 
-	ns_aic, ns_aicmix, ns_dc, ns_rdf =\
+	ns_aic, ns_aicmix, ns_dc, ns_rdf, ns_indexing =\
 		ns_collection['aic'],\
 		ns_collection['aicmix'],\
 		ns_collection['dc'],\
-		ns_collection['rdf']
+		ns_collection['rdf'],\
+		ns_collection['indexing']
+
 
 	''' Tuples of LAKE namespaces and data types.
 		Data type string can be 'literal', 'uri' or 'variable'.
@@ -81,10 +83,14 @@ class StaticImage(Resource):
 		'''Create a new image node with automatic UID by providing data and node properties.'''
 		
 		#cherrypy.request.body.processors['multipart'] = cherrypy._cpreqbody.process_multipart
-
+		#cherrypy.log('Max. upload size: ' + str(cherrypy.server.max_request_body_size))
 		self._setConnection()
 
 		props = json.loads(properties)
+		for p in props:
+			''' Wrap string props in one-element lists '''
+			if not props[p].__class__.__name__ == 'list':
+				props[p] = [props[p]]
 
 		# Before anything else, check that if a legacy_uid parameter is
 		# provied, no other image exists with that legacy UID. In the case one exists, 
@@ -93,13 +99,22 @@ class StaticImage(Resource):
 		if 'legacy_uid' in props:
 			for uid in props['legacy_uid']:
 				if self.tsconn.assertImageExistsByLegacyUid(uid):
-					cherrypy.HTTPError('409 Conflict', 'An image with the same legacy UID already exists. Not creating a new one.')
+                                    raise cherrypy.HTTPError('409 Conflict', 'An image with the same legacy UID already exists. Not creating a new one.')
 
 		
 		# Create a new UID
 		uid = self.mintUid(mid)
 
+		#print('Multipart: ', cherrypy.request.body.__dict__)
 		# Validate source
+
+		# If source is a byte stream instead of a Part instance, wrap it in an
+		# anonymous object as a 'file' property
+		if source.__class__.__name__ == 'bytes':
+			sourceObj = lambda:0 # Kind of a hack, but it works.
+			sourceObj.file = io.BytesIO(source)
+			source = sourceObj
+
 		src_format, src_size, src_mimetype = self._validateDStream(source.file)
 
 		if master == None:
@@ -147,7 +162,10 @@ class StaticImage(Resource):
 		source_uri = source_content_uri.replace('/fcr:content', '')
 
 		# Set source datastream properties
-		prop_tuples = [(self.ns_dc.title, Literal(uid + '_source'))]
+		prop_tuples = [
+                    (self.ns_rdf.type, self.ns_indexing.indexable),
+                    (self.ns_dc.title, Literal(uid + '_source')),
+                ]
 		self.fconn.updateNodeProperties(source_uri, insert_props=prop_tuples)
 
 		# Upload master datastream
@@ -164,6 +182,7 @@ class StaticImage(Resource):
 		# Set master datastream properties
 		prop_tuples = [
 			(self.ns_rdf.type, self.ns_aicmix.imageDerivable),
+			(self.ns_rdf.type, self.ns_indexing.indexable),
 			(self.ns_dc.title, Literal(uid + '_master')),
 		]
 		self.fconn.updateNodeProperties(master_uri, insert_props=prop_tuples)
@@ -175,8 +194,6 @@ class StaticImage(Resource):
 		cherrypy.response.headers['Location'] = img_uri
 
 		return {"message": "Image created"}
-		# @TODO Add 409 Conflict response if image uploaded 
-		# has a legacy_uid value that already exists in LAKE
 
 
 	def PUT(self, uid, properties={}, **dstreams):
@@ -226,13 +243,14 @@ class StaticImage(Resource):
 		@TODO Figure out how to pass parameters in HTTP body instead of as URL params.
 		'''
 
-		#print('Req parameters:', cherrypy.request.params)
+		print('Req parameters:', str(cherrypy.request.params))
 		self._setConnection()
 
 		insert_props = json.loads(insert_properties)
 		delete_props = json.loads(delete_properties)
 
-		#print('Add props:',insert_props)
+		#cherrypy.log.error('Insert props:' + str(insert_props))
+		#cherrypy.log.error('Delete props:' + str(delete_props))
 
 		insert_tuples, delete_tuples, where_tuples = ([],[],[])
 		for req_name, lake_name in zip(self.prop_req_names, self.prop_lake_names):
@@ -243,8 +261,8 @@ class StaticImage(Resource):
 						delete_tuples.append((lake_name[0], self._rdfObject(value, lake_name[1])))
 				elif isinstance(delete_props[req_name], str):
 					# Delete the whole property
-					delete_tuples.append((lake_name[0], self._rdfObject('?v', 'variable')))
-					where_tuples.append((lake_name[0], self._rdfObject('?v', 'variable')))
+					delete_tuples.append((lake_name[0], self._rdfObject('?' + req_name, 'variable')))
+					where_tuples.append((lake_name[0], self._rdfObject('?' + req_name, 'variable')))
 			if req_name in insert_props:
 				for value in insert_props[req_name]:
 					insert_tuples.append((lake_name[0], self._rdfObject(value, lake_name[1])))
@@ -292,7 +310,7 @@ class StaticImage(Resource):
 
 
 	def _rdfObject(self, value, type):
-		cherrypy.log.error('Value: ' + value)
+		cherrypy.log.error('Value: ' + str(value))
 		if type == 'literal':
 			return Literal(value)
 		elif type == 'uri':

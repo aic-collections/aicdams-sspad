@@ -8,7 +8,7 @@ class UidminterConnector:
 
 		cur.callproc('mintuid', (pfx, mid))
 		new_uid = cur.fetchone()[0]
-		print('New UID: ', new_uid)
+		#print('New UID: ', new_uid)
 
 		session.commit()
 		cur.close()

@@ -40,8 +40,8 @@ class TstoreConnector:
 			)),
 			params = {'query': query}
 		)
-		cherrypy.log.error('Requesting URL: ' + res.url)
-		cherrypy.log.error('h for UID: ' + str(res.text))
+		#cherrypy.log.error('Requesting URL: ' + res.url)
+		#cherrypy.log.error('h for UID: ' + str(res.text))
 		res.raise_for_status()
 
 		return True if res.text == 'true' else False
