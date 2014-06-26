@@ -1,0 +1,19 @@
+# # # Host-specific settings are defined here. Change them to fit the host system.
+import sys
+
+# App environment. 'dev', 'test', 'stag' or 'prod'
+if sys.argv[1] in ('prod', 'stag', 'test', 'dev'):
+	app_env = sys.argv[1]
+else:
+	app_env='dev'
+#print('Starting SSPAD server in {} environment.'.format(app_env))
+
+# This application's path
+app_path = sys.argv[0]
+
+# Webapp host
+app_host = 'localhost'
+
+# Webapp port
+app_port = 5000
+

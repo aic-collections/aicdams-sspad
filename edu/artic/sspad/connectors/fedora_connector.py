@@ -25,8 +25,8 @@ class FedoraConnector:
 			self.base_url + 'fcr:tx', 
 			headers = self.headers
 		)
-		print('Requesting URL:', res.url)
-		print('Open transaction response:', res.status_code)
+		cherrypy.log.error('Requesting URL:', res.url)
+		#cherrypy.log.error('Open transaction response:', res.status_code)
 		res.raise_for_status()
 
 		return res.headers['location']

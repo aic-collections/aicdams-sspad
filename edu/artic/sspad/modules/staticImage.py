@@ -103,7 +103,10 @@ class StaticImage(Resource):
 		if 'legacy_uid' in props:
 			for uid in props['legacy_uid']:
 				if self.tsconn.assertImageExistsByLegacyUid(uid):
-                                    raise cherrypy.HTTPError('409 Conflict', 'An image with the same legacy UID already exists. Not creating a new one.')
+					raise cherrypy.HTTPError(
+						'409 Conflict',
+						'An image with the same legacy UID already exists. Not creating a new one.'
+					)
 
 		
 		# Create a new UID

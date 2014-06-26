@@ -1,6 +1,6 @@
 import cherrypy
 
-from edu.artic.sspad.config import host, server
+#from edu.artic.sspad.config import host, server
 from edu.artic.sspad.modules import resource, staticImage
 
 class Webapp():
@@ -19,4 +19,4 @@ class Webapp():
 
 
 if __name__ == '__main__':
-	cherrypy.quickstart(Webapp(), config=server.conf)
+	cherrypy.quickstart(Webapp())
