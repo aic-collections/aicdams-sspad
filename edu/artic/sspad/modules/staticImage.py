@@ -244,7 +244,7 @@ class StaticImage(Resource):
 		@TODO Figure out how to pass parameters in HTTP body instead of as URL params.
 		'''
 
-		print('Req parameters:', str(cherrypy.request.params))
+		#cherrypy.log.error('Req parameters:' + str(cherrypy.request.params))
 		self._setConnection()
 
 		insert_props = json.loads(insert_properties)
