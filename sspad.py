@@ -19,4 +19,4 @@ class Webapp():
 
 
 if __name__ == '__main__':
-	cherrypy.quickstart(Webapp())
+	cherrypy.quickstart(Webapp(), config='sspad.conf')
