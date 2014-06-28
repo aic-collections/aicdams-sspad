@@ -254,13 +254,26 @@ class StaticImage(Resource):
 		#cherrypy.log.error('Delete props:' + str(delete_props))
 
 		insert_tuples, delete_tuples, where_tuples = ([],[],[])
+		url = fedora_rest_api['base_url'] + 'resources/SI/' + uid
+
+		# @TODO Wrap these operations in a transaction.
 		for req_name, lake_name in zip(self.prop_req_names, self.prop_lake_names):
+			#cherrypy.log.error("Req. name: " + str(req_name) + "; LAKE name: " + str(lake_name))
 			if req_name in delete_props:
 				if isinstance(delete_props[req_name], list):
 					# Delete one or more values from property
 					for value in delete_props[req_name]:
-						delete_tuples.append((lake_name[0], self._rdfObject(value, lake_name[1])))
-				elif isinstance(delete_props[req_name], str):
+						if req_name == 'type':
+							# If we are removing rdf:type properties,
+							# remove them one by one separately from other properties
+							self.fconn.updateNodeProperties(
+								url,
+								delete_props=[(lake_name[0], self._rdfObject(value, lake_name[1]))],
+								where_props=[(lake_name[0], self._rdfObject(value, lake_name[1]))]
+							)
+						else:
+							delete_tuples.append((lake_name[0], self._rdfObject(value, lake_name[1])))
+				elif delete_props[req_name] == '':
 					# Delete the whole property
 					delete_tuples.append((lake_name[0], self._rdfObject('?' + req_name, 'variable')))
 					where_tuples.append((lake_name[0], self._rdfObject('?' + req_name, 'variable')))
@@ -270,7 +283,6 @@ class StaticImage(Resource):
 
 		#print('INSERT:',insert_tuples, 'DELETE:', delete_tuples)
 
-		url = fedora_rest_api['base_url'] + 'resources/SI/' + uid
 		self.fconn.updateNodeProperties(
 			url,
 			delete_props=delete_tuples,
@@ -312,7 +324,7 @@ class StaticImage(Resource):
 
 
 	def _rdfObject(self, value, type):
-		cherrypy.log.error('Value: ' + str(value))
+		#cherrypy.log.error('Value: ' + str(value))
 		if type == 'literal':
 			return Literal(value)
 		elif type == 'uri':

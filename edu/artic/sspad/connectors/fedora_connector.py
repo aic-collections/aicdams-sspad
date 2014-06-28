@@ -84,6 +84,7 @@ class FedoraConnector:
 	def updateNodeProperties(self, uri, delete_props={}, insert_props={}, where_props={}):
 		''' Modifies node properties using a SPARQL-update query. '''
 
+		cherrypy.log.error("Delete props: " + str(delete_props) + "; Insert props: " + str(insert_props) + "; where props: " + str(where_props))
 		g = Graph(namespace_manager = ns_mgr)
 		insert_triples, delete_triples = ('','')
 		where_triples_list = [];
@@ -94,7 +95,6 @@ class FedoraConnector:
 		for w in where_props:
 			where_triples_list.append('\n\t{{<> {} {}}}'.format(w[0].n3(), w[1].n3()))
 		where_triples = '\n\tUNION'.join(where_triples_list)
-		#print('Triples:', triples)
 
 		# @TODO Use namespaces
 		body = 'DELETE {{{}\n}} INSERT {{{}\n}} WHERE {{{}\n}}'\
