@@ -19,7 +19,9 @@ class Resource():
 	]
 
 	def __init__(self):
-		pass
+		mimetypes.init()
+		for mt, ext in self.add_mimetypes:
+			mimetypes.add_type(mt, ext, True)
 
 
 	def _setConnection(self):
@@ -49,8 +51,6 @@ class Resource():
 
 
 	def _guessFileExt(self, mimetype):
-		for mt, ext in self.add_mimetypes:
-			mimetypes.add_type(mt, ext, True)
 		ext = mimetypes.guess_extension(mimetype) or '.bin'
 		cherrypy.log.error('Guessing MIME type for {}: {}'.format(mimetype, ext))
 		return ext
