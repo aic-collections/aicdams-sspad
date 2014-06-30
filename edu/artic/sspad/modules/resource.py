@@ -11,9 +11,10 @@ class Resource():
 
 	#exposed = True
 	add_mimetypes = [
+		('image/jpeg', '.jpeg'),
 		('image/psd', '.psd'),
+		('image/vnd.adobe.photoshop', '.psd'),
 		('image/x-psd', '.psd'),
-		('image/vnd.adove.photoshop', '.psd'),
 		# [...]
 	]
 
