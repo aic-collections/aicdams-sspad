@@ -50,4 +50,6 @@ class Resource():
 
 
 	def _guessFileExt(self, mimetype):
-		return mimetypes.guess_extension(mimetype) or ''
+		ext = mimetypes.guess_extension(mimetype) or 'bin'
+		cherrypy.log.error('Guessing MIME type for {}: {}'.format(mimetype, ext))
+		return ext
