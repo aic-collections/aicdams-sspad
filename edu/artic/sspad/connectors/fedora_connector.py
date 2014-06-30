@@ -25,8 +25,8 @@ class FedoraConnector:
 			self.base_url + 'fcr:tx', 
 			headers = self.headers
 		)
-		print('Requesting URL:', res.url)
-		print('Open transaction response:', res.status_code)
+		#print('Requesting URL:', res.url)
+		cherrypy.log.error('Open transaction response: {}'.format(res.status_code))
 		res.raise_for_status()
 
 		return res.headers['location']
@@ -116,26 +116,26 @@ class FedoraConnector:
 
 
 	def commitTransaction(self, tx_uri):
-		print('Committing transaction:', tx_uri)
+		cherrypy.log.error('Committing transaction: {}'.format(tx_uri.split('tx:')[-1]))
 		res = requests.post(
 			tx_uri + '/fcr:tx/fcr:commit',
 			headers=self.headers
 		)
-		print('Requesting URL:', res.url)
-		print('Commit transaction response:', res.status_code)
+		#print('Requesting URL:', res.url)
+		cherrypy.log.error('Commit transaction response: {}'.format(res.status_code))
 		res.raise_for_status()
 		
 		return True
 
 
 	def rollbackTransaction(self, tx_uri):
-		print('Committing transaction:', tx_uri)
+		cherrypy.log.error('Rolling back transaction: {}'.format(tx_uri.split('tx:')[-1]))
 		res = requests.post(
 			tx_uri + '/fcr:tx/fcr:rollback',
 			headers=self.headers
 		)
-		print('Requesting URL:', res.url)
-		print('Rollback transaction response:', res.status_code)
+		#print('Requesting URL:', res.url)
+		cherrypy.log.error('Rollback transaction response: {}'.format(res.status_code))
 		res.raise_for_status()
 		
 		return True
