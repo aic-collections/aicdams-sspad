@@ -11,15 +11,17 @@ class Resource():
 
 	#exposed = True
 	add_mimetypes = [
+		('image/jpeg', '.jpeg'),
 		('image/psd', '.psd'),
+		('image/vnd.adobe.photoshop', '.psd'),
 		('image/x-psd', '.psd'),
-		('image/vnd.adove.photoshop', '.psd'),
 		# [...]
 	]
 
 	def __init__(self):
+		mimetypes.init()
 		for mt, ext in self.add_mimetypes:
-			mimetypes.add_type(mt, ext)
+			mimetypes.add_type(mt, ext, True)
 
 
 	def _setConnection(self):
@@ -49,4 +51,6 @@ class Resource():
 
 
 	def _guessFileExt(self, mimetype):
-		return mimetypes.guess_extension(mimetype) or ''
+		ext = mimetypes.guess_extension(mimetype) or '.bin'
+		cherrypy.log.error('Guessing MIME type for {}: {}'.format(mimetype, ext))
+		return ext

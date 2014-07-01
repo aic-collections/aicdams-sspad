@@ -148,48 +148,53 @@ class StaticImage(Resource):
 		# Open Fedora transaction
 		tx_uri = self.openTransaction()
 
-		# Create image node in tx
-		img_tx_uri, img_uri = self.createNodeInTx(uid, tx_uri)
+		try:
+			# Create image node in tx
+			img_tx_uri, img_uri = self.createNodeInTx(uid, tx_uri)
 
-		# Set node properties
-		prop_tuples = [
-			(self.ns_rdf.type, self.ns_aic.image),
-			(self.ns_rdf.type, self.ns_aic.citi),
-			(self.ns_dc.title, Literal(uid)),
-			(self.ns_aic.uid, Literal(uid)),
-		]
-
-		for req_name, lake_name in zip(self.prop_req_names, self.prop_lake_names):
-			if req_name in props:
-				for value in props[req_name]:
-					prop_tuples.append((lake_name[0], self._rdfObject(value, lake_name[1])))
-
-		print('Props:', prop_tuples)
-
-		self.fconn.updateNodeProperties(img_tx_uri, insert_props=prop_tuples)
-
-		# Loop over all datastreams and ingest them
-		for dsname in dstreams.keys():
-			ds = dstreams[dsname]
-			#cherrypy.log.error('Ingestion round: ' + dsname + ' class name: ' + ds.__class__.__name__)
-			ds.file.seek(0)
-			ds_content_uri = self.fconn.createOrUpdateDStream(
-				img_tx_uri + '/aic:ds_' + dsname,
-				ds=ds.file,
-				dsname = uid + '_' + dsname + self._guessFileExt(dsmeta[dsname]['mimetype']),
-				mimetype = dsmeta[dsname]['mimetype']
-			)
-
-			ds_uri = ds_content_uri.replace('/fcr:content', '')
-
-			# Set source datastream properties
+			# Set node properties
 			prop_tuples = [
-						(self.ns_rdf.type, self.ns_indexing.indexable),
-						(self.ns_dc.title, Literal(uid + '_' + dsname)),
-					]
-			if dsname == 'master':
-				prop_tuples.append((self.ns_rdf.type, self.ns_aicmix.imageDerivable))
-			self.fconn.updateNodeProperties(ds_uri, insert_props=prop_tuples)
+				(self.ns_rdf.type, self.ns_aic.image),
+				(self.ns_rdf.type, self.ns_aic.citi),
+				(self.ns_dc.title, Literal(uid)),
+				(self.ns_aic.uid, Literal(uid)),
+			]
+
+			for req_name, lake_name in zip(self.prop_req_names, self.prop_lake_names):
+				if req_name in props:
+					for value in props[req_name]:
+						prop_tuples.append((lake_name[0], self._rdfObject(value, lake_name[1])))
+
+			print('Props:', prop_tuples)
+
+			self.fconn.updateNodeProperties(img_tx_uri, insert_props=prop_tuples)
+
+			# Loop over all datastreams and ingest them
+			for dsname in dstreams.keys():
+				ds = dstreams[dsname]
+				#cherrypy.log.error('Ingestion round: ' + dsname + ' class name: ' + ds.__class__.__name__)
+				ds.file.seek(0)
+				ds_content_uri = self.fconn.createOrUpdateDStream(
+					img_tx_uri + '/aic:ds_' + dsname,
+					ds=ds.file,
+					dsname = uid + '_' + dsname + self._guessFileExt(dsmeta[dsname]['mimetype']),
+					mimetype = dsmeta[dsname]['mimetype']
+				)
+
+				ds_uri = ds_content_uri.replace('/fcr:content', '')
+
+				# Set source datastream properties
+				prop_tuples = [
+							(self.ns_rdf.type, self.ns_indexing.indexable),
+							(self.ns_dc.title, Literal(uid + '_' + dsname)),
+						]
+				if dsname == 'master':
+					prop_tuples.append((self.ns_rdf.type, self.ns_aicmix.imageDerivable))
+				self.fconn.updateNodeProperties(ds_uri, insert_props=prop_tuples)
+		except:
+			# Roll back transaction if something goes wrong
+			self.fconn.rollbackTransaction(tx_uri)
+			raise
 
 		# Commit transaction
 		self.fconn.commitTransaction(tx_uri)
@@ -247,7 +252,7 @@ class StaticImage(Resource):
 		@TODO Figure out how to pass parameters in HTTP body instead of as URL params.
 		'''
 
-		print('Req parameters:', str(cherrypy.request.params))
+		#cherrypy.log.error('Req parameters:' + str(cherrypy.request.params))
 		self._setConnection()
 
 		insert_props = json.loads(insert_properties)
@@ -257,29 +262,49 @@ class StaticImage(Resource):
 		#cherrypy.log.error('Delete props:' + str(delete_props))
 
 		insert_tuples, delete_tuples, where_tuples = ([],[],[])
-		for req_name, lake_name in zip(self.prop_req_names, self.prop_lake_names):
-			if req_name in delete_props:
-				if isinstance(delete_props[req_name], list):
-					# Delete one or more values from property
-					for value in delete_props[req_name]:
-						delete_tuples.append((lake_name[0], self._rdfObject(value, lake_name[1])))
-				elif isinstance(delete_props[req_name], str):
-					# Delete the whole property
-					delete_tuples.append((lake_name[0], self._rdfObject('?' + req_name, 'variable')))
-					where_tuples.append((lake_name[0], self._rdfObject('?' + req_name, 'variable')))
-			if req_name in insert_props:
-				for value in insert_props[req_name]:
-					insert_tuples.append((lake_name[0], self._rdfObject(value, lake_name[1])))
-
-		#print('INSERT:',insert_tuples, 'DELETE:', delete_tuples)
-
 		url = fedora_rest_api['base_url'] + 'resources/SI/' + uid
-		self.fconn.updateNodeProperties(
-			url,
-			delete_props=delete_tuples,
-			insert_props=insert_tuples,
-			where_props=where_tuples
-		)
+
+		# Open Fedora transaction
+		tx_uri = self.openTransaction()
+
+		try:
+			for req_name, lake_name in zip(self.prop_req_names, self.prop_lake_names):
+				#cherrypy.log.error("Req. name: " + str(req_name) + "; LAKE name: " + str(lake_name))
+				if req_name in delete_props:
+					if isinstance(delete_props[req_name], list):
+						# Delete one or more values from property
+						for value in delete_props[req_name]:
+							if req_name == 'type':
+								# If we are removing rdf:type properties,
+								# remove them one by one separately from other properties
+								self.fconn.updateNodeProperties(
+									url,
+									delete_props=[(lake_name[0], self._rdfObject(value, lake_name[1]))],
+									where_props=[(lake_name[0], self._rdfObject(value, lake_name[1]))]
+								)
+							else:
+								delete_tuples.append((lake_name[0], self._rdfObject(value, lake_name[1])))
+					elif delete_props[req_name] == '':
+						# Delete the whole property
+						delete_tuples.append((lake_name[0], self._rdfObject('?' + req_name, 'variable')))
+						where_tuples.append((lake_name[0], self._rdfObject('?' + req_name, 'variable')))
+				if req_name in insert_props:
+					for value in insert_props[req_name]:
+						insert_tuples.append((lake_name[0], self._rdfObject(value, lake_name[1])))
+
+			#print('INSERT:',insert_tuples, 'DELETE:', delete_tuples)
+
+			self.fconn.updateNodeProperties(
+				url,
+				delete_props=delete_tuples,
+				insert_props=insert_tuples,
+				where_props=where_tuples
+			)
+		except:
+			self.fconn.rollbackTransaction(tx_uri)
+			raise
+
+		self.fconn.commitTransaction(tx_uri)
 
 		cherrypy.response.headers['Status'] = 204
 		cherrypy.response.headers['Location'] = url
@@ -315,7 +340,7 @@ class StaticImage(Resource):
 
 
 	def _rdfObject(self, value, type):
-		cherrypy.log.error('Value: ' + str(value))
+		#cherrypy.log.error('Value: ' + str(value))
 		if type == 'literal':
 			return Literal(value)
 		elif type == 'uri':

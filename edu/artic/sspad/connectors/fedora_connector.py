@@ -25,8 +25,8 @@ class FedoraConnector:
 			self.base_url + 'fcr:tx', 
 			headers = self.headers
 		)
-		cherrypy.log.error('Requesting URL:', res.url)
-		#cherrypy.log.error('Open transaction response:', res.status_code)
+		#print('Requesting URL:', res.url)
+		cherrypy.log.error('Open transaction response: {}'.format(res.status_code))
 		res.raise_for_status()
 
 		return res.headers['location']
@@ -84,6 +84,7 @@ class FedoraConnector:
 	def updateNodeProperties(self, uri, delete_props={}, insert_props={}, where_props={}):
 		''' Modifies node properties using a SPARQL-update query. '''
 
+		cherrypy.log.error("Delete props: " + str(delete_props) + "; Insert props: " + str(insert_props) + "; where props: " + str(where_props))
 		g = Graph(namespace_manager = ns_mgr)
 		insert_triples, delete_triples = ('','')
 		where_triples_list = [];
@@ -94,7 +95,6 @@ class FedoraConnector:
 		for w in where_props:
 			where_triples_list.append('\n\t{{<> {} {}}}'.format(w[0].n3(), w[1].n3()))
 		where_triples = '\n\tUNION'.join(where_triples_list)
-		#print('Triples:', triples)
 
 		# @TODO Use namespaces
 		body = 'DELETE {{{}\n}} INSERT {{{}\n}} WHERE {{{}\n}}'\
@@ -116,26 +116,26 @@ class FedoraConnector:
 
 
 	def commitTransaction(self, tx_uri):
-		print('Committing transaction:', tx_uri)
+		cherrypy.log.error('Committing transaction: {}'.format(tx_uri.split('tx:')[-1]))
 		res = requests.post(
 			tx_uri + '/fcr:tx/fcr:commit',
 			headers=self.headers
 		)
-		print('Requesting URL:', res.url)
-		print('Commit transaction response:', res.status_code)
+		#print('Requesting URL:', res.url)
+		cherrypy.log.error('Commit transaction response: {}'.format(res.status_code))
 		res.raise_for_status()
 		
 		return True
 
 
 	def rollbackTransaction(self, tx_uri):
-		print('Committing transaction:', tx_uri)
+		cherrypy.log.error('Rolling back transaction: {}'.format(tx_uri.split('tx:')[-1]))
 		res = requests.post(
 			tx_uri + '/fcr:tx/fcr:rollback',
 			headers=self.headers
 		)
-		print('Requesting URL:', res.url)
-		print('Rollback transaction response:', res.status_code)
+		#print('Requesting URL:', res.url)
+		cherrypy.log.error('Rollback transaction response: {}'.format(res.status_code))
 		res.raise_for_status()
 		
 		return True
