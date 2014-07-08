@@ -11,17 +11,17 @@ class Resource():
 
 	#exposed = True
 	add_mimetypes = [
-		('image/jpeg', '.jpeg'),
-		('image/psd', '.psd'),
-		('image/vnd.adobe.photoshop', '.psd'),
-		('image/x-psd', '.psd'),
+		('image/jpeg', '.jpeg', True),
+		('image/psd', '.psd', False),
+		('image/vnd.adobe.photoshop', '.psd', True),
+		('image/x-psd', '.psd', False),
 		# [...]
 	]
 
 	def __init__(self):
 		mimetypes.init()
-		for mt, ext in self.add_mimetypes:
-			mimetypes.add_type(mt, ext, True)
+		for mt, ext, strict in self.add_mimetypes:
+			mimetypes.add_type(mt, ext, strict)
 
 
 	def _setConnection(self):

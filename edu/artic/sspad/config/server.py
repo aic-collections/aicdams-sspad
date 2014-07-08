@@ -9,10 +9,6 @@ conf = {
 		'server.max_request_body_size': host.max_req_size,
 		'server.socket_host': host.listen_addr,
 		'server.socket_port': host.listen_port,
-    },
-    '/': {
-		'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
-		#'request.methods_with_bodies': ('POST', 'PUT', 'PATCH'),
     }
 }
 

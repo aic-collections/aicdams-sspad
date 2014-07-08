@@ -1,22 +1,23 @@
 import cherrypy
 
-#from edu.artic.sspad.config import host, server
+from edu.artic.sspad.config import server, app
 from edu.artic.sspad.modules import resource, staticImage
 
 class Webapp():
-	_cp_config = {
-		'tools.json_out.on': True,
-	#	'tools.json_in.on': True
-	}
+	cherrypy.config.update(server.conf)
 	exposed = True
 
 	resource = resource.Resource()
 	resource.SI = staticImage.StaticImage()
 	#@TODO Add other resource prefixes.
+	cherrypy.log('Cherrypy config: ' + str(cherrypy.config))
 
 	def GET(self):
 		return {'message': 'Nothing to see here.'}
 
 
-if __name__ == '__main__':
-	cherrypy.quickstart(Webapp(), config='sspad.conf')
+#print('Name:', __name__)
+if __name__ == 'sspad' or __name__ == '__main__':
+	cherrypy.tree.mount(Webapp(), '/', app.rest_conf)
+	cherrypy.engine.start()
+	cherrypy.engine.block()
