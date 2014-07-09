@@ -17,3 +17,6 @@ app_host = 'localhost'
 # Webapp port
 app_port = 5000
 
+# Max. request size
+max_req_size = 1024**3 # 1Gb
+
