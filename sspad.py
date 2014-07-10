@@ -1,8 +1,8 @@
 import cherrypy
 
-from cherrypy.process.plugins import Daemonizer
+from cherrypy.process.plugins import Daemonizer, PIDFile
 
-from edu.artic.sspad.config import server, app
+from edu.artic.sspad.config import host, server, app
 from edu.artic.sspad.modules import resource, staticImage
 
 class Webapp():
@@ -11,8 +11,6 @@ class Webapp():
 	resource = resource.Resource()
 	resource.SI = staticImage.StaticImage()
 	#@TODO Add other resource prefixes.
-
-	#cherrypy.log('Cherrypy config: ' + str(cherrypy.config))
 
 	def GET(self):
 		return {'message': 'Nothing to see here.'}
@@ -24,6 +22,7 @@ if __name__ == '__main__':
 	cherrypy.config.update(server.conf)
 
 	Daemonizer(cherrypy.engine).subscribe()
+	PIDFile(cherrypy.engine, host.pidfile).subscribe()
 
 	webapp = Webapp()
 	cherrypy.tree.mount(webapp, '/', app.rest_conf)
