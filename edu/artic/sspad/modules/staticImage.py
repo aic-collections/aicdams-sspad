@@ -23,6 +23,7 @@ class StaticImage(Resource):
 
 	pfx = 'SI'
 
+	'''Short-hand namespace variables.'''
 	ns_aic, ns_aicmix, ns_dc, ns_rdf, ns_indexing =\
 		ns_collection['aic'],\
 		ns_collection['aicmix'],\
@@ -47,6 +48,9 @@ class StaticImage(Resource):
 		(ns_aic.citiImgDBankUid, 'literal'),
 	)
 
+	'''Properties as specified in requests.
+		These map to the prop_lake_names above.
+		'''
 	prop_req_names = (
 		'type',
 		'title',
@@ -60,6 +64,7 @@ class StaticImage(Resource):
 		'citi_imgdbank_pkey',
 	)
 
+	'''Mix-ins considered for updating.'''
 	mixins = [
 		'aicmix:citiPrivate',
 		'aicmix:derivable',
@@ -88,7 +93,7 @@ class StaticImage(Resource):
 
 		#cherrypy.request.body.processors['multipart'] = cherrypy._cpreqbody.process_multipart
 		#cherrypy.log('Max. upload size: ' + str(cherrypy.server.max_request_body_size))
-		self._setConnection()
+		#self._setConnection()
 
 		props = json.loads(properties)
 		for p in props:
@@ -112,20 +117,18 @@ class StaticImage(Resource):
 		# Create a new UID
 		uid = self.mintUid(mid)
 
-		#print('Multipart: ', cherrypy.request.body.__dict__)
-
 		if 'master' not in dstreams:
 			# Generate master if not present
-			cherrypy.log.error('Master file not provided.')
+			cherrypy.log('Master file not provided.')
 			dstreams['master'] = self._generateMasterFile(dstreams['source'].file, uid + '_master.jpg')
 		else:
-			cherrypy.log.error('Master file provided.')
+			cherrypy.log('Master file provided.')
 
 		# First validate all datastreams
 		dsmeta = {}
 		for dsname in dstreams.keys():
 			ds = dstreams[dsname]
-			cherrypy.log.error(dsname + ' class name: ' + ds.__class__.__name__)
+			cherrypy.log(dsname + ' class name: ' + ds.__class__.__name__)
 
 			# If ds is a byte stream instead of a Part instance, wrap it in an
 			# anonymous object as a 'file' property
@@ -143,7 +146,7 @@ class StaticImage(Resource):
 				dsmeta[dsname] = self._validateDStream(ds.file, dsname)
 			except Exception:
 				raise cherrypy.HTTPError('415 Unsupported Media Type', 'Validation for datastream {} failed.'.format(dsname))
-			cherrypy.log.error('Validation for ' + dsname + ': ' + str(dsmeta[dsname]))
+			cherrypy.log('Validation for ' + dsname + ': ' + str(dsmeta[dsname]))
 
 		# Open Fedora transaction
 		tx_uri = self.openTransaction()
@@ -172,7 +175,7 @@ class StaticImage(Resource):
 			# Loop over all datastreams and ingest them
 			for dsname in dstreams.keys():
 				ds = dstreams[dsname]
-				#cherrypy.log.error('Ingestion round: ' + dsname + ' class name: ' + ds.__class__.__name__)
+				#cherrypy.log('Ingestion round: ' + dsname + ' class name: ' + ds.__class__.__name__)
 				ds.file.seek(0)
 				ds_content_uri = self.fconn.createOrUpdateDStream(
 					img_tx_uri + '/aic:ds_' + dsname,
@@ -199,32 +202,32 @@ class StaticImage(Resource):
 		# Commit transaction
 		self.fconn.commitTransaction(tx_uri)
 
-		cherrypy.response.headers['Status'] = 201
+		cherrypy.response.status = 201
 		cherrypy.response.headers['Location'] = img_uri
 
-		return {"message": "Image created"}
+		return {"message": "Image created.", "data": {"location": img_uri}}
 
 
 	def PUT(self, uid, properties={}, **dstreams):
 		''' Add or replace datastreams or replace the whole property set of an image. '''
 
-		self._setConnection()
+		#self._setConnection()
 
-		img_url = fedora_rest_api['base_url'] + 'resources/SI/' + uid
+		img_uri = fedora_rest_api['base_url'] + 'resources/SI/' + uid
 
 		dsnames = sorted(dstreams.keys())
 		for dsname in dsnames:
 			ds = dstreams[dsname]
 			src_format, src_size, src_mimetype = self._validateDStream(ds.file)
 
-			#cherrypy.log.error('UID: ' + uid + '; dsname: ' + dsname + ' mimetype: ' + src_mimetype)
-			#cherrypy.log.error('mimetype guess: ' + self._guessFileExt(src_mimetype))
+			#cherrypy.log('UID: ' + uid + '; dsname: ' + dsname + ' mimetype: ' + src_mimetype)
+			#cherrypy.log('mimetype guess: ' + self._guessFileExt(src_mimetype))
 			#ds.file.seek(0)
 			with ds.file as file:
 				src_data = file.read()
-				cherrypy.log.error('File in ctxmgr is closed: ' + str(file.closed))
+				cherrypy.log('File in ctxmgr is closed: ' + str(file.closed))
 				content_uri = self.fconn.createOrUpdateDStream(
-					img_url + '/aic:ds_' + dsname,
+					img_uri + '/aic:ds_' + dsname,
 					ds=src_data,
 					dsname = uid + '_' + dsname + self._guessFileExt(src_mimetype),
 					mimetype = src_mimetype
@@ -233,18 +236,18 @@ class StaticImage(Resource):
 				if dsname == 'source' and 'master' not in dsnames:
 					# Recreate master file automatically if source is provided
 					# without master
-					cherrypy.log.error('No master file provided with source, re-creating master.')
-					cherrypy.log.error('DS: '+str(ds))
+					cherrypy.log('No master file provided with source, re-creating master.')
+					cherrypy.log('DS: '+str(ds))
 					master = self._generateMasterFile(src_data, uid + '_master.jpg')
 					content_uri = self.fconn.createOrUpdateDStream(
-						img_url + '/aic:ds_master',
+						img_uri + '/aic:ds_master',
 						ds=master.read(), 
 						dsname = uid + '_master.jpg',
 						mimetype = 'image/jpeg'
 					)
 				src_data = None # Flush datastream
 
-		return {"message": "Image updated."}
+		return {"message": "Image updated.", "data": {"location": img_uri}}
 
 		
 	def PATCH(self, uid, insert_properties='{}', delete_properties='{}'):
@@ -252,14 +255,20 @@ class StaticImage(Resource):
 		@TODO Figure out how to pass parameters in HTTP body instead of as URL params.
 		'''
 
-		#cherrypy.log.error('Req parameters:' + str(cherrypy.request.params))
-		self._setConnection()
+		#cherrypy.log('Req parameters:' + str(cherrypy.request.params))
+		#self._setConnection()
 
-		insert_props = json.loads(insert_properties)
-		delete_props = json.loads(delete_properties)
+		try:
+			insert_props = json.loads(insert_properties)
+			delete_props = json.loads(delete_properties)
+		except:
+			raise cherrypy.HTTPError(
+				'400 Bad Request',
+				'Properties are invalid. Please review your request.'
+			)
 
-		#cherrypy.log.error('Insert props:' + str(insert_props))
-		#cherrypy.log.error('Delete props:' + str(delete_props))
+		#cherrypy.log('Insert props:' + str(insert_props))
+		#cherrypy.log('Delete props:' + str(delete_props))
 
 		insert_tuples, delete_tuples, where_tuples = ([],[],[])
 		url = fedora_rest_api['base_url'] + 'resources/SI/' + uid
@@ -269,7 +278,7 @@ class StaticImage(Resource):
 
 		try:
 			for req_name, lake_name in zip(self.prop_req_names, self.prop_lake_names):
-				#cherrypy.log.error("Req. name: " + str(req_name) + "; LAKE name: " + str(lake_name))
+				#cherrypy.log("Req. name: " + str(req_name) + "; LAKE name: " + str(lake_name))
 				if req_name in delete_props:
 					if isinstance(delete_props[req_name], list):
 						# Delete one or more values from property
@@ -306,7 +315,7 @@ class StaticImage(Resource):
 
 		self.fconn.commitTransaction(tx_uri)
 
-		cherrypy.response.headers['Status'] = 204
+		cherrypy.response.status = 204
 		cherrypy.response.headers['Location'] = url
 
 		return {"message": "Image updated."}
@@ -324,12 +333,12 @@ class StaticImage(Resource):
 		'''
 
 		ds.seek(0)
-		cherrypy.log.error('Validating ds: ' + dsname + ' of type: ' + str(ds))
+		cherrypy.log('Validating ds: ' + dsname + ' of type: ' + str(ds))
 		with image.Image(file=ds) as img:
 			format = img.format
 			mimetype = img.mimetype
 			size = img.size
-			cherrypy.log.error(' Image format: ' + format + ' MIME type: ' + mimetype + ' size: ' + str(size))
+			cherrypy.log(' Image format: ' + format + ' MIME type: ' + mimetype + ' size: ' + str(size))
 
 		ds.seek(0)
 
@@ -340,7 +349,7 @@ class StaticImage(Resource):
 
 
 	def _rdfObject(self, value, type):
-		#cherrypy.log.error('Value: ' + str(value))
+		#cherrypy.log('Value: ' + str(value))
 		if type == 'literal':
 			return Literal(value)
 		elif type == 'uri':

@@ -3,8 +3,11 @@ from edu.artic.sspad.config.datasources import uidminter_db
 
 class UidminterConnector:
 	def mintUid(self, pfx, mid):
-		session = psycopg2.connect(uidminter_db['conn_string'])
-		cur = session.cursor()
+		try:
+			session = psycopg2.connect(uidminter_db['conn_string'])
+			cur = session.cursor()
+		except:
+			raise RuntimeError("Could not connect to PostgreSQL database.")
 
 		cur.callproc('mintuid', (pfx, mid))
 		new_uid = cur.fetchone()[0]

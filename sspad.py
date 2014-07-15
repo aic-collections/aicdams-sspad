@@ -16,8 +16,6 @@ class Webapp():
 		return {'message': 'Nothing to see here.'}
 
 
-#print('Name:', __name__)
-#if __name__ == 'sspad' or __name__ == '__main__':
 if __name__ == '__main__':
 	cherrypy.config.update(server.conf)
 

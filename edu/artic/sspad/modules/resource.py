@@ -19,14 +19,17 @@ class Resource():
 	]
 
 	def __init__(self):
+		self._setConnection()
+
 		mimetypes.init()
 		for mt, ext, strict in self.add_mimetypes:
 			mimetypes.add_type(mt, ext, strict)
 
 
 	def _setConnection(self):
-		# Set connectors - @TODO move this in __init__ method of super class
-		# when you figure out how to access cherrypy.request.headers there
+		'''Set connectors.'''
+		
+		print('Setting up connections.')
 		self.auth_str = cherrypy.request.headers['Authorization']\
 			if 'Authorization' in cherrypy.request.headers\
 			else None
@@ -36,7 +39,11 @@ class Resource():
 
 
 	def mintUid(self, mid=None):
-		return UidminterConnector().mintUid(self.pfx, mid)
+		try:
+			uid = UidminterConnector().mintUid(self.pfx, mid)
+		except:
+			raise RuntimeError('Could not generate UID.')
+		return uid
 
 
 	def openTransaction(self):
