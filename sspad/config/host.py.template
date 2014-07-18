@@ -1,0 +1,29 @@
+### Host-specific settings are defined here. Change them to fit the host system. THIS FILE IS NOT UNDER SOURCE CONTROL.
+### See host.py.template for a starting point.
+import sys
+
+## App environment. 'dev', 'test' or 'prod'
+default_app_env='dev'
+
+pidfile = '/var/run/sspad/sspad.pid'  
+
+## This application's path
+app_path = sys.argv[0]
+
+## Webapp host
+listen_addr = '0.0.0.0'
+
+## Webapp port
+listen_port = 5000
+
+## Max. request size
+max_req_size = 1024**3 # 1Gb
+
+
+# # # Do not edit below this line # # #
+
+# You can override the environment by passing an argument to server.sh. 
+if len(sys.argv) > 1 and sys.argv[1] in ('prod', 'stag', 'test', 'dev'):
+	app_env = sys.argv[1]
+else:
+	app_env = default_app_env
