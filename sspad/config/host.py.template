@@ -1,5 +1,4 @@
-### Host-specific settings are defined here. Change them to fit the host system. THIS FILE IS NOT UNDER SOURCE CONTROL.
-### See host.py.template for a starting point.
+## Host-specific settings are defined here. Copy this file to host.py and change them to fit the host system.
 import sys
 
 ## App environment. 'dev', 'test' or 'prod'
