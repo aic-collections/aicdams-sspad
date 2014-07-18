@@ -1,6 +1,6 @@
 import cherrypy
 
-from edu.artic.sspad.config import host
+from sspad.config import host
 
 ## CherryPy server configuration.
 conf = {

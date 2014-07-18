@@ -1,5 +1,5 @@
 import psycopg2
-from edu.artic.sspad.config.datasources import uidminter_db
+from sspad.config.datasources import uidminter_db
 
 ## UidminterConnector class.
 #

@@ -1,10 +1,10 @@
 import abc, mimetypes, re
 import cherrypy
 
-from edu.artic.sspad.connectors.datagrinder_connector import DatagrinderConnector
-from edu.artic.sspad.connectors.fedora_connector import FedoraConnector
-from edu.artic.sspad.connectors.tstore_connector import TstoreConnector
-from edu.artic.sspad.connectors.uidminter_connector import UidminterConnector
+from sspad.connectors.datagrinder_connector import DatagrinderConnector
+from sspad.connectors.fedora_connector import FedoraConnector
+from sspad.connectors.tstore_connector import TstoreConnector
+from sspad.connectors.uidminter_connector import UidminterConnector
 
 ## Resource class.
 #  This is the base class for all resource operations.

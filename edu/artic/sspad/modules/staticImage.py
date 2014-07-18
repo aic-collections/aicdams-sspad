@@ -4,10 +4,10 @@ import cherrypy
 from rdflib import Graph, URIRef, Literal, Variable
 from wand import image
 
-from edu.artic.sspad.config.datasources import fedora_rest_api
-from edu.artic.sspad.config.datasources import datagrinder_rest_api
-from edu.artic.sspad.modules.resource import Resource
-from edu.artic.sspad.resources.rdf_lexicon import ns_collection
+from sspad.config.datasources import fedora_rest_api
+from sspad.config.datasources import datagrinder_rest_api
+from sspad.modules.resource import Resource
+from sspad.resources.rdf_lexicon import ns_collection
 
 ## Static Image class.
 #

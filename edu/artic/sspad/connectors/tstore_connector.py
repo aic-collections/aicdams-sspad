@@ -5,10 +5,10 @@ from rdflib import Graph, URIRef, Literal
 from rdflib.plugins.sparql.processor import prepareQuery
 from urllib.parse import quote
 
-from edu.artic.sspad.config import host
-from edu.artic.sspad.config.datasources import tstore_rest_api, tstore_schema_rest_api
-#from edu.artic.sspad.resources.rdf_lexicon import ns_mgr
-from edu.artic.sspad.resources.rdf_lexicon import ns_collection
+from sspad.config import host
+from sspad.config.datasources import tstore_rest_api, tstore_schema_rest_api
+#from sspad.resources.rdf_lexicon import ns_mgr
+from sspad.resources.rdf_lexicon import ns_collection
 
 
 ## TstoreConnector class.

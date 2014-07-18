@@ -2,7 +2,7 @@ import cherrypy, io, requests
 from cherrypy import log
 #from requests_toolbelt import MultipartEncoder
 
-from edu.artic.sspad.config.datasources import datagrinder_rest_api
+from sspad.config.datasources import datagrinder_rest_api
 
 
 ## Datagrinder connector class.

@@ -4,9 +4,9 @@ from os.path import basename
 from rdflib import Graph, URIRef, Literal
 from rdflib.plugins.sparql.processor import prepareQuery
 
-from edu.artic.sspad.config import host
-from edu.artic.sspad.config.datasources import fedora_rest_api
-from edu.artic.sspad.resources.rdf_lexicon import ns_mgr
+from sspad.config import host
+from sspad.config.datasources import fedora_rest_api
+from sspad.resources.rdf_lexicon import ns_mgr
 
 
 class FedoraConnector:
