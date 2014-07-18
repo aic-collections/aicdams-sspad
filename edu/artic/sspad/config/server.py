@@ -2,6 +2,7 @@ import cherrypy
 
 from edu.artic.sspad.config import host
 
+## CherryPy server configuration.
 conf = {
     'global': {
 		'log.access_file': '/var/log/sspad/access.log',

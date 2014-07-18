@@ -4,26 +4,23 @@ import cherrypy
 from rdflib import Graph, URIRef, Literal, Variable
 from wand import image
 
-from edu.artic.sspad.connectors.datagrinder_connector import DatagrinderConnector
-from edu.artic.sspad.connectors.fedora_connector import FedoraConnector
-from edu.artic.sspad.connectors.uidminter_connector import UidminterConnector
 from edu.artic.sspad.config.datasources import fedora_rest_api
 from edu.artic.sspad.config.datasources import datagrinder_rest_api
 from edu.artic.sspad.modules.resource import Resource
 from edu.artic.sspad.resources.rdf_lexicon import ns_collection
 
+## Static Image class.
+#
+#  This class runs and manages Image actions.
 class StaticImage(Resource):
-	'''Static Image class.
 
-	This class runs and manages Image actions.
-	@TODO Make subclass of new 'Node' class and move related methods there.
-	'''
 	exposed = True
 
 
+	## @sa Resource#pfx
 	pfx = 'SI'
 
-	'''Short-hand namespace variables.'''
+	## Short-hand namespace variables.
 	ns_aic, ns_aicmix, ns_dc, ns_rdf, ns_indexing =\
 		ns_collection['aic'],\
 		ns_collection['aicmix'],\
@@ -32,9 +29,9 @@ class StaticImage(Resource):
 		ns_collection['indexing']
 
 
-	''' Tuples of LAKE namespaces and data types.
-		Data type string can be 'literal', 'uri' or 'variable'.
-		'''
+	## Tuples of LAKE namespaces and data types.
+	#
+	#  Data type string can be 'literal', 'uri' or 'variable'.
 	prop_lake_names = (
 		(ns_rdf.type, 'uri'),
 		(ns_dc.title, 'literal'),
@@ -48,9 +45,10 @@ class StaticImage(Resource):
 		(ns_aic.citiImgDBankUid, 'literal'),
 	)
 
-	'''Properties as specified in requests.
-		These map to the prop_lake_names above.
-		'''
+
+	## Properties as specified in requests.
+	#
+	#  These map to #prop_lake_names.
 	prop_req_names = (
 		'type',
 		'title',
@@ -64,28 +62,41 @@ class StaticImage(Resource):
 		'citi_imgdbank_pkey',
 	)
 
-	'''Mix-ins considered for updating.'''
-	mixins = [
+
+	## Mix-ins considered for updating.
+	mixins = (
 		'aicmix:citiPrivate',
 		'aicmix:derivable',
 		'aicmix:overlaid',
 		'aicmix:publ_web',
-	]
+	)
 
 
+	## GET method.
+	#
+	#  Lists all images or shows properties for an image with given uid.
+	#
+	#  @param uid (string) UID of image to display.
+	#
+	#  @TODO stub
 	def GET(self, uid=None):
-		'''Lists all images or shows properties for an image with given uid.
-		@TODO stub
-		'''
 		if uid:
 			return {'message': '*stub* This is image #{}'.format(uid)}
 		else:
 			return {'message': '*stub* This is a list of images.'}
 
 
+	## POST method.
+	#
+	#  Create a new image node with automatic UID by providing data and node properties.
+	#
+	#  @param mid			(string) Mid-prefix.
+	#  @param properties	(dict) Properties to be associated with new node.
+	#  @param **dstreams	(BytesIO) Arbitrary datastream(s). Name of the parameter is the datastream name.\
+	#  Only the 'source' datastream is mandatory.
+	#
+	#  @return (dict) Message with new node information.
 	def POST(self, mid, properties='{}', **dstreams):
-
-		'''Create a new image node with automatic UID by providing data and node properties.'''
 		
 		# Raise error if source is not uploaded.
 		if 'source' not in dstreams.keys():
@@ -208,8 +219,19 @@ class StaticImage(Resource):
 		return {"message": "Image created.", "data": {"location": img_uri}}
 
 
+	## PUT method.
+	#
+	#  Adds or replaces datastreams or replaces the whole property set of an image.
+	#
+	#  @param uid		(string) Image UID.
+	#  @param properties	(dict) Properties to be associated with new node.
+	#  @param **dstreams	(BytesIO) Arbitrary datastream(s). Name of the parameter is the datastream name.
+	#  Only the 'source' datastream is mandatory.
+	#
+	#  @return (dict) Message with node information.
+	#
+	#  @TODO Replacing property set is not supported yet, and might not be needed anyway.
 	def PUT(self, uid, properties={}, **dstreams):
-		''' Add or replace datastreams or replace the whole property set of an image. '''
 
 		#self._setConnection()
 
@@ -250,10 +272,16 @@ class StaticImage(Resource):
 		return {"message": "Image updated.", "data": {"location": img_uri}}
 
 		
+	## PATCH method.
+	#
+	#  Adds or removes properties and mixins in an image.
+	#
+	#  @param uid				(string) Image UID.
+	#  @param insert_properties	(dict) Properties to be inserted. See FedoraConnector#createOrUpdateDStream
+	#  @param delete_properties	(dict) Properties to be deleted. See FedoraConnector#createOrUpdateDStream
+	#
+	#  @TODO Figure out how to pass parameters in HTTP body instead of as URL params.
 	def PATCH(self, uid, insert_properties='{}', delete_properties='{}'):
-		''' Add or removes properties and mixins in an image.
-		@TODO Figure out how to pass parameters in HTTP body instead of as URL params.
-		'''
 
 		#cherrypy.log('Req parameters:' + str(cherrypy.request.params))
 		#self._setConnection()
@@ -327,10 +355,10 @@ class StaticImage(Resource):
 		return self.dgconn.resizeImageFromData(file, fname, 4096, 4096)
 
 
+	## Checks that the input file is a valid image.
+	#
+	#  @TODO more rules. So far only 'mimetype' is supported.
 	def _validateDStream(self, ds, dsname='', rules={}):
-		'''Checks that the input file is a valid image.
-		@TODO more rules. So far only 'mimetype' is supported.
-		'''
 
 		ds.seek(0)
 		cherrypy.log('Validating ds: ' + dsname + ' of type: ' + str(ds))
@@ -348,6 +376,15 @@ class StaticImage(Resource):
 		return {'format': format, 'size': size, 'mimetype': mimetype}
 
 
+	## Returns a RDF triple object from a value and a type.
+	#
+	#  The value must be in the #mixins list.
+	#  Depending on the value of @p type, a literal object, a URI or a variable (?var) is created.
+	#
+	#  @param value		(string) Value to be processed.
+	#  @oaram type		(string) One of 'literal', 'uri', 'variable'.
+	#
+	#  @return (rdflib.URIRef | rdflib.Literal | rdflib.Variable) rdflib object.
 	def _rdfObject(self, value, type):
 		#cherrypy.log('Value: ' + str(value))
 		if type == 'literal':

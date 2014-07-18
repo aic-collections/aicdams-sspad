@@ -5,6 +5,10 @@ from cherrypy.process.plugins import Daemonizer, PIDFile
 from edu.artic.sspad.config import host, server, app
 from edu.artic.sspad.modules import resource, staticImage
 
+
+## Main Web app class.
+#
+# Contains the RESTful API and all its top-level locations.
 class Webapp():
 	exposed = True
 

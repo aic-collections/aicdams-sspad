@@ -10,25 +10,42 @@ from edu.artic.sspad.config.datasources import tstore_rest_api, tstore_schema_re
 #from edu.artic.sspad.resources.rdf_lexicon import ns_mgr
 from edu.artic.sspad.resources.rdf_lexicon import ns_collection
 
+
+## TstoreConnector class.
+#
+# Handles operations related to the triplestore indexer and schema.
 class TstoreConnector:
 
 
+	## Triplestore config for indexer.
 	conf = tstore_rest_api
+
+	## Triplestore config for repo schema information.
 	sconf = tstore_schema_rest_api
 
 
+	## Class constructor.
+	#
+	# Sets authorization parameters based on incoming auth headers.
+	#
+	# @param auth (string) Authorization string as passed by incoming headers.
 	def __init__(self, auth):
 		self.headers = {'Authorization': auth}
-		#print('Headers:', self.headers)
+		#cherrypy.log('Headers:', self.headers)
 
 
+	## Verifies whether an image exists in LAKE already with the same legacy UID.
+	#
+	# @param uid (string)The legacy UID.
+	#
+	# @return boolean
+	#
+	# @TODO Replace hardcoded SPARQL wit rdflib methods.
 	def assertImageExistsByLegacyUid(self,uid):
 		''' Finds if an image exists with a given UID. '''
 
-		query = 'ASK {{ ?r <{}> "{}"{} . }}'.format(
-			ns_collection['aic'] + 'legacyUid',
-			uid,
-			'^^<http://www.w3.org/2001/XMLSchema#string>'
+		query = 'ASK {{ ?r <{}> "{}"^^<http://www.w3.org/2001/XMLSchema#string> . }}'.format(
+			ns_collection['aic'] + 'legacyUid', uid
 		)
 		res = requests.get(
 			self.conf['base_url'], 
@@ -40,8 +57,8 @@ class TstoreConnector:
 			)),
 			params = {'query': query}
 		)
-		#cherrypy.log.error('Requesting URL: ' + res.url)
-		#cherrypy.log.error('h for UID: ' + str(res.text))
+		#cherrypy.log('Requesting URL: ' + res.url)
+		#cherrypy.log('h for UID: ' + str(res.text))
 		res.raise_for_status()
 
 		return True if res.text == 'true' else False

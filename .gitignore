@@ -49,8 +49,8 @@ coverage.xml
 *.log
 *.pot
 
-# Sphinx documentation
-docs/_build/
+# documentation
+doc/
 
 # Custom stuff
 host.py

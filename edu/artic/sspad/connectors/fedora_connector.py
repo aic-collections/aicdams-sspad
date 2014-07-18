@@ -15,24 +15,36 @@ class FedoraConnector:
 	base_url = '{}://{}{}'. format(conf['proto'], conf['host'], conf['root'])
 
 
+	## Class constructor.
+	#
+	#  Sets authorization parameters based on incoming auth headers.
+	#
+	#  @param auth	(string) Authorization string as passed by incoming headers.
 	def __init__(self, auth):
 		self.headers = {'Authorization': auth}
-		#print('Headers:', self.headers)
+		#cherrypy.log('Headers:', self.headers)
 
 
+	## Open Fedora transaction.
+	#
+	#  @return string The transaction URI.
 	def openTransaction(self):
 		res = requests.post(
 			self.base_url + 'fcr:tx', 
 			headers = self.headers
 		)
-		#print('Requesting URL:', res.url)
+		#cherrypy.log('Requesting URL:', res.url)
 		cherrypy.log.error('Open transaction response: {}'.format(res.status_code))
 		res.raise_for_status()
 
 		return res.headers['location']
 
 
-	def createOrUpdateNode(self, uri, props=None, ds=None, file=None):
+	## Creates a container node if it does not exist, or updates it if it exists already.
+	#
+	#  @param uri	(string) URI of the node to be created or updated.
+	#  @param props	(dict) Dictionary of properties to be associated with the node.
+	def createOrUpdateNode(self, uri, props=None):
 		if props != None:
 			g = Graph(namespace_manager = ns_mgr)
 			for t in props:
@@ -49,13 +61,21 @@ class FedoraConnector:
 				[('Content-type', 'text/turtle')]
 			))
 		)
-		print('Requesting URL:', res.url)
-		print('Create/update node response:', res.status_code)
+		cherrypy.log('Requesting URL:', res.url)
+		cherrypy.log('Create/update node response:', res.status_code)
 		res.raise_for_status()
 
 		return res.headers['location']
 	
 
+	## Creates a datastream under an existing container node if it does not exist,\
+	#  or updates it if it exists already.
+	#
+	#  @param uri		(string) URI of the datastream node to be created or updated.
+	#  @param dsname	(string) Name of the datastream as a downloaded file.
+	#  @param ds		(BytesIO) Datastream to be ingested. Alternative to \p path.
+	#  @param path		(string) Path to the datastream. Alternative to \p ds.
+	#  @param mimetype	(string) MIME type of the datastream. Default: application/octet-stream
 	def createOrUpdateDStream(self, uri, dsname, ds=None, path=None, mimetype = 'application/octet-stream'):
 		# @TODO Optimize with with
 		if not ds and not path:
@@ -66,21 +86,28 @@ class FedoraConnector:
 		res = requests.put(
 			uri + '/fcr:content', 
 			data = data,
-			headers = dict(chain(self.headers.items(),
-				[(
-					'content-disposition',
-					'inline; filename="' + dsname + '"'
-				)]
+			headers = dict(chain(
+				self.headers.items(),
+				[('content-disposition', 'inline; filename="' + dsname + '"')]
 			))
 		)
-		print('Requesting URL:', res.url)
-		print('Create/update datastream response:', res.status_code)
+		cherrypy.log('Requesting URL:', res.url)
+		cherrypy.log('Create/update datastream response:', res.status_code)
 		res.raise_for_status()
 
 		if 'location' in res.headers:
 			return res.headers['location']
 
 
+	## Updates the properties of an existing node.
+	#
+	#  @param uri			(string) Node URI.
+	#  @param delete_props	(dict) Properties to be deleted.\
+	#  If the value of a property is a tuple or a list, thespecific value(s) will be deleted.\
+	#  If it is an empty string (""), the whole property and its values are deleted.
+	#  @param insert_props	(dict) Properties to be inserted.\
+	#  Keys are property names, values are tuples or lists of values. Non-empty string can be used as single values.
+	#  @param where_props	(dict) Conditions. Same syntax as \p insert_props.
 	def updateNodeProperties(self, uri, delete_props={}, insert_props={}, where_props={}):
 		''' Modifies node properties using a SPARQL-update query. '''
 
@@ -108,33 +135,39 @@ class FedoraConnector:
 				[('Content-type', 'application/sparql-update')]
 			))
 		)
-		print('Requesting URL:', res.url)
-		print('Update datastream properties response:', res.status_code)
+		cherrypy.log('Requesting URL:', res.url)
+		cherrypy.log('Update datastream properties response:', res.status_code)
 		res.raise_for_status()
 
 		return True
 
 
+	## Commits an open transaction.
+	#
+	# @param tx_uri The full transaction URI.
 	def commitTransaction(self, tx_uri):
 		cherrypy.log.error('Committing transaction: {}'.format(tx_uri.split('tx:')[-1]))
 		res = requests.post(
 			tx_uri + '/fcr:tx/fcr:commit',
 			headers=self.headers
 		)
-		#print('Requesting URL:', res.url)
+		#cherrypy.log('Requesting URL:', res.url)
 		cherrypy.log.error('Commit transaction response: {}'.format(res.status_code))
 		res.raise_for_status()
 		
 		return True
 
 
+	## Rolls back an open transaction.
+	#
+	# @param tx_uri The full transaction URI.
 	def rollbackTransaction(self, tx_uri):
 		cherrypy.log.error('Rolling back transaction: {}'.format(tx_uri.split('tx:')[-1]))
 		res = requests.post(
 			tx_uri + '/fcr:tx/fcr:rollback',
 			headers=self.headers
 		)
-		#print('Requesting URL:', res.url)
+		#cherrypy.log('Requesting URL:', res.url)
 		cherrypy.log.error('Rollback transaction response: {}'.format(res.status_code))
 		res.raise_for_status()
 		
