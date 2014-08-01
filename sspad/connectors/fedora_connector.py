@@ -91,8 +91,8 @@ class FedoraConnector:
 				[('content-disposition', 'inline; filename="' + dsname + '"')]
 			))
 		)
-		cherrypy.log('Requesting URL:', res.url)
-		cherrypy.log('Create/update datastream response:', res.status_code)
+		cherrypy.log('Requesting URL:' + res.url)
+		cherrypy.log('Create/update datastream response:' + str(res.status_code))
 		res.raise_for_status()
 
 		if 'location' in res.headers:
@@ -135,8 +135,8 @@ class FedoraConnector:
 				[('Content-type', 'application/sparql-update')]
 			))
 		)
-		cherrypy.log('Requesting URL:', res.url)
-		cherrypy.log('Update datastream properties response:', res.status_code)
+		cherrypy.log('Requesting URL:' + res.url)
+		cherrypy.log('Update datastream properties response:' + str(res.status_code))
 		res.raise_for_status()
 
 		return True
