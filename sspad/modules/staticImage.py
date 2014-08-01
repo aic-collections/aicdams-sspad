@@ -20,56 +20,8 @@ class StaticImage(Resource):
 	## @sa Resource#pfx
 	pfx = 'SI'
 
-	## Short-hand namespace variables.
-	ns_aic, ns_aicmix, ns_dc, ns_rdf, ns_indexing =\
-		ns_collection['aic'],\
-		ns_collection['aicmix'],\
-		ns_collection['dc'],\
-		ns_collection['rdf'],\
-		ns_collection['indexing']
-
-
-	## Tuples of LAKE namespaces and data types.
-	#
-	#  Data type string can be 'literal', 'uri' or 'variable'.
-	prop_lake_names = (
-		(ns_rdf.type, 'uri'),
-		(ns_dc.title, 'literal'),
-		(ns_aic.legacyUid, 'literal'),
-		(ns_aic.batchUid, 'literal'),
-		(ns_aic.citiObjUid, 'literal'),
-		(ns_aic.citiObjAccNo, 'literal'),
-		(ns_aic.citiAgentUid, 'literal'),
-		(ns_aic.citiPlaceUid, 'literal'),
-		(ns_aic.citiExhibUid, 'literal'),
-		(ns_aic.citiImgDBankUid, 'literal'),
-	)
-
-
-	## Properties as specified in requests.
-	#
-	#  These map to #prop_lake_names.
-	prop_req_names = (
-		'type',
-		'title',
-		'legacy_uid',
-		'batch_uid',
-		'citi_obj_pkey',
-		'citi_obj_acc_no',
-		'citi_agent_pkey',
-		'citi_place_pkey',
-		'citi_exhib_pkey',
-		'citi_imgdbank_pkey',
-	)
-
-
-	## Mix-ins considered for updating.
-	mixins = (
-		'aicmix:citiPrivate',
-		'aicmix:derivable',
-		'aicmix:overlaid',
-		'aicmix:publ_web',
-	)
+	## @sa Resource#node_type
+	node_type=ns_collection['aic'].image
 
 
 	## GET method.
@@ -79,9 +31,20 @@ class StaticImage(Resource):
 	#  @param uid (string) UID of image to display.
 	#
 	#  @TODO stub
-	def GET(self, uid=None):
+	def GET(self, uid=None, legacy_uid=None):
+		
+		self._setConnection()
+
 		if uid:
-			return {'message': '*stub* This is image #{}'.format(uid)}
+			return {'message': '*stub* This is image #{}.'.format(uid)}
+		elif legacy_uid:
+			if self.tsconn.assertImageExistsByLegacyUid(legacy_uid):
+				return {'message': '*stub* This is image with legacy UID #{}.'.format(legacy_uid)}
+			else:
+				raise cherrypy.HTTPError(
+					'404 Not Found',
+					'An image with this legacy UID does not exist.'
+				)
 		else:
 			return {'message': '*stub* This is a list of images.'}
 
@@ -96,8 +59,10 @@ class StaticImage(Resource):
 	#  Only the 'source' datastream is mandatory.
 	#
 	#  @return (dict) Message with new node information.
-	def POST(self, mid, properties='{}', **dstreams):
+	def POST(self, mid, properties='{}', overwrite=False, **dstreams):
 		
+		self._setConnection()
+
 		# Raise error if source is not uploaded.
 		if 'source' not in dstreams.keys():
 			raise cherrypy.HTTPError('400 Bad Request', 'Required source datastream missing.')
@@ -108,7 +73,7 @@ class StaticImage(Resource):
 
 		props = json.loads(properties)
 		for p in props:
-			''' Wrap string props in one-element lists '''
+			# Wrap string props in one-element lists
 			if not props[p].__class__.__name__ == 'list':
 				props[p] = [props[p]]
 
@@ -116,14 +81,13 @@ class StaticImage(Resource):
 		# provied, no other image exists with that legacy UID. In the case one exists, 
 		# the function shall return a '409 Conflict'.
 		# The function assumes that multiple legacy UIDs can be assigned.
-		if 'legacy_uid' in props:
+		if overwrite == False and 'legacy_uid' in props:
 			for uid in props['legacy_uid']:
 				if self.tsconn.assertImageExistsByLegacyUid(uid):
 					raise cherrypy.HTTPError(
 						'409 Conflict',
 						'An image with the same legacy UID already exists. Not creating a new one.'
 					)
-
 		
 		# Create a new UID
 		uid = self.mintUid(mid)
@@ -233,7 +197,7 @@ class StaticImage(Resource):
 	#  @TODO Replacing property set is not supported yet, and might not be needed anyway.
 	def PUT(self, uid, properties={}, **dstreams):
 
-		#self._setConnection()
+		self._setConnection()
 
 		img_uri = fedora_rest_api['base_url'] + 'resources/SI/' + uid
 
@@ -283,8 +247,7 @@ class StaticImage(Resource):
 	#  @TODO Figure out how to pass parameters in HTTP body instead of as URL params.
 	def PATCH(self, uid, insert_properties='{}', delete_properties='{}'):
 
-		#cherrypy.log('Req parameters:' + str(cherrypy.request.params))
-		#self._setConnection()
+		self._setConnection()
 
 		try:
 			insert_props = json.loads(insert_properties)
@@ -349,8 +312,11 @@ class StaticImage(Resource):
 		return {"message": "Image updated."}
 
 		
+	## Generate a master datastream from a source image file.
+	#
+	#  @param file (StringIO) Input file.
+	#  @param fname (string) downloaded file name.
 	def _generateMasterFile(self, file, fname):
-		'''Generate a master datastream from a source image file.'''
 
 		return self.dgconn.resizeImageFromData(file, fname, 4096, 4096)
 

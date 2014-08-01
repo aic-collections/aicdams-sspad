@@ -61,8 +61,8 @@ class FedoraConnector:
 				[('Content-type', 'text/turtle')]
 			))
 		)
-		cherrypy.log('Requesting URL:', res.url)
-		cherrypy.log('Create/update node response:', res.status_code)
+		cherrypy.log('Requesting URL:' + res.url)
+		cherrypy.log('Create/update node response:' + str(res.status_code))
 		res.raise_for_status()
 
 		return res.headers['location']
