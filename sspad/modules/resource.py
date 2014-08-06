@@ -3,7 +3,7 @@ import cherrypy
 
 from sspad.resources.rdf_lexicon import ns_collection, ns_mgr
 from sspad.connectors.datagrinder_connector import DatagrinderConnector
-from sspad.connectors.fedora_connector import FedoraConnector
+from sspad.connectors.lake_connector import LakeConnector
 from sspad.connectors.tstore_connector import TstoreConnector
 from sspad.connectors.uidminter_connector import UidminterConnector
 
@@ -110,7 +110,7 @@ class Resource():
 		self.auth_str = cherrypy.request.headers['Authorization']\
 			if 'Authorization' in cherrypy.request.headers\
 			else None
-		self.fconn = FedoraConnector(self.auth_str)
+		self.fconn = LakeConnector(self.auth_str)
 		self.dgconn = DatagrinderConnector(self.auth_str)
 		self.tsconn = TstoreConnector(self.auth_str)
 

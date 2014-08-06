@@ -240,8 +240,8 @@ class StaticImage(Resource):
 	#  Adds or removes properties and mixins in an image.
 	#
 	#  @param uid				(string) Image UID.
-	#  @param insert_properties	(dict) Properties to be inserted. See FedoraConnector#createOrUpdateDStream
-	#  @param delete_properties	(dict) Properties to be deleted. See FedoraConnector#createOrUpdateDStream
+	#  @param insert_properties	(dict) Properties to be inserted. See LakeConnector#createOrUpdateDStream
+	#  @param delete_properties	(dict) Properties to be deleted. See LakeConnector#createOrUpdateDStream
 	#
 	#  @TODO Figure out how to pass parameters in HTTP body instead of as URL params.
 	def PATCH(self, uid, insert_properties='{}', delete_properties='{}'):

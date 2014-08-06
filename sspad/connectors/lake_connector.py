@@ -8,7 +8,7 @@ from sspad.config.datasources import lake_rest_api
 from sspad.resources.rdf_lexicon import ns_mgr
 
 
-class FedoraConnector:
+class LakeConnector:
 
 	conf = lake_rest_api
 
