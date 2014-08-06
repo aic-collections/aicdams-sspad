@@ -1,13 +1,11 @@
 ## Host-specific settings are defined here. Copy this file to host.py and change them to fit the host system.
+
 import sys
 
-## App environment. 'dev', 'test' or 'prod'
+## App environment. 'dev', 'test', 'stag' or 'prod'
 default_app_env='dev'
 
 pidfile = '/var/run/sspad/sspad.pid'  
-
-## This application's path
-app_path = sys.argv[0]
 
 ## Webapp host
 listen_addr = '0.0.0.0'
@@ -19,10 +17,52 @@ listen_port = 5000
 max_req_size = 1024**3 # 1Gb
 
 
-# # # Do not edit below this line # # #
+## Remote data sources
+
+uidminter_db = {
+	'host': 'localhost',		# UIDminter host name
+	'port': '5432',				# UIDminter port
+	'username': 'user',			# UIDminter DB user name
+	'password': 'password',		# UIDminter DB password
+	'db': 'uidminter',			# UIDminter database name
+}
+
+datagrinder_rest_api = {
+	'proto': 'http',				# Datagrinder connection protocol
+	'host': 'localhost:8480',		# Datagrinder host name and optional port
+	'root': '/datagrinder/image/',	# Datagrinder root path
+}
+
+lake_rest_api = {
+	'proto': 'http',			# LAKE connection protocol
+	'host': 'localhost:8180',	# LAKE host name and optional port
+	'root': '/fcrepo/rest/'		# LAKE path to repository root
+}
+
+tstore_rest_api = {
+	'proto': 'http',							# Triplestore indexer connection protocol
+	'host': 'localhost:8480',					# Triplestore indexer host name and optional port
+	'root': '/openrdf-sesame/repositories/test'	# Triplestore indexer path to repository root
+}
+
+tstore_schema_rest_api = {
+	'proto': tstore_rest_api['proto'],
+	'host': tstore_rest_api['host'],
+	'root': '/openrdf-sesame/repositories/dams-schema-test',
+}
+
+
+#################################
+## Do not edit below this line ##
+#################################
 
 # You can override the environment by passing an argument to server.sh. 
 if len(sys.argv) > 1 and sys.argv[1] in ('prod', 'stag', 'test', 'dev'):
 	app_env = sys.argv[1]
 else:
 	app_env = default_app_env
+
+## This application's path
+app_path = sys.argv[0]
+
+

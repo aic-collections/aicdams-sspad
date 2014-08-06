@@ -5,6 +5,9 @@ from sspad.config.datasources import uidminter_db
 #
 #  Handles generation of persistent UIDs via uidminter service.
 class UidminterConnector:
+
+	config = uidminter_db
+
 	## Generates a new persistent UID.
 	#
 	# @param UidminterConnector self Object pointer.

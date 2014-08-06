@@ -4,15 +4,13 @@ from os.path import basename
 from rdflib import Graph, URIRef, Literal
 from rdflib.plugins.sparql.processor import prepareQuery
 
-from sspad.config import host
-from sspad.config.datasources import fedora_rest_api
+from sspad.config.datasources import lake_rest_api
 from sspad.resources.rdf_lexicon import ns_mgr
 
 
 class FedoraConnector:
-	
-	conf = fedora_rest_api
-	base_url = '{}://{}{}'. format(conf['proto'], conf['host'], conf['root'])
+
+	conf = lake_rest_api
 
 
 	## Class constructor.
@@ -30,7 +28,7 @@ class FedoraConnector:
 	#  @return string The transaction URI.
 	def openTransaction(self):
 		res = requests.post(
-			self.base_url + 'fcr:tx', 
+			self.conf['base_url'] + 'fcr:tx',
 			headers = self.headers
 		)
 		#cherrypy.log('Requesting URL:', res.url)
@@ -55,7 +53,7 @@ class FedoraConnector:
 			body = ''
 
 		res = requests.put(
-			uri, 
+			uri,
 			data = body,
 			headers = dict(chain(self.headers.items(),
 				[('Content-type', 'text/turtle')]
@@ -66,7 +64,7 @@ class FedoraConnector:
 		res.raise_for_status()
 
 		return res.headers['location']
-	
+
 
 	## Creates a datastream under an existing container node if it does not exist,\
 	#  or updates it if it exists already.
@@ -80,11 +78,11 @@ class FedoraConnector:
 		# @TODO Optimize with with
 		if not ds and not path:
 			raise cherrypy.HTTPError('500 Internal Server Error', "No datastream or file path given.")
-	
+
 		data = ds or open(path)
-	
+
 		res = requests.put(
-			uri + '/fcr:content', 
+			uri + '/fcr:content',
 			data = data,
 			headers = dict(chain(
 				self.headers.items(),
@@ -127,9 +125,9 @@ class FedoraConnector:
 		body = 'DELETE {{{}\n}} INSERT {{{}\n}} WHERE {{{}\n}}'\
 			.format(delete_triples, insert_triples, where_triples)
 		cherrypy.log.error('Executing SPARQL update: ' + body)
-		
+
 		res = requests.patch(
-			uri, 
+			uri,
 			data = body.encode('utf-8'),
 			headers = dict(chain(self.headers.items(),
 				[('Content-type', 'application/sparql-update')]
@@ -154,7 +152,7 @@ class FedoraConnector:
 		#cherrypy.log('Requesting URL:', res.url)
 		cherrypy.log.error('Commit transaction response: {}'.format(res.status_code))
 		res.raise_for_status()
-		
+
 		return True
 
 
@@ -170,6 +168,6 @@ class FedoraConnector:
 		#cherrypy.log('Requesting URL:', res.url)
 		cherrypy.log.error('Rollback transaction response: {}'.format(res.status_code))
 		res.raise_for_status()
-		
+
 		return True
 

@@ -4,8 +4,7 @@ import cherrypy
 from rdflib import Graph, URIRef, Literal, Variable
 from wand import image
 
-from sspad.config.datasources import fedora_rest_api
-from sspad.config.datasources import datagrinder_rest_api
+from sspad.config.datasources import lake_rest_api, datagrinder_rest_api
 from sspad.modules.resource import Resource
 from sspad.resources.rdf_lexicon import ns_collection
 
@@ -32,7 +31,7 @@ class StaticImage(Resource):
 	#
 	#  @TODO stub
 	def GET(self, uid=None, legacy_uid=None):
-		
+
 		self._setConnection()
 
 		if uid:
@@ -60,7 +59,7 @@ class StaticImage(Resource):
 	#
 	#  @return (dict) Message with new node information.
 	def POST(self, mid, properties='{}', overwrite=False, **dstreams):
-		
+
 		self._setConnection()
 
 		# Raise error if source is not uploaded.
@@ -88,7 +87,7 @@ class StaticImage(Resource):
 						'409 Conflict',
 						'An image with the same legacy UID already exists. Not creating a new one.'
 					)
-		
+
 		# Create a new UID
 		uid = self.mintUid(mid)
 
@@ -227,7 +226,7 @@ class StaticImage(Resource):
 					master = self._generateMasterFile(src_data, uid + '_master.jpg')
 					content_uri = self.fconn.createOrUpdateDStream(
 						img_uri + '/aic:ds_master',
-						ds=master.read(), 
+						ds=master.read(),
 						dsname = uid + '_master.jpg',
 						mimetype = 'image/jpeg'
 					)
@@ -235,7 +234,7 @@ class StaticImage(Resource):
 
 		return {"message": "Image updated.", "data": {"location": img_uri}}
 
-		
+
 	## PATCH method.
 	#
 	#  Adds or removes properties and mixins in an image.
@@ -311,7 +310,7 @@ class StaticImage(Resource):
 
 		return {"message": "Image updated."}
 
-		
+
 	## Generate a master datastream from a source image file.
 	#
 	#  @param file (StringIO) Input file.
@@ -352,13 +351,13 @@ class StaticImage(Resource):
 	#
 	#  @return (rdflib.URIRef | rdflib.Literal | rdflib.Variable) rdflib object.
 	def _rdfObject(self, value, type):
-		#cherrypy.log('Value: ' + str(value))
-		if type == 'literal':
-			return Literal(value)
-		elif type == 'uri':
-			ns, tname = value.split(':')
-			if ns not in ns_collection or value not in self.mixins:
-				cherrypy.HTTPError('400 Bad Request', 'Relationship {} cannot be added or removed with this method.'.format(value))
-			return URIRef(ns_collection[ns] + tname)
-		elif type == 'variable':
-			return Variable(value)
+            #cherrypy.log('Value: ' + str(value))
+            if type == 'literal':
+                    return Literal(value)
+            elif type == 'uri':
+                    ns, tname = value.split(':')
+                    if ns not in ns_collection or value not in self.mixins:
+                            cherrypy.HTTPError('400 Bad Request', 'Relationship {} cannot be added or removed with this method.'.format(value))
+                    return URIRef(ns_collection[ns] + tname)
+            elif type == 'variable':
+                    return Variable(value)
