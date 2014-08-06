@@ -12,7 +12,11 @@ Dependencies:
 - Rdflib
 - Wand
 
-You also need a connection to uidminter (@TODO create project).
+You also need a connection to the following services:
+- [LAKE](https://github.com/aic-collections/aicdams-lake)
+- [UIDMinter](https://github.com/aic-collections/aicdams-uidminter)
+- [Datagrinder](https://github.com/aic-collections/aicdams-datagrinder)
+
 
 Usage
 -----
