@@ -102,10 +102,9 @@ class StaticImage(Resource):
 		# First validate all datastreams
 		dsmeta = {}
 		for dsname in dstreams.keys():
-			ds = dstreams[dsname]
-			cherrypy.log(dsname + ' class name: ' + ds.__class__.__name__)
+			ds = self._normalizeFileProp(dstreams[dsname])
 
-			ds = self._normalizeFileProp(ds)
+			cherrypy.log(dsname + ' class name: ' + ds.__class__.__name__)
 
 			try:
 				dsmeta[dsname] = self._validateDStream(ds.file, dsname)
@@ -133,13 +132,14 @@ class StaticImage(Resource):
 					for value in props[req_name]:
 						prop_tuples.append((lake_name[0], self._rdfObject(value, lake_name[1])))
 
-			print('Props:', prop_tuples)
+			cherrypy.log('Props:' + prop_tuples)
 
 			self.fconn.updateNodeProperties(img_tx_uri, insert_props=prop_tuples)
 
 			# Loop over all datastreams and ingest them
 			for dsname in dstreams.keys():
-				ds = dstreams[dsname]
+				ds = self._normalizeFileProp(dstreams[dsname])
+
 				#cherrypy.log('Ingestion round: ' + dsname + ' class name: ' + ds.__class__.__name__)
 				ds.file.seek(0)
 				ds_content_uri = self.fconn.createOrUpdateDStream(
