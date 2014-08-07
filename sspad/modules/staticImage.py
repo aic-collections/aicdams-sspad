@@ -94,20 +94,20 @@ class StaticImage(Resource):
 		if 'master' not in dstreams:
 			# Generate master if not present
 			cherrypy.log('Master file not provided.')
-			ds = self._normalizeFileProp(dstreams['source'])
-			dstreams['master'] = self._generateMasterFile(ds.file, uid + '_master.jpg')
+			ds = self._getIOStreamFromReq(dstreams['source'])
+			dstreams['master'] = self._generateMasterFile(ds, uid + '_master.jpg')
 		else:
 			cherrypy.log('Master file provided.')
 
 		# First validate all datastreams
 		dsmeta = {}
 		for dsname in dstreams.keys():
-			ds = self._normalizeFileProp(dstreams[dsname])
+			ds = self._getIOStreamFromReq(dstreams[dsname])
 
 			cherrypy.log(dsname + ' class name: ' + ds.__class__.__name__)
 
 			try:
-				dsmeta[dsname] = self._validateDStream(ds.file, dsname)
+				dsmeta[dsname] = self._validateDStream(ds, dsname)
 			except Exception:
 				raise cherrypy.HTTPError('415 Unsupported Media Type', 'Validation for datastream {} failed.'.format(dsname))
 			cherrypy.log('Validation for ' + dsname + ': ' + str(dsmeta[dsname]))
@@ -138,13 +138,13 @@ class StaticImage(Resource):
 
 			# Loop over all datastreams and ingest them
 			for dsname in dstreams.keys():
-				ds = self._normalizeFileProp(dstreams[dsname])
+				ds = self._getIOStreamFromReq(dstreams[dsname])
 
 				cherrypy.log('Ingestion round: ' + dsname + ' class name: ' + ds.__class__.__name__)
-				ds.file.seek(0)
+				ds.seek(0)
 				ds_content_uri = self.fconn.createOrUpdateDStream(
 					img_tx_uri + '/aic:ds_' + dsname,
-					ds=ds.file,
+					ds = ds,
 					dsname = uid + '_' + dsname + self._guessFileExt(dsmeta[dsname]['mimetype']),
 					mimetype = dsmeta[dsname]['mimetype']
 				)
@@ -194,14 +194,12 @@ class StaticImage(Resource):
 		dsnames = sorted(dstreams.keys())
 		for dsname in dsnames:
 			ds = dstreams[dsname]
-			src_format, src_size, src_mimetype = self._validateDStream(ds.file)
+			src_format, src_size, src_mimetype = self._validateDStream(ds)
 
 			#cherrypy.log('UID: ' + uid + '; dsname: ' + dsname + ' mimetype: ' + src_mimetype)
 			#cherrypy.log('mimetype guess: ' + self._guessFileExt(src_mimetype))
-			#ds.file.seek(0)
-			with ds.file as file:
-				src_data = file.read()
-				cherrypy.log('File in ctxmgr is closed: ' + str(file.closed))
+			#ds.seek(0)
+			with ds.read() as src_data:
 				content_uri = self.fconn.createOrUpdateDStream(
 					img_uri + '/aic:ds_' + dsname,
 					ds=src_data,
@@ -308,23 +306,18 @@ class StaticImage(Resource):
 	#  anonymous object as a 'file' property.
 	#
 	#  @param ds The BytesIO or bytes object to be normalized.
-	def _normalizeFileProp(self, ds):
+	def _getIOStreamFromReq(self, ds):
 		if hasattr(ds, 'file'):
 			cherrypy.log('Normalizer: ds.file exists already and is of class type {}.'.format(
 				ds.file.__class__.__name__
 			))
-			return ds
+			return ds.file
 		elif ds.__class__.__name__ == 'bytes':
 			cherrypy.log('Normalizer: got a bytestream.')
-			dsObj = lambda:0
-			dsObj.file = io.BytesIO(ds)
+			return io.BytesIO(ds)
 		elif ds.__class__.__name__ == 'BytesIO':
 			cherrypy.log('Normalizer: got a BytesIO.')
-			dsObj = lambda:0
-			dsObj.file = ds
-		cherrypy.log('Normalized ds.file is a {} class.'.format(dsObj.file.__class__.__name__))
-
-		return dsObj
+			return ds
 
 
 	## Generate a master datastream from a source image file.
