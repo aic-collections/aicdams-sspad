@@ -104,7 +104,7 @@ class StaticImage(Resource):
 		for dsname in dstreams.keys():
 			ds = self._getIOStreamFromReq(dstreams[dsname])
 
-			cherrypy.log(dsname + ' class name: ' + ds.__class__.__name__)
+			cherrypy.log('Validation round: ' + dsname + ' class name: ' + ds.__class__.__name__)
 
 			try:
 				dsmeta[dsname] = self._validateDStream(ds, dsname)
@@ -193,7 +193,7 @@ class StaticImage(Resource):
 
 		dsnames = sorted(dstreams.keys())
 		for dsname in dsnames:
-			ds = dstreams[dsname]
+			ds = _getIOStreamFromReq(dstreams[dsname])
 			src_format, src_size, src_mimetype = self._validateDStream(ds)
 
 			#cherrypy.log('UID: ' + uid + '; dsname: ' + dsname + ' mimetype: ' + src_mimetype)
