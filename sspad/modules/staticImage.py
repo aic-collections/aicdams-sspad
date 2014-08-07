@@ -94,7 +94,8 @@ class StaticImage(Resource):
 		if 'master' not in dstreams:
 			# Generate master if not present
 			cherrypy.log('Master file not provided.')
-			dstreams['master'] = self._generateMasterFile(dstreams['source'].file, uid + '_master.jpg')
+			ds = self._normalizeFileProp(dstreams['source'])
+			dstreams['master'] = self._generateMasterFile(ds.file, uid + '_master.jpg')
 		else:
 			cherrypy.log('Master file provided.')
 
@@ -104,17 +105,7 @@ class StaticImage(Resource):
 			ds = dstreams[dsname]
 			cherrypy.log(dsname + ' class name: ' + ds.__class__.__name__)
 
-			# If ds is a byte stream instead of a Part instance, wrap it in an
-			# anonymous object as a 'file' property
-			if ds.__class__.__name__ == 'bytes':
-				dsObj = lambda:0 # Kind of a hack, but it works.
-				dsObj.file = io.BytesIO(ds)
-				dstreams[dsname] = dsObj
-			elif ds.__class__.__name__ == 'BytesIO':
-				dsObj = lambda:0 # Kind of a hack, but it works.
-				dsObj.file = ds
-				dstreams[dsname] = dsObj
-			ds = dstreams[dsname]
+			ds = self._normalizeFileProp(ds)
 
 			try:
 				dsmeta[dsname] = self._validateDStream(ds.file, dsname)
@@ -309,6 +300,24 @@ class StaticImage(Resource):
 		cherrypy.response.headers['Location'] = url
 
 		return {"message": "Image updated."}
+
+
+	## Normalize the behaviour of a datastream object regardless of its source.
+	#
+	#  If ds is a byte stream instead of a Part instance, wrap it in an
+	#  anonymous object as a 'file' property.
+	#
+	#  @param ds The BytesIO or bytes object to be normalized.
+	def _normalizeFileProps(self, ds):
+		if hasattr(ds, 'file'):
+			return ds
+		elif ds.__class__.__name__ == 'bytes':
+			dsObj = lambda:0
+			dsObj.file = io.BytesIO(ds)
+		elif ds.__class__.__name__ == 'BytesIO':
+			dsObj = lambda:0
+			dsObj.file = ds
+		return dsObj
 
 
 	## Generate a master datastream from a source image file.
