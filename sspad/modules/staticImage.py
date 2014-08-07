@@ -308,7 +308,7 @@ class StaticImage(Resource):
 	#  anonymous object as a 'file' property.
 	#
 	#  @param ds The BytesIO or bytes object to be normalized.
-	def _normalizeFileProps(self, ds):
+	def _normalizeFileProp(self, ds):
 		if hasattr(ds, 'file'):
 			return ds
 		elif ds.__class__.__name__ == 'bytes':
