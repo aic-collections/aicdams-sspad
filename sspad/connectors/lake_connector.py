@@ -79,15 +79,12 @@ class LakeConnector:
 		if not ds and not path:
 			raise cherrypy.HTTPError('500 Internal Server Error', "No datastream or file path given.")
 
-		#data = ds or open(path, 'rb')
-		data = ds.read()
+		data = ds or open(path, 'rb')
 
-		cherrypy.log('Create datastream: Ingesting datastream from class type: ' + data.__class__.__name__)
-		cherrypy.log('Create datastream: peek into ds: ' + str(data[:256]))
-
+		#cherrypy.log('Ingesting datastream from class type: ' + data.__class__.__name__)
 		res = requests.put(
 			uri + '/fcr:content',
-			data = data[:],
+			data = data,
 			headers = dict(chain(
 				self.headers.items(),
 				[('content-disposition', 'inline; filename="' + dsname + '"')]
