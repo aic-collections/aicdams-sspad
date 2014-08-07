@@ -189,7 +189,7 @@ class StaticImage(Resource):
 
 		self._setConnection()
 
-		img_uri = fedora_rest_api['base_url'] + 'resources/SI/' + uid
+		img_uri = lake_rest_api['base_url'] + 'resources/SI/' + uid
 
 		dsnames = sorted(dstreams.keys())
 		for dsname in dsnames:
