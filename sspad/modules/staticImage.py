@@ -140,7 +140,7 @@ class StaticImage(Resource):
 			for dsname in dstreams.keys():
 				ds = self._normalizeFileProp(dstreams[dsname])
 
-				#cherrypy.log('Ingestion round: ' + dsname + ' class name: ' + ds.__class__.__name__)
+				cherrypy.log('Ingestion round: ' + dsname + ' class name: ' + ds.__class__.__name__)
 				ds.file.seek(0)
 				ds_content_uri = self.fconn.createOrUpdateDStream(
 					img_tx_uri + '/aic:ds_' + dsname,
