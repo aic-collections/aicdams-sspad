@@ -80,6 +80,7 @@ class LakeConnector:
 			raise cherrypy.HTTPError('500 Internal Server Error', "No datastream or file path given.")
 
 		data = ds or open(path)
+		data.seek(0)
 
 		cherrypy.log('Ingesting datastream from class type: ' + data.__class__.__name__)
 
