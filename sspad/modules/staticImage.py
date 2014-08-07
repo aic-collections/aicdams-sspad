@@ -310,11 +310,14 @@ class StaticImage(Resource):
 	#  @param ds The BytesIO or bytes object to be normalized.
 	def _normalizeFileProp(self, ds):
 		if hasattr(ds, 'file'):
+			cherrypy.log('Normalizer: ds.file exists already.')
 			return ds
 		elif ds.__class__.__name__ == 'bytes':
+			cherrypy.log('Normalizer: got a bytestream.')
 			dsObj = lambda:0
 			dsObj.file = io.BytesIO(ds)
 		elif ds.__class__.__name__ == 'BytesIO':
+			cherrypy.log('Normalizer: got a BytesIO.')
 			dsObj = lambda:0
 			dsObj.file = ds
 		cherrypy.log('Normalized ds.file is a {} class.'.format(dsObj.file.__class__.__name__))
