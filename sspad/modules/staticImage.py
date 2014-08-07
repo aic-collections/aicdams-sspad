@@ -132,7 +132,7 @@ class StaticImage(Resource):
 					for value in props[req_name]:
 						prop_tuples.append((lake_name[0], self._rdfObject(value, lake_name[1])))
 
-			cherrypy.log('Props:' + prop_tuples)
+			cherrypy.log('Props:' + str(prop_tuples))
 
 			self.fconn.updateNodeProperties(img_tx_uri, insert_props=prop_tuples)
 
