@@ -317,6 +317,8 @@ class StaticImage(Resource):
 		elif ds.__class__.__name__ == 'BytesIO':
 			dsObj = lambda:0
 			dsObj.file = ds
+		cherrypy.log('Normalized ds.file is a {} class.'.format(dsObj.file.__class__.__name__))
+
 		return dsObj
 
 
