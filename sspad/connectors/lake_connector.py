@@ -85,7 +85,7 @@ class LakeConnector:
 
 		res = requests.put(
 			uri + '/fcr:content',
-			data = data,
+			data = data.read(),
 			headers = dict(chain(
 				self.headers.items(),
 				[('content-disposition', 'inline; filename="' + dsname + '"')]
