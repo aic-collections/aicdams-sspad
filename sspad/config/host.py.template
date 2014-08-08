@@ -3,7 +3,9 @@
 import sys
 
 ## App environment. 'dev', 'test', 'stag' or 'prod'
-default_app_env='dev'
+#  
+#  Do not use this var in the application. Use app_env (see below)
+_default_app_env='dev'
 
 pidfile = '/var/run/sspad/sspad.pid'  
 
@@ -46,9 +48,9 @@ tstore_rest_api = {
 }
 
 tstore_schema_rest_api = {
-	'proto': tstore_rest_api['proto'],
-	'host': tstore_rest_api['host'],
-	'root': '/openrdf-sesame/repositories/dams-schema-test',
+	'proto': tstore_rest_api['proto'],							# Triplestore schema indexer connection protocol
+	'host': tstore_rest_api['host'],							# Triplestore schema indexer host name and optional port
+	'root': '/openrdf-sesame/repositories/dams-schema-test',	# Triplestore schema indexer path to repository root
 }
 
 
@@ -56,11 +58,11 @@ tstore_schema_rest_api = {
 ## Do not edit below this line ##
 #################################
 
-# You can override the environment by passing an argument to server.sh. 
+## You can override the environment by passing an argument to server.sh. 
 if len(sys.argv) > 1 and sys.argv[1] in ('prod', 'stag', 'test', 'dev'):
 	app_env = sys.argv[1]
 else:
-	app_env = default_app_env
+	app_env = _default_app_env
 
 ## This application's path
 app_path = sys.argv[0]
