@@ -121,8 +121,8 @@ class StaticImage(Resource):
 
 			# Set node properties
 			prop_tuples = [
-				(self.ns_rdf.type, self.ns_aic.image),
-				(self.ns_rdf.type, self.ns_aic.citi),
+				(ns_collection['rdf'].type, self.ns_aic.image),
+				(ns_collection['rdf'].type, self.ns_aic.citi),
 				(self.ns_dc.title, Literal(uid)),
 				(self.ns_aic.uid, Literal(uid)),
 			]
@@ -153,11 +153,11 @@ class StaticImage(Resource):
 
 				# Set source datastream properties
 				prop_tuples = [
-							(self.ns_rdf.type, self.ns_indexing.indexable),
+							(ns_collection['rdf'].type, ns_collection['indexing'].indexable),
 							(self.ns_dc.title, Literal(uid + '_' + dsname)),
 						]
 				if dsname == 'master':
-					prop_tuples.append((self.ns_rdf.type, self.ns_aicmix.imageDerivable))
+					prop_tuples.append((ns_collection['rdf'].type, ns_collection['aicmix'].imageDerivable))
 				self.fconn.updateNodeProperties(ds_uri, insert_props=prop_tuples)
 		except:
 			# Roll back transaction if something goes wrong

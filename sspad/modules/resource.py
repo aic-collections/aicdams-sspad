@@ -11,29 +11,20 @@ from sspad.connectors.uidminter_connector import UidminterConnector
 #  This is the base class for all resource operations.
 class Resource():
 
-	## Short-hand namespace variables.
-	ns_aic, ns_aicmix, ns_dc, ns_rdf, ns_indexing =\
-		ns_collection['aic'],\
-		ns_collection['aicmix'],\
-		ns_collection['dc'],\
-		ns_collection['rdf'],\
-		ns_collection['indexing']
-
-
 	## Tuples of LAKE namespaces and data types.
 	#
 	#  Data type string can be 'literal', 'uri' or 'variable'.
 	prop_lake_names = (
-		(ns_rdf.type, 'uri'),
-		(ns_dc.title, 'literal'),
-		(ns_aic.legacyUid, 'literal'),
-		(ns_aic.batchUid, 'literal'),
-		(ns_aic.citiObjUid, 'literal'),
-		(ns_aic.citiObjAccNo, 'literal'),
-		(ns_aic.citiAgentUid, 'literal'),
-		(ns_aic.citiPlaceUid, 'literal'),
-		(ns_aic.citiExhibUid, 'literal'),
-		(ns_aic.citiImgDBankUid, 'literal'),
+		(ns_collection['rdf'].type, 'uri'),
+		(ns_collection['dc'].title, 'literal'),
+		(ns_collection['aic'].legacyUid, 'literal'),
+		(ns_collection['aic'].batchUid, 'literal'),
+		(ns_collection['aic'].citiObjUid, 'literal'),
+		(ns_collection['aic'].citiObjAccNo, 'literal'),
+		(ns_collection['aic'].citiAgentUid, 'literal'),
+		(ns_collection['aic'].citiPlaceUid, 'literal'),
+		(ns_collection['aic'].citiExhibUid, 'literal'),
+		(ns_collection['aic'].citiImgDBankUid, 'literal'),
 	)
 
 	## Properties as specified in requests.
@@ -75,7 +66,7 @@ class Resource():
 	#  This is a URI that reflects the node type set in the LAKE CND.
 	#
 	#  @sa https://github.com/aic-collections/aicdams-lake/tree/master-aic/fcrepo-webapp/src/aic/resources/cnd
-	node_type=ns_aic.resource
+	node_type=ns_collection['aic'].resource
 
 
 	## Additional MIME types.
