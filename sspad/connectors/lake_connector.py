@@ -116,9 +116,9 @@ class LakeConnector:
 		#cherrypy.log('Create/update datastream response:' + str(res.status_code))
 
 		# Add external source
-		self.updateNodeProperties(uri, insert_props=(
+		self.updateNodeProperties(uri, insert_props=[
 			(ns_collection['fcrepo'].hasExternalContent, URIRef(ref))
-		))
+		])
 
 		cherrypy.log('Response headers for reference DS:' + str(res.headers))
 		if 'location' in res.headers:
@@ -136,7 +136,7 @@ class LakeConnector:
 	#  @param insert_props	(dict) Properties to be inserted.\
 	#  Keys are property names, values are tuples or lists of values. Non-empty string can be used as single values.
 	#  @param where_props	(dict) Conditions. Same syntax as \p insert_props.
-	def updateNodeProperties(self, uri, delete_props={}, insert_props={}, where_props={}):
+	def updateNodeProperties(self, uri, delete_props=[], insert_props=[], where_props=[]):
 		''' Modifies node properties using a SPARQL-update query. '''
 
 		cherrypy.log.error("Delete props: " + str(delete_props) + "; Insert props: " + str(insert_props) + "; where props: " + str(where_props))
