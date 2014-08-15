@@ -1,8 +1,7 @@
-import io, json
+import io, json, requests
 
 import cherrypy
 from rdflib import Graph, URIRef, Literal, Variable
-from urllib.request import urlopen
 from wand import image
 
 from sspad.config.datasources import lake_rest_api, datagrinder_rest_api
@@ -103,7 +102,7 @@ class StaticImage(Resource):
 			# Generate master if not present
 			cherrypy.log('Master file not provided.')
 			if sourceRef:
-				with urlopen(sourceRef) as ds:
+				with requests.get(sourceRef).content as ds:
 					dstreams['master'] = self._generateMasterFile(ds, uid + '_master.jpg')
 			else:
 				with self._getIOStreamFromReq(dstreams['source']) as ds: 
