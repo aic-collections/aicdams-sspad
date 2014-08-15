@@ -109,8 +109,7 @@ class LakeConnector:
 		check.raise_for_status()
 
 		# Create ds with empty content
-		res = requests.put(
-			uri + '/fcr:content', headers=self.headers)
+		res = requests.put(uri + '/fcr:content', headers=self.headers)
 		res.raise_for_status()
 
 		#cherrypy.log('Requesting URL:' + res.url)
