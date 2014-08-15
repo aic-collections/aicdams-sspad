@@ -70,6 +70,7 @@ class StaticImage(Resource):
 				raise cherrypy.HTTPError('400 Bad Request', 'Required source datastream missing.')
 			# Else add source entry containing URL
 			else:
+				cherrypy.log('Parameter parser: source passed as a reference.')
 				dstreams['source'] = sourceRef
 
 		#cherrypy.request.body.processors['multipart'] = cherrypy._cpreqbody.process_multipart
