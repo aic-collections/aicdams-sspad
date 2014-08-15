@@ -117,7 +117,7 @@ class LakeConnector:
 
 		# Add external source
 		self.updateNodeProperties(uri, insert_props=[
-			(ns_collection['fcrepo'].hasExternalContent, URIRef(ref))
+			(ns_collection['fedorarelsext'].hasExternalContent, URIRef(ref))
 		])
 
 		cherrypy.log('Response headers for reference DS:' + str(res.headers))
