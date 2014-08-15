@@ -118,7 +118,7 @@ class StaticImage(Resource):
 			cherrypy.log('Validation round: ' + dsname + ' class name: ' + ds.__class__.__name__)
 
 			if sourceRef and dsname == 'source':
-				pass
+				cherrypy.log('Skipping validation for reference ds.')
 			else:
 				try:
 					dsmeta[dsname] = self._validateDStream(ds, dsname)
@@ -146,7 +146,7 @@ class StaticImage(Resource):
 					for value in props[req_name]:
 						prop_tuples.append((lake_name[0], self._rdfObject(value, lake_name[1])))
 
-			cherrypy.log('Props:' + str(prop_tuples))
+			#cherrypy.log('Props:' + str(prop_tuples))
 
 			self.fconn.updateNodeProperties(img_tx_uri, insert_props=prop_tuples)
 
