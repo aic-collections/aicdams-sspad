@@ -98,7 +98,7 @@ class StaticImage(Resource):
 		# Create a new UID
 		uid = self.mintUid(mid)
 
-		if 'master' not in dstreams:
+		if 'master' not in dstreams.keys():
 			# Generate master if not present
 			cherrypy.log('Master file not provided.')
 			if sourceRef:
@@ -117,11 +117,14 @@ class StaticImage(Resource):
 
 			cherrypy.log('Validation round: ' + dsname + ' class name: ' + ds.__class__.__name__)
 
-			try:
-				dsmeta[dsname] = self._validateDStream(ds, dsname)
-			except Exception:
-				raise cherrypy.HTTPError('415 Unsupported Media Type', 'Validation for datastream {} failed.'.format(dsname))
-			cherrypy.log('Validation for ' + dsname + ': ' + str(dsmeta[dsname]))
+			if sourceRef and dsname == 'master':
+				pass
+			else:
+				try:
+					dsmeta[dsname] = self._validateDStream(ds, dsname)
+					cherrypy.log('Validation for ' + dsname + ': ' + str(dsmeta[dsname]))
+				except Exception:
+					raise cherrypy.HTTPError('415 Unsupported Media Type', 'Validation for datastream {} failed.'.format(dsname))
 
 		# Open Fedora transaction
 		tx_uri = self.openTransaction()
