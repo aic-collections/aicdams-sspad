@@ -105,7 +105,7 @@ class LakeConnector:
 	def createOrUpdateRefDStream(self, uri, ref):
 		cherrypy.log('Creating an externally referenced node.')
 		# Check that external reference exists
-		check = requests.head(ref)
+		check = requests.head(ref, headers=self.headers)
 		check.raise_for_status()
 
 		# Create ds with empty content
