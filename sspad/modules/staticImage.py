@@ -64,13 +64,13 @@ class StaticImage(Resource):
 
 		cherrypy.log('SourceRef: ' + sourceRef)
 		# If source is not uploaded
-        if 'source' not in dstreams.keys():
-            # If sourceRef is not present, throw error
-            if not sourceRef:
-			    raise cherrypy.HTTPError('400 Bad Request', 'Required source datastream missing.')
-            # Else add source entry containing URL
-            else:
-                dstreams['source'] = sourceRef
+		if 'source' not in dstreams.keys():
+			# If sourceRef is not present, throw error
+			if not sourceRef:
+				raise cherrypy.HTTPError('400 Bad Request', 'Required source datastream missing.')
+			# Else add source entry containing URL
+			else:
+				dstreams['source'] = sourceRef
 
 		#cherrypy.request.body.processors['multipart'] = cherrypy._cpreqbody.process_multipart
 		#cherrypy.log('Max. upload size: ' + str(cherrypy.server.max_request_body_size))
