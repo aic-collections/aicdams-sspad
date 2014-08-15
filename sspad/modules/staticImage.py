@@ -63,7 +63,7 @@ class StaticImage(Resource):
 		self._setConnection()
 
 		# Raise error if source is not uploaded.
-        cherrypy.log('SourceRef: ' + sourceRef)
+		cherrypy.log('SourceRef: ' + sourceRef)
 		if 'source' not in dstreams.keys() and not sourceRef:
 			raise cherrypy.HTTPError('400 Bad Request', 'Required source datastream missing.')
 
@@ -145,13 +145,20 @@ class StaticImage(Resource):
 			for dsname in dstreams.keys():
 
 				cherrypy.log('Ingestion round: ' + dsname + ' class name: ' + ds.__class__.__name__)
-				ds.seek(0)
-				ds_content_uri = self.fconn.createOrUpdateDStream(
-					img_tx_uri + '/aic:ds_' + dsname,
-					ds = ds,
-					dsname = uid + '_' + dsname + self._guessFileExt(dsmeta[dsname]['mimetype']),
-					mimetype = dsmeta[dsname]['mimetype']
-				)
+				if dsname == 'source' and not sourceRef == False:
+					ds_content_uri = self.fconn.createOrUpdateRefDStream(
+						img_tx_uri + '/aic:ds_' + dsname,
+						sourceRef
+					)
+				else:
+					ds = self._getIOStreamFromReq(dstreams[dsname])
+					ds.seek(0)
+					ds_content_uri = self.fconn.createOrUpdateDStream(
+						img_tx_uri + '/aic:ds_' + dsname,
+						ds = ds,
+						dsname = uid + '_' + dsname + self._guessFileExt(dsmeta[dsname]['mimetype']),
+						mimetype = dsmeta[dsname]['mimetype']
+					)
 
 				ds_uri = ds_content_uri.replace('/fcr:content', '')
 
@@ -364,13 +371,13 @@ class StaticImage(Resource):
 	#
 	#  @return (rdflib.URIRef | rdflib.Literal | rdflib.Variable) rdflib object.
 	def _rdfObject(self, value, type):
-            #cherrypy.log('Value: ' + str(value))
-            if type == 'literal':
-                    return Literal(value)
-            elif type == 'uri':
-                    ns, tname = value.split(':')
-                    if ns not in ns_collection or value not in self.mixins:
-                            cherrypy.HTTPError('400 Bad Request', 'Relationship {} cannot be added or removed with this method.'.format(value))
-                    return URIRef(ns_collection[ns] + tname)
-            elif type == 'variable':
-                    return Variable(value)
+			#cherrypy.log('Value: ' + str(value))
+			if type == 'literal':
+					return Literal(value)
+			elif type == 'uri':
+					ns, tname = value.split(':')
+					if ns not in ns_collection or value not in self.mixins:
+							cherrypy.HTTPError('400 Bad Request', 'Relationship {} cannot be added or removed with this method.'.format(value))
+					return URIRef(ns_collection[ns] + tname)
+			elif type == 'variable':
+					return Variable(value)
