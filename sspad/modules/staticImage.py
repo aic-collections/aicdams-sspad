@@ -102,7 +102,10 @@ class StaticImage(Resource):
 			# Generate master if not present
 			cherrypy.log('Master file not provided.')
 			if sourceRef:
-				req = requests.get(sourceRef)
+				req = requests.get(
+					sourceRef,
+					headers={'auth' : self.auth_str}
+				)
 				req.raise_for_status()
 				with req.content as ds:
 					dstreams['master'] = self._generateMasterFile(ds, uid + '_master.jpg')
