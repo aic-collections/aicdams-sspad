@@ -58,12 +58,13 @@ class StaticImage(Resource):
 	#  Only the 'source' datastream is mandatory.
 	#
 	#  @return (dict) Message with new node information.
-	def POST(self, mid, properties='{}', overwrite=False, **dstreams):
+	def POST(self, mid, properties='{}', overwrite=False, sourceRef=False, **dstreams):
 
 		self._setConnection()
 
 		# Raise error if source is not uploaded.
-		if 'source' not in dstreams.keys():
+        cherrypy.log('SourceRef: ' + sourceRef)
+		if 'source' not in dstreams.keys() and not sourceRef:
 			raise cherrypy.HTTPError('400 Bad Request', 'Required source datastream missing.')
 
 		#cherrypy.request.body.processors['multipart'] = cherrypy._cpreqbody.process_multipart
@@ -94,8 +95,12 @@ class StaticImage(Resource):
 		if 'master' not in dstreams:
 			# Generate master if not present
 			cherrypy.log('Master file not provided.')
-			ds = self._getIOStreamFromReq(dstreams['source'])
-			dstreams['master'] = self._generateMasterFile(ds, uid + '_master.jpg')
+			if sourceRef:
+				with open(sourceRef, 'rb') as ds:
+					dstreams['master'] = self._generateMasterFile(ds, uid + '_master.jpg')
+			else:
+				with self._getIOStreamFromReq(dstreams['source']) as ds: 
+					dstreams['master'] = self._generateMasterFile(ds, uid + '_master.jpg')
 		else:
 			cherrypy.log('Master file provided.')
 
@@ -138,7 +143,6 @@ class StaticImage(Resource):
 
 			# Loop over all datastreams and ingest them
 			for dsname in dstreams.keys():
-				ds = self._getIOStreamFromReq(dstreams[dsname])
 
 				cherrypy.log('Ingestion round: ' + dsname + ' class name: ' + ds.__class__.__name__)
 				ds.seek(0)

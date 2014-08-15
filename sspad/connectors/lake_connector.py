@@ -98,6 +98,39 @@ class LakeConnector:
 			return res.headers['location']
 
 
+	## Creates or updates a datastream with an externally referenced content.
+	#
+	#  @param uri		(string) URI of the datastream node to be created or updated.
+	#  @param ref		(string) External source as a HTTP URL.
+	def createOrUpdateRefDStream(self, uri, ref):
+		# Check that external reference exists
+		check = requests.head(ref)
+		check.raise_for_status()
+
+		# Create ds with empty content
+		res = requests.put(
+			uri + '/fcr:content',
+			headers = dict(chain(
+				self.headers.items(),
+				[('content-disposition', 'inline; filename="' + dsname + '"')]
+			))
+		)
+		res.raise_for_status()
+
+		#cherrypy.log('Requesting URL:' + res.url)
+		#cherrypy.log('Create/update datastream response:' + str(res.status_code))
+
+		# Add external source
+		self.updateNodeProperties(uri, insert_props=(
+			(ns_collection['fcrepo'].hasExternalContent, URIRef(ref))
+		))
+
+		if 'location' in res.headers:
+			return res.headers['location']
+
+
+
+
 	## Updates the properties of an existing node.
 	#
 	#  @param uri			(string) Node URI.

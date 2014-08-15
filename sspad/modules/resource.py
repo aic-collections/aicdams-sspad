@@ -25,6 +25,7 @@ class Resource():
 		(ns_collection['aic'].citiPlaceUid, 'literal'),
 		(ns_collection['aic'].citiExhibUid, 'literal'),
 		(ns_collection['aic'].citiImgDBankUid, 'literal'),
+		#(ns_collection['fcrepo'].hasExternalContent, 'uri'),
 	)
 
 	## Properties as specified in requests.
@@ -41,6 +42,7 @@ class Resource():
 		'citi_place_pkey',
 		'citi_exhib_pkey',
 		'citi_imgdbank_pkey',
+		#'has_ext_content',
 	)
 
 
