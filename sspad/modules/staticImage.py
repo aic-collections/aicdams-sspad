@@ -104,7 +104,7 @@ class StaticImage(Resource):
 			if sourceRef:
 				req = requests.get(
 					sourceRef,
-					headers={'auth' : self.auth_str}
+					headers={'Authorization' : self.auth_str}
 				)
 				cherrypy.log('Auth string: ' + self.auth_str)
 				req.raise_for_status()
