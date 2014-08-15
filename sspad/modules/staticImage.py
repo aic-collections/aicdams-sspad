@@ -117,7 +117,7 @@ class StaticImage(Resource):
 
 			cherrypy.log('Validation round: ' + dsname + ' class name: ' + ds.__class__.__name__)
 
-			if sourceRef and dsname == 'master':
+			if sourceRef and dsname == 'source':
 				pass
 			else:
 				try:
