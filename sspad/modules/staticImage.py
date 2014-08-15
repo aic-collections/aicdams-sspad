@@ -146,11 +146,13 @@ class StaticImage(Resource):
 
 				cherrypy.log('Ingestion round: ' + dsname + ' class name: ' + ds.__class__.__name__)
 				if dsname == 'source' and not sourceRef == False:
+					# Create a reference node.
 					ds_content_uri = self.fconn.createOrUpdateRefDStream(
 						img_tx_uri + '/aic:ds_' + dsname,
 						sourceRef
 					)
 				else:
+					# Create an actual datastream.
 					ds = self._getIOStreamFromReq(dstreams[dsname])
 					ds.seek(0)
 					ds_content_uri = self.fconn.createOrUpdateDStream(
