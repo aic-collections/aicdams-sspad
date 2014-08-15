@@ -110,12 +110,7 @@ class LakeConnector:
 
 		# Create ds with empty content
 		res = requests.put(
-			uri + '/fcr:content',
-			headers = dict(chain(
-				self.headers.items(),
-				[('content-disposition', 'inline; filename="' + dsname + '"')]
-			))
-		)
+			uri + '/fcr:content', headers=self.headers)
 		res.raise_for_status()
 
 		#cherrypy.log('Requesting URL:' + res.url)
