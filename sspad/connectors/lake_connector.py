@@ -126,7 +126,7 @@ class LakeConnector:
 			(ns_collection['fcrepo'].hasExternalContent, URIRef(ref))
 		))
 
-		cherrypy.log('Response headers for reference DS:' + str(res.headers)
+		cherrypy.log('Response headers for reference DS:' + str(res.headers))
 		if 'location' in res.headers:
 			return res.headers['location']
 
