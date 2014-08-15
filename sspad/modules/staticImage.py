@@ -126,10 +126,10 @@ class StaticImage(Resource):
 
 			# Set node properties
 			prop_tuples = [
-				(ns_collection['rdf'].type, self.ns_aic.image),
-				(ns_collection['rdf'].type, self.ns_aic.citi),
-				(self.ns_dc.title, Literal(uid)),
-				(self.ns_aic.uid, Literal(uid)),
+				(ns_collection['rdf'].type, ns_collection['aic'].image),
+				(ns_collection['rdf'].type, ns_collection['aic'].citi),
+				(ns_collection['dc.title'], Literal(uid)),
+				(ns_collection['aic.uid'], Literal(uid)),
 			]
 
 			for req_name, lake_name in zip(self.prop_req_names, self.prop_lake_names):
@@ -165,7 +165,7 @@ class StaticImage(Resource):
 				# Set source datastream properties
 				prop_tuples = [
 							(ns_collection['rdf'].type, ns_collection['indexing'].indexable),
-							(self.ns_dc.title, Literal(uid + '_' + dsname)),
+							(ns_collection['dc.title'], Literal(uid + '_' + dsname)),
 						]
 				if dsname == 'master':
 					prop_tuples.append((ns_collection['rdf'].type, ns_collection['aicmix'].imageDerivable))
