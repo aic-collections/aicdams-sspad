@@ -108,8 +108,7 @@ class StaticImage(Resource):
 				)
 				cherrypy.log('Auth string: ' + self.auth_str)
 				req.raise_for_status()
-				with req.content as ds:
-					dstreams['master'] = self._generateMasterFile(ds, uid + '_master.jpg')
+				dstreams['master'] = self._generateMasterFile(req.content, uid + '_master.jpg')
 			else:
 				with self._getIOStreamFromReq(dstreams['source']) as ds: 
 					dstreams['master'] = self._generateMasterFile(ds, uid + '_master.jpg')
