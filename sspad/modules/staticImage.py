@@ -54,28 +54,21 @@ class StaticImage(Resource):
 	#
 	#  @param mid			(string) Mid-prefix.
 	#  @param properties	(dict) Properties to be associated with new node.
-	#  @param **dstreams	(BytesIO) Arbitrary datastream(s). Name of the parameter is the datastream name.\
-	#  Only the 'source' datastream is mandatory.
+	#  @param **dstreams	(BytesIO) Arbitrary datastream(s).
+	#  Name of the parameter is the datastream name.
+	#  If the datastream is to be ingested directly into LAKE, the variable value is the actual data.
+	#  If the datastream is in an external URL and must be a reference, 
+	#  the variable name is prefixed with ref_ and the value is a URL (e.g. 'ref_source' will ingest a reference ds called 'source').
+	#  Only the 'source' datastream is mandatory (or 'ref_source' if it is a reference).
 	#
 	#  @return (dict) Message with new node information.
-	def POST(self, mid, properties='{}', overwrite=False, sourceRef=False, **dstreams):
+	def POST(self, mid, properties='{}', overwrite=False, **dstreams):
 
 		self._setConnection()
 
-		cherrypy.log('SourceRef: ' + sourceRef)
-		# If source is not uploaded
-		if 'source' not in dstreams.keys():
-			# If sourceRef is not present, throw error
-			if not sourceRef:
-				raise cherrypy.HTTPError('400 Bad Request', 'Required source datastream missing.')
-			# Else add source entry containing URL
-			else:
-				cherrypy.log('Parameter parser: source passed as a reference.')
-				dstreams['source'] = sourceRef
-
-		#cherrypy.request.body.processors['multipart'] = cherrypy._cpreqbody.process_multipart
-		#cherrypy.log('Max. upload size: ' + str(cherrypy.server.max_request_body_size))
-		#self._setConnection()
+		# If neither source nor ref_source is present, throw error
+		if 'source' not in dstreams.keys() and 'ref_source' not in dstreams.keys():
+			raise cherrypy.HTTPError('400 Bad Request', 'Required source datastream missing.')
 
 		props = json.loads(properties)
 		for p in props:
@@ -98,12 +91,12 @@ class StaticImage(Resource):
 		# Create a new UID
 		uid = self.mintUid(mid)
 
-		if 'master' not in dstreams.keys():
+		if 'master' not in dstreams.keys() and 'ref_master' not in dstreams.keys():
 			# Generate master if not present
 			cherrypy.log('Master file not provided.')
-			if sourceRef:
+			if 'ref_source' in dstreams.keys():
 				req = requests.get(
-					sourceRef,
+					dstreams['ref_source'],
 					headers={'Authorization' : self.auth_str}
 				)
 				cherrypy.log('Auth string: ' + self.auth_str)
@@ -122,7 +115,7 @@ class StaticImage(Resource):
 
 			cherrypy.log('Validation round: ' + dsname + ' class name: ' + ds.__class__.__name__)
 
-			if sourceRef and dsname == 'source':
+			if dsname[:4] == 'ref_':
 				cherrypy.log('Skipping validation for reference ds.')
 			else:
 				try:
@@ -158,14 +151,14 @@ class StaticImage(Resource):
 			# Loop over all datastreams and ingest them
 			for dsname in dstreams.keys():
 
-				cherrypy.log('Ingestion round: ' + dsname + ' class name: ' + ds.__class__.__name__)
-				if dsname == 'source' and not sourceRef == False:
+				if dsname[:4] == 'ref_':
 					# Create a reference node.
 					ds_content_uri = self.fconn.createOrUpdateRefDStream(
-						img_tx_uri + '/aic:ds_' + dsname,
-						sourceRef
+						img_tx_uri + '/aic:ds_' + dsname[4:],
+						dstreams[dsname]
 					)
 				else:
+					cherrypy.log('Ingestion round: ' + dsname + ' class name: ' + ds.__class__.__name__)
 					# Create an actual datastream.
 					ds = self._getIOStreamFromReq(dstreams[dsname])
 					ds.seek(0)
