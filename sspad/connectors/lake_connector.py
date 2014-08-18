@@ -103,7 +103,7 @@ class LakeConnector:
 	#  @param uri		(string) URI of the datastream node to be created or updated.
 	#  @param ref		(string) External source as a HTTP URL.
 	def createOrUpdateRefDStream(self, uri, ref):
-		cherrypy.log('Creating an externally referenced node.')
+		cherrypy.log('Creating an externally referenced node: ' + uri)
 		# Check that external reference exists
 		check = requests.head(ref, headers=self.headers)
 		check.raise_for_status()

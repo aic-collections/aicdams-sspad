@@ -99,7 +99,6 @@ class StaticImage(Resource):
 					dstreams['ref_source'],
 					headers={'Authorization' : self.auth_str}
 				)
-				cherrypy.log('Auth string: ' + self.auth_str)
 				req.raise_for_status()
 				dstreams['master'] = self._generateMasterFile(req.content, uid + '_master.jpg')
 			else:
