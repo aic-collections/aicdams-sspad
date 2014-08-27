@@ -54,18 +54,20 @@ class DatagrinderConnector:
 	#
 	#  @return BytesIO The resized image stream.
 	def resizeImageFromData(self, image, fname, w=0, h=0):
-		fields = {'width': w, 'height': h}
+		data = {'width': w, 'height': h}
 		files = {'file': (fname, image)}
 
 		res = requests.post(
 			self._base_url + 'resize.jpg',
-			data = fields,
-			files = files
+			files = files,
+			data = data
 		)
 
 		cherrypy.log('Image resize response: ' + str(res.status_code))
+		#cherrypy.log('Image resize headers: ' + str(res.headers))
 		res.raise_for_status()
 		#print('Returned image:', res.content[:256])
+		cherrypy.log('After image resize: {}'.format(image.closed))
 		return io.BytesIO(res.content)
 
 

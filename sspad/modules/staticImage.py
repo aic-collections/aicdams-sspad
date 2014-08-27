@@ -63,6 +63,7 @@ class StaticImage(Resource):
 	#
 	#  @return (dict) Message with new node information.
 	def POST(self, mid, properties='{}', overwrite=False, **dstreams):
+		cherrypy.log('******** Begin ingestion process.')
 
 		self._setConnection()
 
@@ -102,8 +103,10 @@ class StaticImage(Resource):
 				req.raise_for_status()
 				dstreams['master'] = self._generateMasterFile(req.content, uid + '_master.jpg')
 			else:
-				with self._getIOStreamFromReq(dstreams['source']) as ds: 
-					dstreams['master'] = self._generateMasterFile(ds, uid + '_master.jpg')
+				dstreams['master'] = self._generateMasterFile(
+					self._getIOStreamFromReq(dstreams['source']),
+					uid + '_master.jpg'
+				)
 		else:
 			cherrypy.log('Master file provided.')
 
@@ -112,16 +115,19 @@ class StaticImage(Resource):
 		for dsname in dstreams.keys():
 			ds = self._getIOStreamFromReq(dstreams[dsname])
 
-			cherrypy.log('Validation round: ' + dsname + ' class name: ' + ds.__class__.__name__)
+			cherrypy.log('Validation round (' + dsname + '): class name: ' + ds.__class__.__name__)
 
 			if dsname[:4] == 'ref_':
 				cherrypy.log('Skipping validation for reference ds.')
 			else:
 				try:
+					cherrypy.log('Before validation: {} is closed: {}'.format(dsname, ds.closed)) 
 					dsmeta[dsname] = self._validateDStream(ds, dsname)
 					cherrypy.log('Validation for ' + dsname + ': ' + str(dsmeta[dsname]))
-				except Exception:
-					raise cherrypy.HTTPError('415 Unsupported Media Type', 'Validation for datastream {} failed.'.format(dsname))
+				except Exception as e:
+					raise cherrypy.HTTPError('415 Unsupported Media Type', 'Validation for datastream {} failed with exception: {}.'.format(
+						dsname, e
+					))
 
 		# Open Fedora transaction
 		tx_uri = self.openTransaction()
@@ -157,7 +163,7 @@ class StaticImage(Resource):
 						dstreams[dsname]
 					)
 				else:
-					cherrypy.log('Ingestion round: ' + dsname + ' class name: ' + ds.__class__.__name__)
+					cherrypy.log('Ingestion round (' + dsname + '): class name: ' + ds.__class__.__name__)
 					# Create an actual datastream.
 					ds = self._getIOStreamFromReq(dstreams[dsname])
 					ds.seek(0)
@@ -172,9 +178,9 @@ class StaticImage(Resource):
 
 				# Set source datastream properties
 				prop_tuples = [
-							(ns_collection['rdf'].type, ns_collection['indexing'].indexable),
-							(ns_collection['dc'].title, Literal(uid + '_' + dsname)),
-						]
+					(ns_collection['rdf'].type, ns_collection['indexing'].indexable),
+					(ns_collection['dc'].title, Literal(uid + '_' + dsname)),
+				]
 				if dsname == 'master':
 					prop_tuples.append((ns_collection['rdf'].type, ns_collection['aicmix'].imageDerivable))
 				self.fconn.updateNodeProperties(ds_uri, insert_props=prop_tuples)
@@ -344,8 +350,9 @@ class StaticImage(Resource):
 	#  @param file (StringIO) Input file.
 	#  @param fname (string) downloaded file name.
 	def _generateMasterFile(self, file, fname):
-
-		return self.dgconn.resizeImageFromData(file, fname, 4096, 4096)
+		ret = self.dgconn.resizeImageFromData(file, fname, 4096, 4096)
+		cherrypy.log('After generating master file: source closed: {}'.format(file.closed))
+		return ret
 
 
 	## Checks that the input file is a valid image.
