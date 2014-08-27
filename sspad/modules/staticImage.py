@@ -124,9 +124,10 @@ class StaticImage(Resource):
 					dsmeta[dsname] = self._validateDStream(ds, dsname)
 					cherrypy.log('Validation for ' + dsname + ': ' + str(dsmeta[dsname]))
 				except Exception as e:
-					raise cherrypy.HTTPError('415 Unsupported Media Type', 'Validation for datastream {} failed with exception: {}.'.format(
-						dsname, e
-					))
+					raise cherrypy.HTTPError(
+						'415 Unsupported Media Type', 'Validation for datastream {} failed with exception: {}.'\
+						.format(dsname, e)
+					)
 
 		# Open Fedora transaction
 		tx_uri = self.openTransaction()
@@ -157,6 +158,7 @@ class StaticImage(Resource):
 
 				if dsname[:4] == 'ref_':
 					# Create a reference node.
+                    cherrypy.log('Creating a reference ds with name: aic:ds_{}'.format(dsname[4:]))
 					ds_content_uri = self.fconn.createOrUpdateRefDStream(
 						img_tx_uri + '/aic:ds_' + dsname[4:],
 						dstreams[dsname]
