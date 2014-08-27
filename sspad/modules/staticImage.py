@@ -158,7 +158,7 @@ class StaticImage(Resource):
 
 				if dsname[:4] == 'ref_':
 					# Create a reference node.
-                    cherrypy.log('Creating a reference ds with name: aic:ds_{}'.format(dsname[4:]))
+					cherrypy.log('Creating a reference ds with name: aic:ds_{}'.format(dsname[4:]))
 					ds_content_uri = self.fconn.createOrUpdateRefDStream(
 						img_tx_uri + '/aic:ds_' + dsname[4:],
 						dstreams[dsname]
