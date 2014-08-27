@@ -121,7 +121,6 @@ class StaticImage(Resource):
 				cherrypy.log('Skipping validation for reference ds.')
 			else:
 				try:
-					cherrypy.log('Before validation: {} is closed: {}'.format(dsname, ds.closed)) 
 					dsmeta[dsname] = self._validateDStream(ds, dsname)
 					cherrypy.log('Validation for ' + dsname + ': ' + str(dsmeta[dsname]))
 				except Exception as e:
@@ -351,7 +350,6 @@ class StaticImage(Resource):
 	#  @param fname (string) downloaded file name.
 	def _generateMasterFile(self, file, fname):
 		ret = self.dgconn.resizeImageFromData(file, fname, 4096, 4096)
-		cherrypy.log('After generating master file: source closed: {}'.format(file.closed))
 		return ret
 
 

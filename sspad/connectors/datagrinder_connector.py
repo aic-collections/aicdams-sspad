@@ -64,10 +64,8 @@ class DatagrinderConnector:
 		)
 
 		cherrypy.log('Image resize response: ' + str(res.status_code))
-		#cherrypy.log('Image resize headers: ' + str(res.headers))
 		res.raise_for_status()
 		#print('Returned image:', res.content[:256])
-		cherrypy.log('After image resize: {}'.format(image.closed))
 		return io.BytesIO(res.content)
 
 
