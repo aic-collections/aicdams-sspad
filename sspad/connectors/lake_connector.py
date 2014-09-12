@@ -81,7 +81,7 @@ class LakeConnector:
 
 		data = ds or open(path, 'rb')
 
-		#cherrypy.log('Ingesting datastream from class type: ' + data.__class__.__name__)
+		cherrypy.log('Ingesting datastream from class type: ' + data.__class__.__name__)
 		res = requests.put(
 			uri + '/fcr:content',
 			data = data,
