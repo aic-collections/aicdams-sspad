@@ -159,20 +159,22 @@ class StaticImage(Resource):
 
 				if dsname[:4] == 'ref_':
 					# Create a reference node.
-					cherrypy.log('Creating a reference ds with name: aic:ds_{}'.format(dsname[4:]))
+					in_dsname = dsname [4:]
+					cherrypy.log('Creating a reference ds with name: aic:ds_{}'.format(in_dsname))
 					ds_content_uri = self.fconn.createOrUpdateRefDStream(
-						img_tx_uri + '/aic:ds_' + dsname[4:],
+						img_tx_uri + '/aic:ds_' + in_dsname,
 						dstreams[dsname]
 					)
 				else:
-					cherrypy.log('Ingestion round (' + dsname + '): class name: ' + ds.__class__.__name__)
+					in_dsname = dsname
+					cherrypy.log('Ingestion round (' + in_dsname + '): class name: ' + ds.__class__.__name__)
 					# Create an actual datastream.
 					ds = self._getIOStreamFromReq(dstreams[dsname])
 					ds.seek(0)
 					ds_content_uri = self.fconn.createOrUpdateDStream(
 						img_tx_uri + '/aic:ds_' + dsname,
 						ds = ds,
-						dsname = uid + '_' + dsname + self._guessFileExt(dsmeta[dsname]['mimetype']),
+						dsname = uid + '_' + in_dsname + self._guessFileExt(dsmeta[dsname]['mimetype']),
 						mimetype = dsmeta[dsname]['mimetype']
 					)
 
@@ -181,7 +183,7 @@ class StaticImage(Resource):
 				# Set source datastream properties
 				prop_tuples = [
 					(ns_collection['rdf'].type, ns_collection['indexing'].indexable),
-					(ns_collection['dc'].title, Literal(uid + '_' + dsname)),
+					(ns_collection['dc'].title, Literal(uid + '_' + in_dsname)),
 				]
 				if dsname == 'master':
 					prop_tuples.append((ns_collection['rdf'].type, ns_collection['aicmix'].imageDerivable))
@@ -258,8 +260,6 @@ class StaticImage(Resource):
 	#  @param uid				(string) Image UID.
 	#  @param insert_properties	(dict) Properties to be inserted. See LakeConnector#createOrUpdateDStream
 	#  @param delete_properties	(dict) Properties to be deleted. See LakeConnector#createOrUpdateDStream
-	#
-	#  @TODO Figure out how to pass parameters in HTTP body instead of as URL params.
 	def PATCH(self, uid, insert_properties='{}', delete_properties='{}'):
 
 		self._setConnection()
