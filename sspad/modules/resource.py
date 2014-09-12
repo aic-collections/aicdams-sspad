@@ -132,7 +132,7 @@ class Resource():
 	#
 	#  @return tuple Two resource URIs: one in the transaction and one outside of it.
 	def createNodeInTx(self, uid, tx_uri):
-		res_tx_uri = self.fconn.createOrUpdateNode('{}/resources/{}/{}'.format(tx_uri,self.pfx,uid))
+		res_tx_uri = self.fconn.createOrUpdateNode('{}/resources/assets/{}/{}'.format(tx_uri,self.pfx,uid))
 		res_uri = re.sub(r'/tx:[^\/]+/', '/', res_tx_uri)
 
 		return (res_tx_uri, res_uri)

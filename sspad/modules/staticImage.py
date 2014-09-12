@@ -96,6 +96,7 @@ class StaticImage(Resource):
 			# Generate master if not present
 			cherrypy.log('Master file not provided.')
 			if 'ref_source' in dstreams.keys():
+				cherrypy.log('Requesting {}...'.format(dstreams['ref_source']))
 				req = requests.get(
 					dstreams['ref_source'],
 					headers={'Authorization' : self.auth_str}
@@ -215,7 +216,7 @@ class StaticImage(Resource):
 
 		self._setConnection()
 
-		img_uri = lake_rest_api['base_url'] + 'resources/SI/' + uid
+		img_uri = lake_rest_api['base_url'] + 'resources/assets/SI/' + uid
 
 		dsnames = sorted(dstreams.keys())
 		for dsname in dsnames:
@@ -276,7 +277,7 @@ class StaticImage(Resource):
 		#cherrypy.log('Delete props:' + str(delete_props))
 
 		insert_tuples, delete_tuples, where_tuples = ([],[],[])
-		url = fedora_rest_api['base_url'] + 'resources/SI/' + uid
+		url = fedora_rest_api['base_url'] + 'resources/assets/SI/' + uid
 
 		# Open Fedora transaction
 		tx_uri = self.openTransaction()
