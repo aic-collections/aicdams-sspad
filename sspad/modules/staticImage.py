@@ -63,7 +63,12 @@ class StaticImage(Resource):
 	#
 	#  @return (dict) Message with new node information.
 	def POST(self, mid, properties='{}', overwrite=False, **dstreams):
-		cherrypy.log('******** Begin ingestion process.')
+		cherrypy.log('\n')
+		cherrypy.log('************************')
+		cherrypy.log('Begin ingestion process.')
+		cherrypy.log('************************')
+		cherrypy.log('')
+		cherrypy.log('Overwrite: {}'.format(overwrite))
 
 		self._setConnection()
 
