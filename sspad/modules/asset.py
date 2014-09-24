@@ -6,6 +6,8 @@ import uuid
 import cherrypy
 import requests
 
+from rdflib import Graph, URIRef, Literal
+
 from sspad.connectors.datagrinder_connector import DatagrinderConnector
 from sspad.connectors.lake_connector import LakeConnector
 from sspad.connectors.tstore_connector import TstoreConnector
