@@ -3,7 +3,7 @@ import cherrypy
 from cherrypy.process.plugins import Daemonizer, PIDFile
 
 from sspad.config import host, server, app
-from sspad.modules import resource, staticImage
+from sspad.modules import resource, asset, staticImage
 
 
 ## Main Web app class.
@@ -12,8 +12,8 @@ from sspad.modules import resource, staticImage
 class Webapp():
 	exposed = True
 
-	resource = resource.Resource()
-	resource.SI = staticImage.StaticImage()
+	asset = asset.Asset()
+	asset.SI = staticImage.StaticImage()
 	#@TODO Add other resource prefixes.
 
 	def GET(self):

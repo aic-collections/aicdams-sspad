@@ -30,6 +30,7 @@ lake_rest_api['base_url'] = '{}://{}{}'.format(
 	lake_rest_api['host'],
 	lake_rest_api['root']
 )
+lake_rest_api['tags_base_url'] = lake_rest_api['base_url'] + 'lists/tags/'
 
 
 tstore_rest_api = host.tstore_rest_api

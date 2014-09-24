@@ -39,7 +39,7 @@ class TstoreConnector:
 	# @return boolean
 	#
 	# @TODO Replace hardcoded SPARQL wit rdflib methods.
-	def assertImageExistsByLegacyUid(self,uid):
+	def assertAssetExistsByLegacyUid(self,uid):
 		''' Finds if an image exists with a given UID. '''
 
 		query = 'ASK {{ ?r <{}> "{}"^^<http://www.w3.org/2001/XMLSchema#string> . }}'.format(

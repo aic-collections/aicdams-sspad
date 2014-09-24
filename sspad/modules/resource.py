@@ -1,58 +1,19 @@
-import abc, mimetypes, re
+import mimetypes
+import re
+
 import cherrypy
 
-from sspad.resources.rdf_lexicon import ns_collection, ns_mgr
 from sspad.connectors.datagrinder_connector import DatagrinderConnector
 from sspad.connectors.lake_connector import LakeConnector
 from sspad.connectors.tstore_connector import TstoreConnector
 from sspad.connectors.uidminter_connector import UidminterConnector
+from sspad.resources.rdf_lexicon import ns_collection, ns_mgr
 
 ## Resource class.
 #  This is the base class for all resource operations.
 class Resource():
 
-	## Tuples of LAKE namespaces and data types.
-	#
-	#  Data type string can be 'literal', 'uri' or 'variable'.
-	prop_lake_names = (
-		(ns_collection['rdf'].type, 'uri'),
-		(ns_collection['dc'].title, 'literal'),
-		(ns_collection['aic'].legacyUid, 'literal'),
-		(ns_collection['aic'].batchUid, 'literal'),
-		(ns_collection['aic'].citiObjUid, 'literal'),
-		(ns_collection['aic'].citiObjAccNo, 'literal'),
-		(ns_collection['aic'].citiAgentUid, 'literal'),
-		(ns_collection['aic'].citiPlaceUid, 'literal'),
-		(ns_collection['aic'].citiExhibUid, 'literal'),
-		(ns_collection['aic'].citiImgDBankUid, 'literal'),
-		#(ns_collection['fcrepo'].hasExternalContent, 'uri'),
-	)
-
-	## Properties as specified in requests.
-	#
-	#  These map to #prop_lake_names.
-	prop_req_names = (
-		'type',
-		'title',
-		'legacy_uid',
-		'batch_uid',
-		'citi_obj_pkey',
-		'citi_obj_acc_no',
-		'citi_agent_pkey',
-		'citi_place_pkey',
-		'citi_exhib_pkey',
-		'citi_imgdbank_pkey',
-		#'has_ext_content',
-	)
-
-
-	## Mix-ins considered for updating.
-	mixins = (
-		'aicmix:citiPrivate',
-		'aicmix:derivable',
-		'aicmix:overlaid',
-		'aicmix:publ_web',
-	)
+	exposed = True
 
 
 	## Resource prefix.
@@ -60,7 +21,7 @@ class Resource():
 	#  This is used in the node UID and designates the resource type.
 	#  It is mandatory to define it for each resource type.
 	#  @TODO Call uidminter and generate a (cached) map of pfx to Resource subclass names.
-	pfx=''
+	pfx = ''
 
 
 	## RDF type.
@@ -68,7 +29,7 @@ class Resource():
 	#  This is a URI that reflects the node type set in the LAKE CND.
 	#
 	#  @sa https://github.com/aic-collections/aicdams-lake/tree/master-aic/fcrepo-webapp/src/aic/resources/cnd
-	node_type=ns_collection['aic'].resource
+	node_type = ns_collection['aic'].resource
 
 
 	## Additional MIME types.
@@ -81,6 +42,37 @@ class Resource():
 		('image/x-psd', '.psd', False),
 		# [...]
 	)
+
+
+	## Tuples of LAKE namespaces and data types.
+	#
+	#  Data type string can be 'literal', 'uri' or 'variable'.
+	@property
+	def prop_lake_names(self):
+		return (
+			(ns_collection['rdf'].type, 'uri'),
+			(ns_collection['dc'].title, 'literal'),
+		)
+
+
+	## Properties as specified in requests.
+	#
+	#  These map to #prop_lake_names.
+	@property
+	def prop_req_names(self):
+		return (
+			'type',
+			'title',
+		)
+
+
+	## Mix-ins considered for updating.
+	@property
+	def mixins(self):
+		return (
+			'aicmix:citi',
+			'aicmix:citiPrivate',
+		)
 
 
 	## Class constructor.
@@ -103,26 +95,14 @@ class Resource():
 		self.auth_str = cherrypy.request.headers['Authorization']\
 			if 'Authorization' in cherrypy.request.headers\
 			else None
-		self.fconn = LakeConnector(self.auth_str)
+		self.lconn = LakeConnector(self.auth_str)
 		self.dgconn = DatagrinderConnector(self.auth_str)
 		self.tsconn = TstoreConnector(self.auth_str)
 
 
-	## Calls an eternal service to generate and returns a UID.
-	#
-	#  @param mid		(string) Second prefix needed for certain types.
-	#  @return string Generated UID.
-	def mintUid(self, mid=None):
-		try:
-			uid = UidminterConnector().mintUid(self.pfx, mid)
-		except:
-			raise RuntimeError('Could not generate UID.')
-		return uid
-
-
 	## Opens a transaction in LAKE.
 	def openTransaction(self):
-		return self.fconn.openTransaction()
+		return self.lconn.openTransaction()
 
 
 	## Creates a node within a transaction in LAKE.
@@ -132,7 +112,7 @@ class Resource():
 	#
 	#  @return tuple Two resource URIs: one in the transaction and one outside of it.
 	def createNodeInTx(self, uid, tx_uri):
-		res_tx_uri = self.fconn.createOrUpdateNode('{}/resources/assets/{}/{}'.format(tx_uri,self.pfx,uid))
+		res_tx_uri = self.lconn.createOrUpdateNode('{}/resources/assets/{}/{}'.format(tx_uri,self.pfx,uid))
 		res_uri = re.sub(r'/tx:[^\/]+/', '/', res_tx_uri)
 
 		return (res_tx_uri, res_uri)
@@ -147,3 +127,10 @@ class Resource():
 		ext = mimetypes.guess_extension(mimetype) or '.bin'
 		cherrypy.log.error('Guessing MIME type for {}: {}'.format(mimetype, ext))
 		return ext
+
+
+	## Validate a datastream.
+	#
+	#  Override this method for each resource subclass.
+	def _validateDStream(self, ds, dsname='', rules={}):
+		pass
