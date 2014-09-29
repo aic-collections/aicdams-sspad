@@ -83,7 +83,7 @@ class Asset(Resource):
 	## Path between the repo root and the asset node.
 	@property
 	def path(self):
-		pfx = self.pfx + '/' if pfx else ''
+		pfx = self.pfx + '/' if self.pfx else ''
 		return 'resources/assets/' + pfx
 
 
