@@ -4,6 +4,7 @@ from rdflib.namespace import Namespace, NamespaceManager
 
 ns_collection = {\
 	'aic':				Namespace('http://artic.edu/definitions/ontology/1.0#'), \
+	'aiclist':			Namespace('http://artic.edu/definitions/ontology/1.0/auth_list#'), \
 	'aicmeta':			Namespace('http://artic.edu/definitions/ontology/1.0/metadata#'), \
 	'aicmix':			Namespace('http://artic.edu/definitions/ontology/1.0/mixin#'), \
 	'authz':			Namespace('http://fedora.info/definitions/v4/authorization#'), \

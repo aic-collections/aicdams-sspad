@@ -202,12 +202,12 @@ class Asset(Resource):
 			# Set node properties
 			prop_tuples = [
 				(ns_collection['rdf'].type, ns_collection['aic'].asset),
-				(ns_collection['rdf'].type, ns_collection['aic'].citi),
+				(ns_collection['rdf'].type, ns_collection['aicmix'].citi),
 				(ns_collection['dc'].title, Literal(uid)),
 				(ns_collection['aic'].uid, Literal(uid)),
 			]
 
-			cherrypy.log('Props available: {}'.format(list(prop_tuples)))
+			#cherrypy.log('Props available: {}'.format(list(prop_tuples)))
 			for req_name, lake_name in self.props:
 				if req_name in props:
 					for value in props[req_name]:
