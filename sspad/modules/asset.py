@@ -6,7 +6,7 @@ import uuid
 import cherrypy
 import requests
 
-from rdflib import Graph, URIRef, Literal
+from rdflib import Literal
 
 from sspad.connectors.datagrinder_connector import DatagrinderConnector
 from sspad.connectors.lake_connector import LakeConnector
@@ -42,8 +42,6 @@ class Asset(Resource):
 	@property
 	def prop_req_names(self):
 		return super().prop_req_names + (
-			'type',
-			'title',
 			'legacy_uid',
 			'batch_uid',
 			'tag',
@@ -64,11 +62,6 @@ class Asset(Resource):
 			(ns_collection['aic'].hasComment, 'uri'),
 			#(ns_collection['fcrepo'].hasExternalContent, 'uri'),
 		)
-
-
-	@property
-	def props(self):
-		return zip(self.prop_req_names, self.prop_lake_names)
 
 
 	@property
@@ -214,6 +207,7 @@ class Asset(Resource):
 				(ns_collection['aic'].uid, Literal(uid)),
 			]
 
+			cherrypy.log('Props available: {}'.format(list(prop_tuples)))
 			for req_name, lake_name in self.props:
 				if req_name in props:
 					for value in props[req_name]:

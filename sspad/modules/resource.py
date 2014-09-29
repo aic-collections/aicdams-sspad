@@ -4,6 +4,7 @@ import re
 import cherrypy
 
 from urllib.parse import urlparse
+from rdflib import URIRef, Literal, Variable
 
 from sspad.connectors.datagrinder_connector import DatagrinderConnector
 from sspad.connectors.lake_connector import LakeConnector
@@ -46,6 +47,17 @@ class Resource():
 	)
 
 
+	## Properties as specified in requests.
+	#
+	#  These map to #prop_lake_names.
+	@property
+	def prop_req_names(self):
+		return (
+			'type',
+			'title',
+		)
+
+
 	## Tuples of LAKE namespaces and data types.
 	#
 	#  Data type string can be 'literal', 'uri' or 'variable'.
@@ -57,15 +69,9 @@ class Resource():
 		)
 
 
-	## Properties as specified in requests.
-	#
-	#  These map to #prop_lake_names.
 	@property
-	def prop_req_names(self):
-		return (
-			'type',
-			'title',
-		)
+	def props(self):
+		return zip(self.prop_req_names, self.prop_lake_names)
 
 
 	## Mix-ins considered for updating.

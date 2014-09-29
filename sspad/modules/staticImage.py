@@ -1,6 +1,5 @@
 import cherrypy
 
-from rdflib import Graph, URIRef, Literal, Variable
 from wand import image
 
 from sspad.config.datasources import lake_rest_api, datagrinder_rest_api
@@ -27,19 +26,13 @@ class StaticImage(Asset):
 	@property
 	def prop_req_names(self):
 		return super().prop_req_names + (
-			'type',
-			'title',
-			'legacy_uid',
-			'batch_uid',
 			'citi_obj_pkey',
 			'citi_obj_acc_no',
 			'citi_agent_pkey',
 			'citi_place_pkey',
 			'citi_exhib_pkey',
 			'citi_imgdbank_pkey',
-			'tag',
 			'view_info',
-			#'has_ext_content',
 		)
 
 
