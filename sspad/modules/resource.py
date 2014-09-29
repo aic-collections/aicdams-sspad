@@ -153,16 +153,16 @@ class Resource():
 					return Literal(value)
 			elif type == 'uri':
 				parsed_uri = urlparse(value)
-					if parsed_uri.scheme and parsed_uri.netloc:
-						return URIRef(value)
-					elif ':' in value:
-						ns, tname = value.split(':')
-						if ns not in ns_collection or value not in self.mixins:
-							cherrypy.HTTPError(
-									'400 Bad Request', 'Relationship {} cannot be added or removed with this method.'.format(value))
-						return URIRef(ns_collection[ns] + tname)
-					else
-						raise ValueError('Value {} is not a valid fully-qualified or namespace-prefixed URI.'.format(value))
+				if parsed_uri.scheme and parsed_uri.netloc:
+					return URIRef(value)
+				elif ':' in value:
+					ns, tname = value.split(':')
+					if ns not in ns_collection or value not in self.mixins:
+						cherrypy.HTTPError(
+								'400 Bad Request', 'Relationship {} cannot be added or removed with this method.'.format(value))
+					return URIRef(ns_collection[ns] + tname)
+				else:
+					raise ValueError('Value {} is not a valid fully-qualified or namespace-prefixed URI.'.format(value))
 			elif type == 'variable':
 					return Variable(value)
 
