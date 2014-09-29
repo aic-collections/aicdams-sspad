@@ -3,6 +3,8 @@ import re
 
 import cherrypy
 
+from urllib.parse import urlparse
+
 from sspad.connectors.datagrinder_connector import DatagrinderConnector
 from sspad.connectors.lake_connector import LakeConnector
 from sspad.connectors.tstore_connector import TstoreConnector
@@ -112,7 +114,7 @@ class Resource():
 	#
 	#  @return tuple Two resource URIs: one in the transaction and one outside of it.
 	def createNodeInTx(self, uid, tx_uri):
-		res_tx_uri = self.lconn.createOrUpdateNode('{}/resources/assets/{}/{}'.format(tx_uri,self.pfx,uid))
+		res_tx_uri = self.lconn.createOrUpdateNode('{}/{}{}'.format(tx_uri,self.path,uid))
 		res_uri = re.sub(r'/tx:[^\/]+/', '/', res_tx_uri)
 
 		return (res_tx_uri, res_uri)
@@ -134,3 +136,34 @@ class Resource():
 	#  Override this method for each resource subclass.
 	def _validateDStream(self, ds, dsname='', rules={}):
 		pass
+
+
+	## Returns a RDF triple object from a value and a type.
+	#
+	#  The value must be in the #mixins list.
+	#  Depending on the value of @p type, a literal object, a URI or a variable (?var) is created.
+	#
+	#  @param value		(string) Value to be processed.
+	#  @oaram type		(string) One of 'literal', 'uri', 'variable'.
+	#
+	#  @return (rdflib.URIRef | rdflib.Literal | rdflib.Variable) rdflib object.
+	def _rdfObject(self, value, type):
+			cherrypy.log('Value: ' + str(value))
+			if type == 'literal':
+					return Literal(value)
+			elif type == 'uri':
+				parsed_uri = urlparse(value)
+					if parsed_uri.scheme and parsed_uri.netloc:
+						return URIRef(value)
+					elif ':' in value:
+						ns, tname = value.split(':')
+						if ns not in ns_collection or value not in self.mixins:
+							cherrypy.HTTPError(
+									'400 Bad Request', 'Relationship {} cannot be added or removed with this method.'.format(value))
+						return URIRef(ns_collection[ns] + tname)
+					else
+						raise ValueError('Value {} is not a valid fully-qualified or namespace-prefixed URI.'.format(value))
+			elif type == 'variable':
+					return Variable(value)
+
+

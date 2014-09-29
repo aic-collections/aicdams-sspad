@@ -351,7 +351,7 @@ class Asset(Resource):
 
 		# Open Fedora transaction
 		tx_uri = self.openTransaction()
-		url = tx_uri + '/resources/assets/SI/' + uid
+		url = '{}/{}{}'.format(tx_uri, self.path, uid)
 
 		# Collect properties
 		try:
@@ -439,29 +439,6 @@ class Asset(Resource):
 		elif ds.__class__.__name__ == 'BytesIO':
 			cherrypy.log('Normalizer: got a BytesIO.')
 			return ds
-
-
-	## Returns a RDF triple object from a value and a type.
-	#
-	#  The value must be in the #mixins list.
-	#  Depending on the value of @p type, a literal object, a URI or a variable (?var) is created.
-	#
-	#  @param value		(string) Value to be processed.
-	#  @oaram type		(string) One of 'literal', 'uri', 'variable'.
-	#
-	#  @return (rdflib.URIRef | rdflib.Literal | rdflib.Variable) rdflib object.
-	def _rdfObject(self, value, type):
-			#cherrypy.log('Value: ' + str(value))
-			if type == 'literal':
-					return Literal(value)
-			elif type == 'uri':
-					ns, tname = value.split(':')
-					if ns not in ns_collection or value not in self.mixins:
-							cherrypy.HTTPError(
-									'400 Bad Request', 'Relationship {} cannot be added or removed with this method.'.format(value))
-					return URIRef(ns_collection[ns] + tname)
-			elif type == 'variable':
-					return Variable(value)
 
 
 	## Adds one or more comments.
