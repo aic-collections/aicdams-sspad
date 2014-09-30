@@ -108,12 +108,10 @@ class Resource():
 		self.tsconn = TstoreConnector(self.auth_str)
 
 
-	## Opens a transaction in LAKE.
-	def openTransaction(self):
-		return self.lconn.openTransaction()
-
-
 	## Creates a node within a transaction in LAKE.
+	#
+	#  @FIXME This is currently broken due to a change in Fedora code that might or might not be
+	#  a bug: https://www.pivotaltracker.com/story/show/79747630
 	#
 	#  @param uid		(string) UID of the node to be generated.
 	#  @param tx_uri	(string) URI of the transaction.
@@ -154,7 +152,7 @@ class Resource():
 	#
 	#  @return (rdflib.URIRef | rdflib.Literal | rdflib.Variable) rdflib object.
 	def _rdfObject(self, value, type):
-			cherrypy.log('Value: ' + str(value))
+			#cherrypy.log('Value: ' + str(value))
 			if type == 'literal':
 					return Literal(value)
 			elif type == 'uri':

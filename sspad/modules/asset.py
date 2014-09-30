@@ -193,7 +193,8 @@ class Asset(Resource):
 					)
 
 		# Open Fedora transaction
-		tx_uri = self.openTransaction()
+		tx_uri = self.lconn.openTransaction()
+		#cherrypy.log('Created TX: {}'.format(tx_uri))
 
 		try:
 			# Create Asset node in tx
@@ -344,7 +345,7 @@ class Asset(Resource):
 		insert_tuples, delete_tuples, where_tuples = ([],[],[])
 
 		# Open Fedora transaction
-		tx_uri = self.openTransaction()
+		tx_uri = self.lconn.openTransaction()
 		url = '{}/{}{}'.format(tx_uri, self.path, uid)
 
 		# Collect properties
