@@ -23,6 +23,12 @@ class StaticImage(Asset):
 	node_type=ns_collection['aic'].image
 
 
+	## Base properties to assign to this node type.
+	base_prop_tuples = [
+		(ns_collection['rdf'].type, ns_collection['aic'].image),
+	]
+
+
 	@property
 	def prop_req_names(self):
 		return super().prop_req_names + (

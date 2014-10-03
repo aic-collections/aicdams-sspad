@@ -13,7 +13,9 @@ from sspad.connectors.uidminter_connector import UidminterConnector
 from sspad.resources.rdf_lexicon import ns_collection, ns_mgr
 
 ## Resource class.
-#  This is the base class for all resource operations.
+#
+#  Resources are all nodes in LAKE that can have metadata. They include two
+#  main categories: holders and assets.
 class Resource():
 
 	exposed = True
@@ -81,6 +83,12 @@ class Resource():
 			'aicmix:citi',
 			'aicmix:citiPrivate',
 		)
+
+
+	## Base properties to assign to this node type.
+	base_prop_tuples = [
+		(ns_collection['rdf'].type, ns_collection['aic'].resource),
+	]
 
 
 	## Class constructor.
@@ -156,6 +164,7 @@ class Resource():
 			if type == 'literal':
 					return Literal(value)
 			elif type == 'uri':
+                # @TODO Use rdflib tools instead of clunky string replacement if possible
 				parsed_uri = urlparse(value)
 				if parsed_uri.scheme and parsed_uri.netloc:
 					return URIRef(value)

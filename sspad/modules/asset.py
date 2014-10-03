@@ -36,6 +36,12 @@ class Asset(Resource):
 	master_mimetype = 'image/jpeg'
 
 
+	## Base properties to assign to this node type.
+	base_prop_tuples = [
+		(ns_collection['rdf'].type, ns_collection['aic'].asset),
+	]
+
+
 	## Properties as specified in requests.
 	#
 	#  These map to #prop_lake_names.
@@ -125,7 +131,7 @@ class Asset(Resource):
 		cherrypy.log('Begin ingestion process.')
 		cherrypy.log('************************')
 		cherrypy.log('')
-		#cherrypy.log('Overwrite: {}'.format(overwrite))
+		cherrypy.log('Properties: {}'.format(properties))
 
 		self._setConnection()
 
@@ -201,9 +207,7 @@ class Asset(Resource):
 			res_tx_uri, res_uri = self.createNodeInTx(uid, tx_uri)
 
 			# Set node properties
-			prop_tuples = [
-				(ns_collection['rdf'].type, ns_collection['aic'].asset),
-				(ns_collection['rdf'].type, ns_collection['aicmix'].citi),
+			prop_tuples = self.base_prop_tuples + [
 				(ns_collection['dc'].title, Literal(uid)),
 				(ns_collection['aic'].uid, Literal(uid)),
 			]
