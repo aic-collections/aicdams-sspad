@@ -42,9 +42,16 @@ class TstoreConnector:
 	def assertAssetExistsByLegacyUid(self,uid):
 		''' Finds if an image exists with a given UID. '''
 
-		query = 'ASK {{ ?r <{}> "{}"^^<http://www.w3.org/2001/XMLSchema#string> . }}'.format(
+		q = 'ASK {{ ?r <{}> "{}"^^<http://www.w3.org/2001/XMLSchema#string> . }}'.format(
 			ns_collection['aic'] + 'legacyUid', uid
 		)
+
+		return True if self.query(q) == 'true' else False
+
+
+	def query(q):
+		'''Sends a SPARQL query and returns the results.'''
+		
 		res = requests.get(
 			self.conf['base_url'], 
 			headers = dict(chain(self.headers.items(),
@@ -53,13 +60,13 @@ class TstoreConnector:
 					'text/boolean, */*;q=0.5'
 				)]
 			)),
-			params = {'query': query}
+			params = {'query': q}
 		)
 		#cherrypy.log('Requesting URL: ' + res.url)
 		#cherrypy.log('h for UID: ' + str(res.text))
 		res.raise_for_status()
 
-		return True if res.text == 'true' else False
+		return res.text
 
 
 
