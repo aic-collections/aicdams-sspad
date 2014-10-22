@@ -7,7 +7,6 @@ from rdflib.plugins.sparql.processor import prepareQuery
 from sspad.config.datasources import lake_rest_api
 from sspad.resources.rdf_lexicon import ns_collection, ns_mgr
 
-
 class LakeConnector:
 
 	conf = lake_rest_api
@@ -32,7 +31,7 @@ class LakeConnector:
 			headers = self.headers
 		)
 		#cherrypy.log('Requesting URL:', res.url)
-		cherrypy.log.error('Open transaction response: {}'.format(res.status_code))
+		cherrypy.log('Open transaction response: {}'.format(res.status_code))
 		res.raise_for_status()
 
 		return res.headers['location']

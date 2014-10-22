@@ -21,7 +21,7 @@ from sspad.resources.rdf_lexicon import ns_collection, ns_mgr
 #  This is the base class for all Assets.
 class Asset(Resource):
 
-	exposed = True
+	#exposed = True
 
 
 	pfx = ''
