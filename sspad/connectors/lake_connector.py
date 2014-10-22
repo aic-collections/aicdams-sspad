@@ -82,7 +82,7 @@ class LakeConnector:
 
 		cherrypy.log('Ingesting datastream from class type: ' + data.__class__.__name__)
 		res = requests.put(
-			uri + '/fcr:content',
+			uri,
 			data = data,
 			headers = dict(chain(
 				self.headers.items(),
@@ -108,14 +108,14 @@ class LakeConnector:
 		check.raise_for_status()
 
 		# Create ds with empty content
-		res = requests.put(uri + '/fcr:content', headers=self.headers)
+		res = requests.put(uri, headers=self.headers)
 		res.raise_for_status()
 
 		#cherrypy.log('Requesting URL:' + res.url)
 		#cherrypy.log('Create/update datastream response:' + str(res.status_code))
 
 		# Add external source
-		self.updateNodeProperties(uri, insert_props=[
+        self.updateNodeProperties(uri + '/fcr:metadata', insert_props=[
 			(ns_collection['fedorarelsext'].hasExternalContent, URIRef(ref))
 		])
 

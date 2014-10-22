@@ -257,7 +257,7 @@ class Asset(Resource):
 					prop_tuples.append(
 						(ns_collection['rdf'].type, ns_collection['aicmix'].assetDerivable)
 					)
-				self.lconn.updateNodeProperties(ds_uri, insert_props=prop_tuples)
+                    self.lconn.updateNodeProperties(ds_uri + '/fcr:metadata', insert_props=prop_tuples)
 		except:
 			# Roll back transaction if something goes wrong
 			self.lconn.rollbackTransaction(tx_uri)
