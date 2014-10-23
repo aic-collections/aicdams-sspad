@@ -79,17 +79,23 @@ class LakeConnector:
 			raise cherrypy.HTTPError('500 Internal Server Error', "No datastream or file path given.")
 
 		data = ds or open(path, 'rb')
+		#cherrypy.log('Data peek: {}'.format(data))
 
 		cherrypy.log('Ingesting datastream from class type: ' + data.__class__.__name__)
 		res = requests.put(
 			uri,
-			data = data,
+			data = data.read(),
 			headers = dict(chain(
 				self.headers.items(),
-				[('content-disposition', 'inline; filename="' + dsname + '"')]
+				[
+					('content-disposition', 'inline; filename="' + dsname + '"'),
+					('content-type', mimetype),
+				]
 			))
 		)
 		cherrypy.log('Requesting URL:' + res.url)
+		#cherrypy.log('Request headers: {}'.format(res.request.headers))
+		#cherrypy.log('Response headers: {}'.format(res.headers))
 		cherrypy.log('Create/update datastream response:' + str(res.status_code))
 		res.raise_for_status()
 
@@ -115,7 +121,7 @@ class LakeConnector:
 		#cherrypy.log('Create/update datastream response:' + str(res.status_code))
 
 		# Add external source
-        self.updateNodeProperties(uri + '/fcr:metadata', insert_props=[
+		self.updateNodeProperties(uri + '/fcr:metadata', insert_props=[
 			(ns_collection['fedorarelsext'].hasExternalContent, URIRef(ref))
 		])
 

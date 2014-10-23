@@ -20,13 +20,15 @@ class StaticImage(Asset):
 
 
 	## @sa Resource#node_type
-	node_type=ns_collection['aic'].image
+	node_type=ns_collection['aic'].StillImage
 
 
 	## Base properties to assign to this node type.
-	base_prop_tuples = [
-		(ns_collection['rdf'].type, ns_collection['aic'].image),
-	]
+	@property
+	def base_prop_tuples(self):
+		return [
+			(ns_collection['rdf'].type, self.node_type),
+		]
 
 
 	@property
@@ -60,6 +62,7 @@ class StaticImage(Asset):
 	#  @param file (StringIO) Input file.
 	#  @param fname (string) downloaded file name.
 	def _generateMasterFile(self, file, fname):
+		# @TODO put these values in constants
 		ret = self.dgconn.resizeImageFromData(file, fname, 4096, 4096)
 		return ret
 

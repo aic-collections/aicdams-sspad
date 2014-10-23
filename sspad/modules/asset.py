@@ -8,9 +8,6 @@ import requests
 
 from rdflib import Literal
 
-from sspad.connectors.datagrinder_connector import DatagrinderConnector
-from sspad.connectors.lake_connector import LakeConnector
-from sspad.connectors.tstore_connector import TstoreConnector
 from sspad.connectors.uidminter_connector import UidminterConnector
 from sspad.modules.resource import Resource
 from sspad.resources.rdf_lexicon import ns_collection, ns_mgr
@@ -21,13 +18,10 @@ from sspad.resources.rdf_lexicon import ns_collection, ns_mgr
 #  This is the base class for all Assets.
 class Asset(Resource):
 
-	#exposed = True
-
-
 	pfx = ''
 
 
-	node_type = ns_collection['aic'].asset
+	node_type = ns_collection['aic'].Asset
 
 
 	## MIME type used for master generation.
@@ -37,9 +31,11 @@ class Asset(Resource):
 
 
 	## Base properties to assign to this node type.
-	base_prop_tuples = [
-		(ns_collection['rdf'].type, ns_collection['aic'].asset),
-	]
+	@property
+	def base_prop_tuples(self):
+		return [
+			(ns_collection['rdf'].type, self.node_type),
+		]
 
 
 	## Properties as specified in requests.
@@ -246,18 +242,22 @@ class Asset(Resource):
 						mimetype = dsmeta[dsname]['mimetype']
 					)
 
-				ds_uri = ds_content_uri.replace('/fcr:content', '')
+				ds_meta_uri = ds_content_uri + '/fcr:metadata'
 
 				# Set source datastream properties
 				prop_tuples = [
-					(ns_collection['rdf'].type, ns_collection['indexing'].indexable),
 					(ns_collection['dc'].title, Literal(uid + '_' + in_dsname)),
 				]
 				if dsname == 'master':
 					prop_tuples.append(
-						(ns_collection['rdf'].type, ns_collection['aicmix'].assetDerivable)
+						(ns_collection['rdf'].type, ns_collection['aicmix'].MasterDStream)
 					)
-                    self.lconn.updateNodeProperties(ds_uri + '/fcr:metadata', insert_props=prop_tuples)
+				else:
+					prop_tuples.append(
+						(ns_collection['rdf'].type, ns_collection['aicmix'].Datastream)
+					)
+
+				self.lconn.updateNodeProperties(ds_meta_uri, insert_props=prop_tuples)
 		except:
 			# Roll back transaction if something goes wrong
 			self.lconn.rollbackTransaction(tx_uri)

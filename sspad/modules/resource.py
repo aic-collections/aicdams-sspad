@@ -1,15 +1,7 @@
 import mimetypes
-import re
 
 import cherrypy
 
-from urllib.parse import urlparse
-from rdflib import URIRef, Literal, Variable
-
-from sspad.connectors.datagrinder_connector import DatagrinderConnector
-from sspad.connectors.lake_connector import LakeConnector
-from sspad.connectors.tstore_connector import TstoreConnector
-from sspad.connectors.uidminter_connector import UidminterConnector
 from sspad.modules.node import Node
 from sspad.resources.rdf_lexicon import ns_collection, ns_mgr
 
