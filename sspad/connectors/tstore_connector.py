@@ -32,23 +32,6 @@ class TstoreConnector:
 		#cherrypy.log('Headers:', self.headers)
 
 
-	## Verifies whether an image exists in LAKE already with the same legacy UID.
-	#
-	# @param uid (string)The legacy UID.
-	#
-	# @return boolean
-	#
-	# @TODO Replace hardcoded SPARQL wit rdflib methods.
-	def assertAssetExistsByLegacyUid(self, uid):
-		''' Finds if an image exists with a given UID. '''
-
-		q = 'ASK {{ ?r <{}> "{}"^^<http://www.w3.org/2001/XMLSchema#string> . }}'.format(
-			ns_collection['aic'] + 'legacyUid', uid
-		)
-
-		return True if self.query(q) == 'true' else False
-
-
 	def query(self, q):
 		'''Sends a SPARQL query and returns the results.'''
 
@@ -68,5 +51,28 @@ class TstoreConnector:
 
 		return res.text
 
+
+	def assert_node_exists_by_prop(self, prop, value):
+		''' Finds if an image exists with a given UID. '''
+
+		q = 'ASK {{ ?r <{}> "{}"^^<http://www.w3.org/2001/XMLSchema#string> . }}'.format(prop, value)
+
+		return True if self.query(q) == 'true' else False
+
+
+	def get_node_uri_by_prop(self, prop, value):
+		''' Get the URI of a node by a given property.
+		
+		@param prop (string) The property name as a fully qualified URI.
+		@param value (string) The property value.
+
+		@return string
+		'''
+
+		q = 'SELECT ?u WHERE {{ ?u <{}> "{}"^^<http://www.w3.org/2001/XMLSchema#string> . }} LIMIT 1'.format(prop, value)
+
+		res = self.query(q)
+
+		return res
 
 

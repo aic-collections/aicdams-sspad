@@ -116,7 +116,7 @@ class Asset(Resource):
 		if uid:
 			return {'message': '*stub* This is Asset #{}.'.format(uid)}
 		elif legacy_uid:
-			if self.tsconn.assertAssetExistsByLegacyUid(legacy_uid):
+			if self.tsconn.assert_node_exists_by_prop(ns_collection['aic'] + 'legacyUid', legacy_uid):
 				return {'message': '*stub* This is Asset with legacy UID #{}.'.format(legacy_uid)}
 			else:
 				raise cherrypy.HTTPError(
@@ -167,7 +167,7 @@ class Asset(Resource):
 		# The function assumes that multiple legacy UIDs can be assigned.
 		if overwrite == False and 'legacy_uid' in props:
 			for uid in props['legacy_uid']:
-				if self.tsconn.assertAssetExistsByLegacyUid(uid):
+				if self.tsconn.assert_node_exists_by_prop(ns_collection['aic'] + 'uid', uid):
 					raise cherrypy.HTTPError(
 						'409 Conflict',
 						'An asset with the same legacy UID already exists. Not creating a new one.'
