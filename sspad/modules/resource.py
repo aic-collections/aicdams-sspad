@@ -32,7 +32,10 @@ class Resource(Node):
 	#  These map to #prop_lake_names.
 	@property
 	def prop_req_names(self):
-		return super().prop_req_names + ('title',)
+		return super().prop_req_names + (
+			'label',
+			'title',
+		)
 
 
 	## Tuples of LAKE namespaces and data types.
@@ -40,7 +43,10 @@ class Resource(Node):
 	#  Data type string can be 'literal', 'uri' or 'variable'.
 	@property
 	def prop_lake_names(self):
-		return super().prop_lake_names + ((ns_collection['dc'].title, 'literal'),)
+		return super().prop_lake_names + (
+			(ns_collection['rdfs'].label, 'literal'),
+			(ns_collection['dc'].title, 'literal'),
+		)
 
 
 	## Mix-ins considered for updating.
