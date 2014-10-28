@@ -31,25 +31,29 @@ class Asset(Resource):
 	master_mimetype = 'image/jpeg'
 
 
+	default_comment_type = 'general'
+
+
 	## Properties as specified in requests.
 	#
 	#  These map to #prop_lake_names.
 	@property
 	def prop_req_names(self):
 		return super().prop_req_names + (
-			'legacy_uid',
-			'batch_uid',
-			'tag',
-			'comment',
+			'legacy_uid', # String
+			'batch_uid', # String
+			'tag', # For insert: String, in the following format: <category>/<tag label> - For delete: String (tag URI)
+			'comment', # For insert: Dict: {'type' : <String>, 'content' : <String>} - For delete: String (comment URI)
 			#'has_ext_content',
-			'citi_obj_pkey',
-			'citi_obj_acc_no',
-			'citi_agent_pkey',
-			'citi_place_pkey',
-			'citi_exhib_pkey',
-			'pref_obj_pkey',
-			#'pref_agent_pkey', # There are so few of these, that it is better to migrate them manually.
-			#'pref_exhib_pkey', # See above.
+			'citi_obj_pkey', # Integer
+			'citi_obj_acc_no', # Integer
+			'citi_agent_pkey', # Integer
+			'citi_place_pkey', # Integer
+			'citi_exhib_pkey', # Integer
+			'pref_obj_pkey', # Integer
+			'pref_agent_pkey', # Integer
+			'pref_place_pkey', # Integer
+			'pref_exhib_pkey', # Integer
 		)
 
 
@@ -64,14 +68,15 @@ class Asset(Resource):
 			(ns_collection['aic'].hasTag, 'uri'),
 			(ns_collection['aic'].hasComment, 'uri'),
 			#(ns_collection['fcrepo'].hasExternalContent, 'uri'),
-			(ns_collection['aic'].represents, 'uri'), # FIXME This should be a URI. See https://www.pivotaltracker.com/story/show/81364842
-			(ns_collection['aic'].represents, 'uri'), # @FIXME See above.
-			(ns_collection['aic'].represents, 'uri'), # @FIXME See above.
-			(ns_collection['aic'].represents, 'uri'), # @FIXME See above.
-			(ns_collection['aic'].represents, 'uri'), # @FIXME See above.
-			(ns_collection['aic'].isPrimaryRepresentationOf, 'uri'), # @FIXME See above.
-			#(ns_collection['aic'].isPrimaryRepresentationOf, 'uri'), # @FIXME See above.
-			#(ns_collection['aic'].isPrimaryRepresentationOf, 'uri'), # @FIXME See above.
+			(ns_collection['aic'].represents, 'uri'),
+			(ns_collection['aic'].represents, 'uri'),
+			(ns_collection['aic'].represents, 'uri'),
+			(ns_collection['aic'].represents, 'uri'),
+			(ns_collection['aic'].represents, 'uri'),
+			(ns_collection['aic'].isPrimaryRepresentationOf, 'uri'),
+			(ns_collection['aic'].isPrimaryRepresentationOf, 'uri'),
+			(ns_collection['aic'].isPrimaryRepresentationOf, 'uri'),
+			(ns_collection['aic'].isPrimaryRepresentationOf, 'uri'),
 		)
 
 
@@ -358,15 +363,16 @@ class Asset(Resource):
 	#  Adds or removes properties and mixins in an Asset.
 	#
 	#  @param uid				(string) Asset UID.
-	#  @param insert_properties	(dict) Properties to be inserted. See LakeConnector#createOrUpdateDStream
-	#  @param delete_properties	(dict) Properties to be deleted. See LakeConnector#createOrUpdateDStream
-	def PATCH(self, uid, insert_properties='{}', delete_properties='{}'):
+	#  @param insert_props	(dict) Properties to be inserted. See LakeConnector#createOrUpdateDStream
+	#  @param delete_props	(dict) Properties to be deleted. See LakeConnector#createOrUpdateDStream
+	def PATCH(self, uri=None, uid=None, insert_props='{}', delete_props='{}'):
 
 		self._setConnection()
+		self._set_uri(uri, uid)
 
 		try:
-			insert_props = json.loads(insert_properties)
-			delete_props = json.loads(delete_properties)
+			insert_props = json.loads(insert_props)
+			delete_props = json.loads(delete_props)
 		except:
 			raise cherrypy.HTTPError(
 				'400 Bad Request',
@@ -376,56 +382,14 @@ class Asset(Resource):
 		#cherrypy.log('Insert props:' + str(insert_props))
 		#cherrypy.log('Delete props:' + str(delete_props))
 
-		insert_tuples, delete_tuples, where_tuples = ([],[],[])
-
 		# Open Fedora transaction
 		tx_uri = self.lconn.openTransaction()
-		url = '{}/{}{}'.format(tx_uri, self.path, uid)
 
 		# Collect properties
 		try:
-			for req_name, lake_name in zip(self.prop_req_names, self.prop_lake_names):
-				#cherrypy.log("Req. name: " + str(req_name) + "; LAKE name: " + str(lake_name))
-				if req_name in delete_props:
-					if isinstance(delete_props[req_name], list):
-						# Delete one or more values from property
-						for value in delete_props[req_name]:
-							if req_name == 'type':
-								# If we are removing rdf:type properties,
-								# remove them one by one separately from other properties
-								self.lconn.updateNodeProperties(
-									url,
-									delete_props=[(lake_name[0], self._rdfObject(value, lake_name[1]))],
-									where_props=[(lake_name[0], self._rdfObject(value, lake_name[1]))]
-								)
-							elif req_name == 'tag':
-								value = lake_rest_api['tags_base_url'] + value
-							elif req_name == 'comment':
-								pass # Handle comments in a second round
-							else:
-								delete_tuples.append((lake_name[0], self._rdfObject(value, lake_name[1])))
-					elif delete_props[req_name] == '':
-						# Delete the whole property
-						delete_tuples.append((lake_name[0], self._rdfObject('?' + req_name, 'variable')))
-						where_tuples.append((lake_name[0], self._rdfObject('?' + req_name, 'variable')))
-				if req_name in insert_props:
-					for value in insert_props[req_name]:
-						if req_name == 'tag':
-							value = lake_rest_api['tags_base_url'] + value
-
-						insert_tuples.append((lake_name[0], self._rdfObject(value, lake_name[1])))
-
-			# Update node
-			self.lconn.updateNodeProperties(
-				url,
-				delete_props=delete_tuples,
-				insert_props=insert_tuples,
-				where_props=where_tuples
-			)
-
-			# Add comment nodes
-			if 'comment' in insert_properties and insert_properties['comment']:
-				self._insert_comments(url, insert_properties['comment'])
+			tuples = self._build_prop_tuples(insert_props, delete_props)
+					
+			self._update_node(tuples)
 		except:
 			self.lconn.rollbackTransaction(tx_uri)
 			raise
@@ -433,7 +397,7 @@ class Asset(Resource):
 		self.lconn.commitTransaction(tx_uri)
 
 		cherrypy.response.status = 204
-		cherrypy.response.headers['Location'] = url
+		cherrypy.response.headers['Location'] = self.uri # @TODO Actually verify the URI from response headers.
 
 		return {"message": "Asset updated."}
 
@@ -448,6 +412,31 @@ class Asset(Resource):
 		except:
 			raise RuntimeError('Could not generate UID.')
 		return uid
+
+
+	def _set_uri(uri=None, uid=None, legacy_uid=None):
+		'''Validates the existence of a node from provided URI, UID or legacy UID
+		and set #uri to a value according to the first valid one found.'''
+
+		if not uri and not uid and not legacy_uid:
+			raise ValueError('No valid identifier provided.')
+
+		if uri and self.lconn.assert_node_exists(uri):
+			self.uri = uri
+			return True
+
+		check_prop = ns_collection['aic'] + 'uid' \
+				if uid \
+				else ns_collection['aic'] + 'legacyUid'
+		check_uid = uid if uid else legacy_uid
+
+		check_uri = self.tsconn.get_node_uri_by_prop(check_prop, check_uid):
+		
+		if check_uri:
+			self.uri = check_uri
+			return True
+		else:
+			return False
 
 
 	## Normalize the behaviour of a datastream object regardless of its source.
@@ -470,27 +459,83 @@ class Asset(Resource):
 			return ds
 
 
-	## Adds one or more comments.
-	#
-	#  @param subject (string) URI of asset that annotation is referring to.
-	#  @param comments (list) Comment contents. Author and creation date will be added
-	#  by Fedora from request headers and timestamp.
-	def _insert_comments(self, subject, comments):
-		for comment in comments:
-			comment_uri = self.lconn.createOrUpdateNode(
-				url + '/aic:annotations/' + uuid.uuid4(),
-				props = {
-					'content' : comment['content'],
-					'type' : comment['type'] if 'type' in comment else 'general',
-				}
-			)
+	def _build_property_tuples(self, insert_props={}, delete_props={}):
+		''' Build delete, insert and where tuples suitable for #LakeConnector:updateNodeProperties.
+		from a list of insert and delete properties.
+		Also builds a list of nodes that need to be deleted and/or inserted to satisfy references.
+		'''
 
-			self.lconn.updateNodeProperties(
-				subject,
-				insert_tuples = (
-					(self.props['comment'][0], self._rdfObject(comment_uri, 'uri'))
-				)
-			)
+		insert_tuples, delete_tuples, where_tuples = ([],[],[])
+		insert_nodes, delete_nodes = ({},{})
+
+		for req_name, lake_name in zip(self.prop_req_names, self.prop_lake_names):
+
+			# Delete tuples + nodes
+			if req_name in delete_props:
+				if isinstance(delete_props[req_name], list):
+					# Delete one or more values from property
+					for value in delete_props[req_name]:
+						if req_name == 'tag':
+							value = lake_rest_api['tags_base_url'] + value
+						elif req_name == 'comment':
+							delete_nodes['comments'] = delete_props['comment']
+						delete_tuples.append((lake_name[0], self._rdfObject(value, lake_name[1])))
+
+				elif delete_props[req_name] == '':
+					# Delete the whole property
+					delete_tuples.append((lake_name[0], self._rdfObject('?' + req_name, 'variable')))
+					where_tuples.append((lake_name[0], self._rdfObject('?' + req_name, 'variable')))
+			
+			# Insert tuples + nodes
+			if req_name in insert_props:
+				for value in insert_props[req_name]:
+					if req_name == 'tag':
+						insert_nodes['tags'] = insert_props['tag']
+						#value = lake_rest_api['tags_base_url'] + value
+						continue
+					elif req_name == 'comment':
+						insert_nodes['comments'] = insert_props['comment']
+						continue
+					insert_tuples.append((lake_name[0], self._rdfObject(value, lake_name[1])))
+
+		return {
+			'nodes' : (delete_nodes, insert_nodes)
+			'tuples' : (delete_tuples, insert_tuples, where_tuples),
+		}
+
+
+	def _update_node(self, tuples):
+		'''Updates a node inserting and deleting related nodes if necessary,'''
+
+		delete_nodes, insert_nodes = tuples['nodes']
+		delete_tuples, insert_tuples, where_tuples = tuples['tuples']
+
+		for node_type in delete_nodes.keys():
+			for uri in delete_nodes[node_type]:
+				self.lconn.delete_node(uri)
+
+		for node_type in insert_nodes.keys():
+			if node_type = 'comment':
+				for comment in insert_nodes[node_type]:
+					comment_uri = self.lconn.createOrUpdateNode(
+						self.uri + '/aic:annotations/' + uuid.uuid4(),
+						props = {
+							'content' : comment['content'],
+							'type' : comment['type'] if 'type' in comment else self.default_comment_type,
+						}
+					)
+					
+
+		self.lconn.updateNodeProperties(
+			url,
+			delete_props=delete_tuples,
+			insert_props=insert_tuples,
+			where_props=where_tuples
+		)
+
+		# Add comment nodes
+		if 'comment' in insert_props and insert_props['comment']:
+			self._insert_comments(url, insert_props['comment'])
 
 
 	def _add_mock_node_rel(self, base_uri, rel_type, rel_value):
@@ -515,3 +560,27 @@ class Asset(Resource):
 			cherrypy.log('Ref node exists.')
 			return ref_uri
 
+	
+	## Adds one or more comments.
+	#
+	#  @param subject (string) URI of asset that annotation is referring to.
+	#  @param comments (list) Comment contents. Author and creation date will be added
+	#  by Fedora from request headers and timestamp.
+	def _insert_comments(self, subject, comments):
+		for comment in comments:
+			comment_uri = self.lconn.createOrUpdateNode(
+				url + '/aic:annotations/' + uuid.uuid4(),
+				props = {
+					'content' : comment['content'],
+					'type' : comment['type'] if 'type' in comment else self.default_comment_type,
+				}
+			)
+
+			self.lconn.updateNodeProperties(
+				subject,
+				insert_tuples = (
+					(self.props['comment'][0], self._rdfObject(comment_uri, 'uri'))
+				)
+			)
+
+	
