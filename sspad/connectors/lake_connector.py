@@ -22,6 +22,20 @@ class LakeConnector:
 		#cherrypy.log('Headers:', self.headers)
 
 
+	def assert_node_exists(self, uri):
+		'''Check if a node exists already.'''
+
+		res = requests.get(uri, headers = self.headers)
+		cherrypy.log('Check if node exists: {}'.format(res.status_code))
+		if res.status_code == 404:
+			return False
+		elif res.status_code < 399:
+			return True
+		else:
+			res.rais_for_status()
+
+
+
 	## Open Fedora transaction.
 	#
 	#  @return string The transaction URI.
@@ -50,6 +64,7 @@ class LakeConnector:
 			body = g.serialize(format='turtle')
 		else:
 			body = ''
+		cherrypy.log('Creating node with RDF properties: {}'.format(body))
 
 		res = requests.put(
 			uri,
@@ -60,6 +75,8 @@ class LakeConnector:
 		)
 		cherrypy.log('Requesting URL:' + res.url)
 		cherrypy.log('Create/update node response:' + str(res.status_code))
+		if res.status_code > 399:
+			cherrypy.log('HTTP Error: {}'.format(res.text))
 		res.raise_for_status()
 
 		return res.headers['location']

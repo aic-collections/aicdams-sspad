@@ -112,7 +112,7 @@ class Node(metaclass=ABCMeta):
 	#
 	#  @return (rdflib.URIRef | rdflib.Literal | rdflib.Variable) rdflib object.
 	def _rdfObject(self, value, type):
-			#cherrypy.log('Value: ' + str(value))
+			cherrypy.log('Converting value to RDF object: {}'.format(value))
 			if type == 'literal':
 					return Literal(value)
 			elif type == 'uri':

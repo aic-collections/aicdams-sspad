@@ -6,8 +6,9 @@ import uuid
 import cherrypy
 import requests
 
-from rdflib import Literal
+from rdflib import URIRef, Literal
 
+from sspad.config.datasources import lake_rest_api
 from sspad.connectors.uidminter_connector import UidminterConnector
 from sspad.modules.resource import Resource
 from sspad.resources.rdf_lexicon import ns_collection, ns_mgr
@@ -30,14 +31,6 @@ class Asset(Resource):
 	master_mimetype = 'image/jpeg'
 
 
-	## Base properties to assign to this node type.
-	@property
-	def base_prop_tuples(self):
-		return [
-			(ns_collection['rdf'].type, self.node_type),
-		]
-
-
 	## Properties as specified in requests.
 	#
 	#  These map to #prop_lake_names.
@@ -49,6 +42,14 @@ class Asset(Resource):
 			'tag',
 			'comment',
 			#'has_ext_content',
+			'citi_obj_pkey',
+			'citi_obj_acc_no',
+			'citi_agent_pkey',
+			'citi_place_pkey',
+			'citi_exhib_pkey',
+			'pref_obj_pkey',
+			#'pref_agent_pkey', # There are so few of these, that it is better to migrate them manually.
+			#'pref_exhib_pkey', # See above.
 		)
 
 
@@ -63,15 +64,34 @@ class Asset(Resource):
 			(ns_collection['aic'].hasTag, 'uri'),
 			(ns_collection['aic'].hasComment, 'uri'),
 			#(ns_collection['fcrepo'].hasExternalContent, 'uri'),
+			(ns_collection['aic'].represents, 'uri'), # FIXME This should be a URI. See https://www.pivotaltracker.com/story/show/81364842
+			(ns_collection['aic'].represents, 'uri'), # @FIXME See above.
+			(ns_collection['aic'].represents, 'uri'), # @FIXME See above.
+			(ns_collection['aic'].represents, 'uri'), # @FIXME See above.
+			(ns_collection['aic'].represents, 'uri'), # @FIXME See above.
+			(ns_collection['aic'].isPrimaryRepresentationOf, 'uri'), # @FIXME See above.
+			#(ns_collection['aic'].isPrimaryRepresentationOf, 'uri'), # @FIXME See above.
+			#(ns_collection['aic'].isPrimaryRepresentationOf, 'uri'), # @FIXME See above.
 		)
+
+
+	## Request properties to resource prefix mapping.
+	#  Keys are properties in prop_req_names. 
+	#  Values are prefixes assigned to the resource that the Asset should be linked to
+	reqprops_to_rels = {
+		'citi_obj_pkey' : {'type' : ns_collection['aic'].Object, 'pfx' : 'OB'},
+		'citi_agent_pkey' : {'type' : ns_collection['aic'].Actor, 'pfx' : 'AC'},
+		'citi_place_pkey' : {'type' : ns_collection['aic'].Place, 'pfx' : 'PL'},
+		'citi_exhib_pkey' : {'type' : ns_collection['aic'].Event, 'pfx' : 'EV'},
+	}
 
 
 	@property
 	def mixins(self):
 		return super().mixins + (
-			'aicmix:derivable',
-			'aicmix:overlaid',
-			'aicmix:publ_web',
+			'aicmix:Derivable',
+			'aicmix:Overlayable',
+			'aicmix:Publ_Web',
 		)
 
 
@@ -210,8 +230,17 @@ class Asset(Resource):
 
 			#cherrypy.log('Props available: {}'.format(list(prop_tuples)))
 			for req_name, lake_name in self.props:
-				if req_name in props:
+				#cherrypy.log('Req. name: {}; All prop names in request: {}'.format(req_name, props.keys()))
+				if req_name in props.keys():
+					#cherrypy.log('Req. name being parsed: {}'.format(req_name))
+					
+					# Build relationships
+					rel_type = self.reqprops_to_rels[req_name] if req_name in self.reqprops_to_rels else {}
+
 					for value in props[req_name]:
+						if rel_type:
+							value = self._add_mock_node_rel(tx_uri, rel_type, value)
+							cherrypy.log('Ref URI in tx: {}'.format(value))
 						prop_tuples.append((lake_name[0], self._rdfObject(value, lake_name[1])))
 
 			#cherrypy.log('Props:' + str(prop_tuples))
@@ -238,7 +267,8 @@ class Asset(Resource):
 					ds_content_uri = self.lconn.createOrUpdateDStream(
 						res_tx_uri + '/aic:ds_' + dsname,
 						ds = ds,
-						dsname = uid + '_' + in_dsname + self._guessFileExt(dsmeta[dsname]['mimetype']),
+						dsname = uid + '_' + in_dsname + \
+								self._guessFileExt(dsmeta[dsname]['mimetype']),
 						mimetype = dsmeta[dsname]['mimetype']
 					)
 
@@ -260,7 +290,7 @@ class Asset(Resource):
 				self.lconn.updateNodeProperties(ds_meta_uri, insert_props=prop_tuples)
 		except:
 			# Roll back transaction if something goes wrong
-			self.lconn.rollbackTransaction(tx_uri)
+			#self.lconn.rollbackTransaction(tx_uri)
 			raise
 
 		# Commit transaction
@@ -442,19 +472,46 @@ class Asset(Resource):
 
 	## Adds one or more comments.
 	#
-	#  @param parent (string) Parent node URI (excluding (aic:annotations)
+	#  @param subject (string) URI of asset that annotation is referring to.
 	#  @param comments (list) Comment contents. Author and creation date will be added
 	#  by Fedora from request headers and timestamp.
-	def _insert_comments(self, parent, comments):
+	def _insert_comments(self, subject, comments):
 		for comment in comments:
 			comment_uri = self.lconn.createOrUpdateNode(
 				url + '/aic:annotations/' + uuid.uuid4(),
-				props = {'content' : comment}
+				props = {
+					'content' : comment['content'],
+					'type' : comment['type'] if 'type' in comment else 'general',
+				}
 			)
 
 			self.lconn.updateNodeProperties(
-				parent,
+				subject,
 				insert_tuples = (
 					(self.props['comment'][0], self._rdfObject(comment_uri, 'uri'))
 				)
 			)
+
+
+	def _add_mock_node_rel(self, base_uri, rel_type, rel_value):
+		''' Add a relationship with a federated CITI entity.
+		If the node does not exist yet, create a mock one.
+		ONLY FOR TESTING!
+		'''
+
+		cherrypy.log('Relationship type: {}'.format(rel_type))
+		cherrypy.log('value: {}'.format(rel_value))
+		ref_uri = '{}/resources/holders/{}/{}-{}'.format(base_uri, rel_type['pfx'], rel_type['pfx'], rel_value)
+
+		if not self.lconn.assert_node_exists(ref_uri):
+			cherrypy.log('Creating ref node.')
+			ref_uri_res = self.lconn.createOrUpdateNode(ref_uri)
+			self.lconn.updateNodeProperties(ref_uri_res, insert_props=[
+				(ns_collection['rdf'].type, URIRef(rel_type['type'])),
+				(ns_collection['aic'].uid, Literal(rel_value))
+			])
+			return ref_uri_res
+		else:
+			cherrypy.log('Ref node exists.')
+			return ref_uri
+

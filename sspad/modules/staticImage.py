@@ -20,40 +20,22 @@ class StaticImage(Asset):
 
 
 	## @sa Resource#node_type
-	node_type=ns_collection['aic'].StillImage
-
-
-	## Base properties to assign to this node type.
-	@property
-	def base_prop_tuples(self):
-		return [
-			(ns_collection['rdf'].type, self.node_type),
-		]
+	node_type = ns_collection['aic'].StillImage
 
 
 	@property
 	def prop_req_names(self):
 		return super().prop_req_names + (
-			'citi_obj_pkey',
-			'citi_obj_acc_no',
-			'citi_agent_pkey',
-			'citi_place_pkey',
-			'citi_exhib_pkey',
 			'citi_imgdbank_pkey',
-			'view_info',
+			#'view_info',
 		)
 
 
 	@property
 	def prop_lake_names(self):
 		return super().prop_lake_names + (
-			(ns_collection['aic'].citiObjUid, 'literal'),
-			(ns_collection['aic'].citiObjAccNo, 'literal'),
-			(ns_collection['aic'].citiAgentUid, 'literal'),
-			(ns_collection['aic'].citiPlaceUid, 'literal'),
-			(ns_collection['aic'].citiExhibUid, 'literal'),
 			(ns_collection['aic'].citiImgDBankUid, 'literal'),
-			(ns_collection['aic'].viewInfo, 'literal'),
+			#(ns_collection['aic'].viewInfo, 'literal'),
 		)
 
 

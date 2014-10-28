@@ -24,7 +24,7 @@ class Resource(Node):
 	#  This is a URI that reflects the node type set in the LAKE CND.
 	#
 	#  @sa https://github.com/aic-collections/aicdams-lake/tree/master-aic/fcrepo-webapp/src/aic/resources/cnd
-	node_type = ns_collection['aic'].resource
+	node_type = ns_collection['aic'].Resource
 
 
 	## Properties as specified in requests.
@@ -47,15 +47,17 @@ class Resource(Node):
 	@property
 	def mixins(self):
 		return (
-			'aicmix:citi',
-			'aicmix:citiPrivate',
+			'aicmix:Citi',
+			'aicmix:CitiPrivate',
 		)
 
 
 	## Base properties to assign to this node type.
-	base_prop_tuples = [
-		(ns_collection['rdf'].type, ns_collection['aic'].resource),
-	]
+	@property
+	def base_prop_tuples(self):
+		return [
+			(ns_collection['rdf'].type, self.node_type),
+		]
 
 
 	## Class constructor.
