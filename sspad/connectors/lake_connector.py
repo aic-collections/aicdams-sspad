@@ -178,6 +178,7 @@ class LakeConnector:
 			.format(delete_triples, insert_triples, where_triples)
 		cherrypy.log.error('Executing SPARQL update: ' + body)
 
+		cherrypy.log('URL: {}'.format(url))
 		res = requests.patch(
 			uri,
 			data = body.encode('utf-8'),
@@ -187,6 +188,8 @@ class LakeConnector:
 		)
 		cherrypy.log('Requesting URL:' + res.url)
 		cherrypy.log('Update datastream properties response:' + str(res.status_code))
+		if res.status_code > 399:
+			cherrypy.log('HTTP Error: {}'.format(res.text))
 		res.raise_for_status()
 
 		return True

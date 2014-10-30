@@ -35,6 +35,7 @@ class TstoreConnector:
 	def query(self, q):
 		'''Sends a SPARQL query and returns the results.'''
 
+		cherrypy.log('Querying tstore: {}'.format(q))
 		res = requests.get(
 			self.conf['base_url'], 
 			headers = dict(chain(self.headers.items(),

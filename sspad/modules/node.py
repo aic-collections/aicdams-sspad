@@ -78,9 +78,14 @@ class Node(metaclass=ABCMeta):
 	#  @return tuple Two resource URIs: one in the transaction and one outside of it.
 	def createNodeInTx(self, uid, tx_uri):
 		node_tx_uri = self.lconn.createOrUpdateNode('{}/{}{}'.format(tx_uri,self.path,uid))
-		node_uri = re.sub(r'/tx:[^\/]+/', '/', node_tx_uri)
 
-		return (node_tx_uri, node_uri)
+		return (node_tx_uri, self.tx_uri_to_notx_uri(tx_uri))
+
+
+	def tx_uri_to_notx_uri(self, tx_uri):
+		'''Converts node URI inside transaction to URI outside of transaction.'''
+
+		return re.sub(r'/tx:[^\/]+/', '/', tx_uri) # FIXME Ugly. Use more reliable methods.
 
 
 	## Guesses file extension from MIME types.

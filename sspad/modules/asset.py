@@ -85,9 +85,13 @@ class Asset(Resource):
 	#  Values are prefixes assigned to the resource that the Asset should be linked to
 	reqprops_to_rels = {
 		'citi_obj_pkey' : {'type' : ns_collection['aic'].Object, 'pfx' : 'OB'},
+		'pref_obj_pkey' : {'type' : ns_collection['aic'].Object, 'pfx' : 'OB'},
 		'citi_agent_pkey' : {'type' : ns_collection['aic'].Actor, 'pfx' : 'AC'},
+		'pref_agent_pkey' : {'type' : ns_collection['aic'].Actor, 'pfx' : 'AC'},
 		'citi_place_pkey' : {'type' : ns_collection['aic'].Place, 'pfx' : 'PL'},
+		'pref_place_pkey' : {'type' : ns_collection['aic'].Place, 'pfx' : 'PL'},
 		'citi_exhib_pkey' : {'type' : ns_collection['aic'].Event, 'pfx' : 'EV'},
+		'pref_exhib_pkey' : {'type' : ns_collection['aic'].Event, 'pfx' : 'EV'},
 	}
 
 
@@ -220,19 +224,24 @@ class Asset(Resource):
 					)
 
 		# Open Fedora transaction
-		tx_uri = self.lconn.openTransaction()
-		#cherrypy.log('Created TX: {}'.format(tx_uri))
+		self.tx_uri = self.lconn.openTransaction()
+		#cherrypy.log('Created TX: {}'.format(self.tx_uri))
 
 		try:
 			# Create Asset node in tx
-			res_tx_uri, res_uri = self.createNodeInTx(uid, tx_uri)
+			self.uri_in_tx, self.uri = self.createNodeInTx(uid, self.tx_uri)
 
 			# Set node properties
-			prop_tuples = self.base_prop_tuples + [
+			init_tuples = self.base_prop_tuples + [
 				(ns_collection['dc'].title, Literal(uid)),
 				(ns_collection['aic'].uid, Literal(uid)),
 			]
 
+			cherrypy.log('Properties: {}'.format(properties))
+			tuples = self._build_prop_tuples(insert_props=properties, init_insert_tuples=init_tuples)
+			self._update_node(tuples)
+
+			'''
 			#cherrypy.log('Props available: {}'.format(list(prop_tuples)))
 			for req_name, lake_name in self.props:
 				#cherrypy.log('Req. name: {}; All prop names in request: {}'.format(req_name, props.keys()))
@@ -244,13 +253,14 @@ class Asset(Resource):
 
 					for value in props[req_name]:
 						if rel_type:
-							value = self._add_mock_node_rel(tx_uri, rel_type, value)
+							value = self._add_mock_node_rel(self.tx_uri, rel_type, value)
 							cherrypy.log('Ref URI in tx: {}'.format(value))
 						prop_tuples.append((lake_name[0], self._rdfObject(value, lake_name[1])))
 
 			#cherrypy.log('Props:' + str(prop_tuples))
 
-			self.lconn.updateNodeProperties(res_tx_uri, insert_props=prop_tuples)
+			self.lconn.updateNodeProperties(self.uri_in_tx, insert_props=prop_tuples)
+			'''
 
 			# Loop over all datastreams and ingest them
 			for dsname in dstreams.keys():
@@ -260,7 +270,7 @@ class Asset(Resource):
 					in_dsname = dsname [4:]
 					cherrypy.log('Creating a reference ds with name: aic:ds_{}'.format(in_dsname))
 					ds_content_uri = self.lconn.createOrUpdateRefDStream(
-						res_tx_uri + '/aic:ds_' + in_dsname,
+						self.uri_in_tx + '/aic:ds_' + in_dsname,
 						dstreams[dsname]
 					)
 				else:
@@ -270,7 +280,7 @@ class Asset(Resource):
 					ds = self._getIOStreamFromReq(dstreams[dsname])
 					ds.seek(0)
 					ds_content_uri = self.lconn.createOrUpdateDStream(
-						res_tx_uri + '/aic:ds_' + dsname,
+						self.uri_in_tx + '/aic:ds_' + dsname,
 						ds = ds,
 						dsname = uid + '_' + in_dsname + \
 								self._guessFileExt(dsmeta[dsname]['mimetype']),
@@ -295,14 +305,14 @@ class Asset(Resource):
 				self.lconn.updateNodeProperties(ds_meta_uri, insert_props=prop_tuples)
 		except:
 			# Roll back transaction if something goes wrong
-			#self.lconn.rollbackTransaction(tx_uri)
+			#self.lconn.rollbackTransaction(self.tx_uri)
 			raise
 
 		# Commit transaction
-		self.lconn.commitTransaction(tx_uri)
+		self.lconn.commitTransaction(self.tx_uri)
 
 		cherrypy.response.status = 201
-		cherrypy.response.headers['Location'] = res_uri
+		cherrypy.response.headers['Location'] = self.uri
 
 		return {"message": "Asset created.", "data": {"location": res_uri}}
 
@@ -319,11 +329,10 @@ class Asset(Resource):
 	#  @return (dict) Message with node information.
 	#
 	#  @TODO Replacing property set is not supported yet, and might not be needed anyway.
-	def PUT(self, uid, properties={}, **dstreams):
+	def PUT(self, uid=None, uri=None, properties={}, **dstreams):
 
 		self._setConnection()
-
-		res_uri = lake_rest_api['base_url'] + self.path + uid
+		self._set_uri(uri, uid)
 
 		dsnames = sorted(dstreams.keys())
 		for dsname in dsnames:
@@ -335,7 +344,7 @@ class Asset(Resource):
 			#ds.seek(0)
 			with ds.read() as src_data:
 				content_uri = self.lconn.createOrUpdateDStream(
-					res_uri + '/aic:ds_' + dsname,
+					self.uri + '/aic:ds_' + dsname,
 					ds=src_data,
 					dsname = uid + '_' + dsname + self._guessFileExt(src_mimetype),
 					mimetype = src_mimetype
@@ -348,14 +357,14 @@ class Asset(Resource):
 					cherrypy.log('DS: '+str(ds))
 					master = self._generateMasterFile(src_data, uid + '_master.jpg')
 					content_uri = self.lconn.createOrUpdateDStream(
-						res_uri + '/aic:ds_master',
+						self.uri + '/aic:ds_master',
 						ds=master.read(),
 						dsname = uid + '_master' + self._guessFileExt(self.master_mimetype),
 						mimetype = self.master_mimetype
 					)
 				src_data = None # Flush datastream
 
-		return {"message": "Resource updated.", "data": {"location": res_uri}}
+		return {"message": "Resource updated.", "data": {"location": self.uri}} # @TODO Actually verify the URI from response headers.
 
 
 	## PATCH method.
@@ -363,9 +372,9 @@ class Asset(Resource):
 	#  Adds or removes properties and mixins in an Asset.
 	#
 	#  @param uid				(string) Asset UID.
-	#  @param insert_props	(dict) Properties to be inserted. See LakeConnector#createOrUpdateDStream
-	#  @param delete_props	(dict) Properties to be deleted. See LakeConnector#createOrUpdateDStream
-	def PATCH(self, uri=None, uid=None, insert_props='{}', delete_props='{}'):
+	#  @param insert_props	(dict) Properties to be inserted.
+	#  @param delete_props	(dict) Properties to be deleted.
+	def PATCH(self, uid=None, uri=None, insert_props='{}', delete_props='{}'):
 
 		self._setConnection()
 		self._set_uri(uri, uid)
@@ -383,18 +392,20 @@ class Asset(Resource):
 		#cherrypy.log('Delete props:' + str(delete_props))
 
 		# Open Fedora transaction
-		tx_uri = self.lconn.openTransaction()
+		self.tx_uri = self.lconn.openTransaction()
 
 		# Collect properties
 		try:
-			tuples = self._build_prop_tuples(insert_props, delete_props)
-					
+			tuples = self._build_prop_tuples(
+				insert_props=insert_props,
+				delete_props=delete_props
+			)
 			self._update_node(tuples)
 		except:
-			self.lconn.rollbackTransaction(tx_uri)
+			self.lconn.rollbackTransaction(self.tx_uri)
 			raise
 
-		self.lconn.commitTransaction(tx_uri)
+		self.lconn.commitTransaction(self.tx_uri)
 
 		cherrypy.response.status = 204
 		cherrypy.response.headers['Location'] = self.uri # @TODO Actually verify the URI from response headers.
@@ -414,7 +425,7 @@ class Asset(Resource):
 		return uid
 
 
-	def _set_uri(uri=None, uid=None, legacy_uid=None):
+	def _set_uri(self, uri=None, uid=None, legacy_uid=None):
 		'''Validates the existence of a node from provided URI, UID or legacy UID
 		and set #uri to a value according to the first valid one found.'''
 
@@ -429,8 +440,7 @@ class Asset(Resource):
 				if uid \
 				else ns_collection['aic'] + 'legacyUid'
 		check_uid = uid if uid else legacy_uid
-
-		check_uri = self.tsconn.get_node_uri_by_prop(check_prop, check_uid):
+		check_uri = self.tsconn.get_node_uri_by_prop(check_prop, check_uid)
 		
 		if check_uri:
 			self.uri = check_uri
@@ -459,16 +469,19 @@ class Asset(Resource):
 			return ds
 
 
-	def _build_property_tuples(self, insert_props={}, delete_props={}):
+	def _build_prop_tuples(
+			self, insert_props={}, delete_props={}, init_insert_tuples=[]
+			):
 		''' Build delete, insert and where tuples suitable for #LakeConnector:updateNodeProperties.
 		from a list of insert and delete properties.
 		Also builds a list of nodes that need to be deleted and/or inserted to satisfy references.
 		'''
 
-		insert_tuples, delete_tuples, where_tuples = ([],[],[])
+		insert_tuples = init_insert_tuples
+		delete_tuples, where_tuples = ([],[])
 		insert_nodes, delete_nodes = ({},{})
 
-		for req_name, lake_name in zip(self.prop_req_names, self.prop_lake_names):
+		for req_name, lake_name in self.props:
 
 			# Delete tuples + nodes
 			if req_name in delete_props:
@@ -489,17 +502,29 @@ class Asset(Resource):
 			# Insert tuples + nodes
 			if req_name in insert_props:
 				for value in insert_props[req_name]:
-					if req_name == 'tag':
+					# Check if property is a relationship
+					if req_name in self.reqprops_to_rels:
+						rel_type = self.reqprops_to_rels[req_name]
+						ref_uri = '{}/resources/holders/{}/{}-{}'.format(self.tx_uri, rel_type['pfx'], rel_type['pfx'], value)
+						#@TODO Implement after collections-shared DB is federated
+						#if not self.lconn.assert_node_exists(ref_uri):
+						#	raise cherrypy.HTTPError(
+						#		'409 Conflict',
+						#		'Referenced node {} does not exist. Cannot create relationship.'.format(ref_uri)
+						#	)
+						value = ref_uri
+					elif req_name == 'tag':
 						insert_nodes['tags'] = insert_props['tag']
 						#value = lake_rest_api['tags_base_url'] + value
 						continue
 					elif req_name == 'comment':
 						insert_nodes['comments'] = insert_props['comment']
 						continue
+					cherrypy.log('Value for {}: {}'.format(req_name, value))
 					insert_tuples.append((lake_name[0], self._rdfObject(value, lake_name[1])))
 
 		return {
-			'nodes' : (delete_nodes, insert_nodes)
+			'nodes' : (delete_nodes, insert_nodes),
 			'tuples' : (delete_tuples, insert_tuples, where_tuples),
 		}
 
@@ -515,7 +540,7 @@ class Asset(Resource):
 				self.lconn.delete_node(uri)
 
 		for node_type in insert_nodes.keys():
-			if node_type = 'comment':
+			if node_type == 'comment':
 				for comment in insert_nodes[node_type]:
 					comment_uri = self.lconn.createOrUpdateNode(
 						self.uri + '/aic:annotations/' + uuid.uuid4(),
@@ -527,7 +552,7 @@ class Asset(Resource):
 					
 
 		self.lconn.updateNodeProperties(
-			url,
+			self.uri,
 			delete_props=delete_tuples,
 			insert_props=insert_tuples,
 			where_props=where_tuples
@@ -538,27 +563,28 @@ class Asset(Resource):
 			self._insert_comments(url, insert_props['comment'])
 
 
-	def _add_mock_node_rel(self, base_uri, rel_type, rel_value):
-		''' Add a relationship with a federated CITI entity.
-		If the node does not exist yet, create a mock one.
-		ONLY FOR TESTING!
-		'''
 
-		cherrypy.log('Relationship type: {}'.format(rel_type))
-		cherrypy.log('value: {}'.format(rel_value))
-		ref_uri = '{}/resources/holders/{}/{}-{}'.format(base_uri, rel_type['pfx'], rel_type['pfx'], rel_value)
-
-		if not self.lconn.assert_node_exists(ref_uri):
-			cherrypy.log('Creating ref node.')
-			ref_uri_res = self.lconn.createOrUpdateNode(ref_uri)
-			self.lconn.updateNodeProperties(ref_uri_res, insert_props=[
-				(ns_collection['rdf'].type, URIRef(rel_type['type'])),
-				(ns_collection['aic'].uid, Literal(rel_value))
-			])
-			return ref_uri_res
-		else:
-			cherrypy.log('Ref node exists.')
-			return ref_uri
+#	def _add_mock_node_rel(self, base_uri, rel_type, rel_value):
+#		''' Add a relationship with a federated CITI entity.
+#		If the node does not exist yet, create a mock one.
+#		ONLY FOR TESTING!
+#		'''
+#
+#		cherrypy.log('Relationship type: {}'.format(rel_type))
+#		cherrypy.log('value: {}'.format(rel_value))
+#		ref_uri = '{}/resources/holders/{}/{}-{}'.format(base_uri, rel_type['pfx'], rel_type['pfx'], rel_value)
+#
+#		if not self.lconn.assert_node_exists(ref_uri):
+#			cherrypy.log('Creating ref node.')
+#			ref_uri_res = self.lconn.createOrUpdateNode(ref_uri)
+#			self.lconn.updateNodeProperties(ref_uri_res, insert_props=[
+#				(ns_collection['rdf'].type, URIRef(rel_type['type'])),
+#				(ns_collection['aic'].uid, Literal(rel_value))
+#			])
+#			return ref_uri_res
+#		else:
+#			cherrypy.log('Ref node exists.')
+#			return ref_uri
 
 	
 	## Adds one or more comments.

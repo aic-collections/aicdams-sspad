@@ -12,7 +12,7 @@ from sspad.modules import resource, staticImage
 class Webapp():
 	exposed = True
 
-	SI = staticImage.StaticImage()
+	si = staticImage.StaticImage()
 	#@TODO Add other resource prefixes.
 
 	def GET(self):
