@@ -22,9 +22,11 @@ class DatagrinderConnector:
 	# Sets authorization parameters based on incoming auth headers.
 	#
 	#  @param string auth Authorization string as passed by incoming headers.
-	def __init__(self, auth):
-		self.auth = auth
-		self.headers = {'Authorization': self.auth}
+	def __init__(self):
+		auth_str = cherrypy.request.headers['Authorization']\
+			if 'Authorization' in cherrypy.request.headers\
+			else None
+		self.headers = {'Authorization': auth_str}
 
 
 	## Resizes an image downloaded from a URL reference.

@@ -27,9 +27,11 @@ class TstoreConnector:
 	# Sets authorization parameters based on incoming auth headers.
 	#
 	# @param auth (string) Authorization string as passed by incoming headers.
-	def __init__(self, auth):
-		self.headers = {'Authorization': auth}
-		#cherrypy.log('Headers:', self.headers)
+	def __init__(self):
+		auth_str = cherrypy.request.headers['Authorization']\
+			if 'Authorization' in cherrypy.request.headers\
+			else None
+		self.headers = {'Authorization': auth_str}
 
 
 	def query(self, q):
