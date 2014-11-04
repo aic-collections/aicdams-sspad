@@ -51,9 +51,9 @@ class StaticImage(Asset):
 
 	## Checks that the input file is a valid image.
 	#
-	#  @sa #Resource._validateDStream
+	#  @sa #Resource._validate_datastream
 	#  @TODO more rules. So far only 'mimetype' is supported.
-	def _validateDStream(self, ds, dsname='', rules={}):
+	def _validate_datastream(self, ds, dsname='', rules={}):
 
 		ds.seek(0)
 		cherrypy.log('Validating ds: ' + dsname + ' of type: ' + str(ds))

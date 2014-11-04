@@ -54,17 +54,18 @@ class Node(metaclass=ABCMeta):
 		return zip(self.prop_req_names, self.prop_lake_names)
 
 
+	def __init__(self):
+		self._setConnection()
+
+
 	## Sets up connections to external services.
 	def _setConnection(self):
 		'''Set connectors.'''
 
-		print('Setting up connections.')
-		self.auth_str = cherrypy.request.headers['Authorization']\
-			if 'Authorization' in cherrypy.request.headers\
-			else None
-		self.lconn = LakeConnector(self.auth_str)
-		self.dgconn = DatagrinderConnector(self.auth_str)
-		self.tsconn = TstoreConnector(self.auth_str)
+		cherrypy.log('Setting connectors...')
+		self.lconn = LakeConnector()
+		self.dgconn = DatagrinderConnector()
+		self.tsconn = TstoreConnector()
 
 
 	## Creates a node within a transaction in LAKE.
@@ -76,8 +77,8 @@ class Node(metaclass=ABCMeta):
 	#  @param tx_uri	(string) URI of the transaction.
 	#
 	#  @return tuple Two resource URIs: one in the transaction and one outside of it.
-	def createNodeInTx(self, uid, tx_uri):
-		node_tx_uri = self.lconn.createOrUpdateNode('{}/{}{}'.format(tx_uri,self.path,uid))
+	def create_node_in_tx(self, uid, tx_uri):
+		node_tx_uri = self.lconn.createOrUpdateNode(parent='{}/{}'.format(tx_uri,self.path))
 
 		return (node_tx_uri, self.tx_uri_to_notx_uri(tx_uri))
 
@@ -93,7 +94,7 @@ class Node(metaclass=ABCMeta):
 	#  @param mimetype	(string) MIME type, such as 'image/jpeg'
 	#
 	#  @return string Extetnsion guessed (including leading period)
-	def _guessFileExt(self, mimetype):
+	def _guess_file_ext(self, mimetype):
 		ext = mimetypes.guess_extension(mimetype) or '.bin'
 		cherrypy.log.error('Guessing MIME type for {}: {}'.format(mimetype, ext))
 		return ext
@@ -103,7 +104,7 @@ class Node(metaclass=ABCMeta):
 	#
 	#  Override this method for each Node subclass.
 	@abstractmethod
-	def _validateDStream(self, ds, dsname='', rules={}):
+	def _validate_datastream(self, ds, dsname='', rules={}):
 		pass
 
 
@@ -116,7 +117,7 @@ class Node(metaclass=ABCMeta):
 	#  @oaram type		(string) One of 'literal', 'uri', 'variable'.
 	#
 	#  @return (rdflib.URIRef | rdflib.Literal | rdflib.Variable) rdflib object.
-	def _rdfObject(self, value, type):
+	def _build_rdf_object(self, value, type):
 			cherrypy.log('Converting value to RDF object: {}'.format(value))
 			if type == 'literal':
 					return Literal(value)

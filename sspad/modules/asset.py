@@ -111,6 +111,9 @@ class Asset(Resource):
 		return 'resources/assets/' + pfx
 
 
+
+	## HTTP-EXPOSED METHODS ##
+
 	## GET method.
 	#
 	#  Lists all Assets or shows properties for an asset with given uid.
@@ -120,7 +123,7 @@ class Asset(Resource):
 	#  @TODO stub
 	def GET(self, uid=None, legacy_uid=None):
 
-		self._setConnection()
+		#self._setConnection()
 
 		if uid:
 			return {'message': '*stub* This is Asset #{}.'.format(uid)}
@@ -141,7 +144,7 @@ class Asset(Resource):
 	#  Create a new Asset node with automatic UID by providing data and node properties.
 	#
 	#  @param mid			(string) Mid-prefix.
-	#  @param properties	(dict) Properties to be associated with new node.
+	#  @param props	(dict) Properties to be associated with new node.
 	#  @param **dstreams	(BytesIO) Arbitrary datastream(s).
 	#  Name of the parameter is the datastream name.
 	#  If the datastream is to be ingested directly into LAKE, the variable value is the actual data.
@@ -150,223 +153,45 @@ class Asset(Resource):
 	#  Only the 'source' datastream is mandatory (or 'ref_source' if it is a reference).
 	#
 	#  @return (dict) Message with new node information.
-	def POST(self, mid, properties='{}', overwrite=False, **dstreams):
+	def POST(self, mid, props='{}', **dstreams):
 		cherrypy.log('\n')
 		cherrypy.log('************************')
 		cherrypy.log('Begin ingestion process.')
 		cherrypy.log('************************')
 		cherrypy.log('')
-		cherrypy.log('Properties: {}'.format(properties))
 
-		self._setConnection()
+		#self._setConnection()
 
-		# If neither source nor ref_source is present, throw error
-		if 'source' not in dstreams.keys() and 'ref_source' not in dstreams.keys():
-			raise cherrypy.HTTPError('400 Bad Request', 'Required source datastream missing.')
-
-		props = json.loads(properties)
-		for p in props:
-			# Wrap string props in one-element lists
-			if not props[p].__class__.__name__ == 'list':
-				props[p] = [props[p]]
-
-		# Before anything else, check that if a legacy_uid parameter is
-		# provied, no other Asset exists with that legacy UID. In the case one exists, 
-		# the function shall return a '409 Conflict'.
-		# The function assumes that multiple legacy UIDs can be assigned.
-		if overwrite == False and 'legacy_uid' in props:
-			for uid in props['legacy_uid']:
-				if self.tsconn.assert_node_exists_by_prop(ns_collection['aic'] + 'uid', uid):
-					raise cherrypy.HTTPError(
-						'409 Conflict',
-						'An asset with the same legacy UID already exists. Not creating a new one.'
-					)
-
-		# Create a new UID
-		uid = self.mintUid(mid)
-
-		if 'master' not in dstreams.keys() and 'ref_master' not in dstreams.keys():
-			# Generate master if not present
-			cherrypy.log('Master file not provided.')
-			if 'ref_source' in dstreams.keys():
-				cherrypy.log('Requesting {}...'.format(dstreams['ref_source']))
-				req = requests.get(
-					dstreams['ref_source'],
-					headers={'Authorization' : self.auth_str}
-				)
-				req.raise_for_status()
-				dstreams['master'] = self._generateMasterFile(req.content, uid + '_master.jpg')
-			else:
-				dstreams['master'] = self._generateMasterFile(
-					self._getIOStreamFromReq(dstreams['source']),
-					uid + '_master.jpg'
-				)
-		else:
-			cherrypy.log('Master file provided.')
-
-		# First validate all datastreams
-		dsmeta = {}
-		for dsname in dstreams.keys():
-			ds = self._getIOStreamFromReq(dstreams[dsname])
-
-			cherrypy.log('Validation round (' + dsname + '): class name: ' + ds.__class__.__name__)
-
-			if dsname[:4] == 'ref_':
-				cherrypy.log('Skipping validation for reference ds.')
-			else:
-				try:
-					dsmeta[dsname] = self._validateDStream(ds, dsname)
-					cherrypy.log('Validation for ' + dsname + ': ' + str(dsmeta[dsname]))
-				except Exception as e:
-					raise cherrypy.HTTPError(
-						'415 Unsupported Media Type', 'Validation for datastream {} failed with exception: {}.'\
-						.format(dsname, e)
-					)
-
-		# Open Fedora transaction
-		self.tx_uri = self.lconn.openTransaction()
-		#cherrypy.log('Created TX: {}'.format(self.tx_uri))
-
-		try:
-			# Create Asset node in tx
-			self.uri_in_tx, self.uri = self.createNodeInTx(uid, self.tx_uri)
-
-			# Set node properties
-			init_tuples = self.base_prop_tuples + [
-				(ns_collection['dc'].title, Literal(uid)),
-				(ns_collection['aic'].uid, Literal(uid)),
-			]
-
-			cherrypy.log('Properties: {}'.format(properties))
-			tuples = self._build_prop_tuples(insert_props=properties, init_insert_tuples=init_tuples)
-			self._update_node(tuples)
-
-			'''
-			#cherrypy.log('Props available: {}'.format(list(prop_tuples)))
-			for req_name, lake_name in self.props:
-				#cherrypy.log('Req. name: {}; All prop names in request: {}'.format(req_name, props.keys()))
-				if req_name in props.keys():
-					#cherrypy.log('Req. name being parsed: {}'.format(req_name))
-					
-					# Build relationships
-					rel_type = self.reqprops_to_rels[req_name] if req_name in self.reqprops_to_rels else {}
-
-					for value in props[req_name]:
-						if rel_type:
-							value = self._add_mock_node_rel(self.tx_uri, rel_type, value)
-							cherrypy.log('Ref URI in tx: {}'.format(value))
-						prop_tuples.append((lake_name[0], self._rdfObject(value, lake_name[1])))
-
-			#cherrypy.log('Props:' + str(prop_tuples))
-
-			self.lconn.updateNodeProperties(self.uri_in_tx, insert_props=prop_tuples)
-			'''
-
-			# Loop over all datastreams and ingest them
-			for dsname in dstreams.keys():
-
-				if dsname[:4] == 'ref_':
-					# Create a reference node.
-					in_dsname = dsname [4:]
-					cherrypy.log('Creating a reference ds with name: aic:ds_{}'.format(in_dsname))
-					ds_content_uri = self.lconn.createOrUpdateRefDStream(
-						self.uri_in_tx + '/aic:ds_' + in_dsname,
-						dstreams[dsname]
-					)
-				else:
-					in_dsname = dsname
-					cherrypy.log('Ingestion round (' + in_dsname + '): class name: ' + ds.__class__.__name__)
-					# Create an actual datastream.
-					ds = self._getIOStreamFromReq(dstreams[dsname])
-					ds.seek(0)
-					ds_content_uri = self.lconn.createOrUpdateDStream(
-						self.uri_in_tx + '/aic:ds_' + dsname,
-						ds = ds,
-						dsname = uid + '_' + in_dsname + \
-								self._guessFileExt(dsmeta[dsname]['mimetype']),
-						mimetype = dsmeta[dsname]['mimetype']
-					)
-
-				ds_meta_uri = ds_content_uri + '/fcr:metadata'
-
-				# Set source datastream properties
-				prop_tuples = [
-					(ns_collection['dc'].title, Literal(uid + '_' + in_dsname)),
-				]
-				if dsname == 'master':
-					prop_tuples.append(
-						(ns_collection['rdf'].type, ns_collection['aicmix'].MasterDStream)
-					)
-				else:
-					prop_tuples.append(
-						(ns_collection['rdf'].type, ns_collection['aicmix'].Datastream)
-					)
-
-				self.lconn.updateNodeProperties(ds_meta_uri, insert_props=prop_tuples)
-		except:
-			# Roll back transaction if something goes wrong
-			#self.lconn.rollbackTransaction(self.tx_uri)
-			raise
-
-		# Commit transaction
-		self.lconn.commitTransaction(self.tx_uri)
-
-		cherrypy.response.status = 201
-		cherrypy.response.headers['Location'] = self.uri
-
-		return {"message": "Asset created.", "data": {"location": res_uri}}
+		return self.create(mid, json.loads(props), **dstreams)
 
 
 	## PUT method.
 	#
 	#  Adds or replaces datastreams or replaces the whole property set of an Asset.
 	#
-	#  @param uid		(string) Asset UID.
-	#  @param properties	(dict) Properties to be associated with new node.
+	#  @param uid		(string) Asset UID. Specify this or 'uri' only if the node is known to exist,
+	#	  otherwise a 404 Not Found will be thrown.
+	#  @param uri		(string) Asset URI. If this is not provided, node will be searched by UID.
+	#  @param props	(dict) Properties to be associated with new or updated node. 
+	#	  The 'legacy_uid' property is searched for conflicts or to find nodes when neither 'uri' or 'uid' are known.
 	#  @param **dstreams	(BytesIO) Arbitrary datastream(s). Name of the parameter is the datastream name.
 	#  Only the 'source' datastream is mandatory.
 	#
 	#  @return (dict) Message with node information.
 	#
 	#  @TODO Replacing property set is not supported yet, and might not be needed anyway.
-	def PUT(self, uid=None, uri=None, properties={}, **dstreams):
+	def PUT(self, uid=None, uri=None, props='{}', **dstreams):
 
-		self._setConnection()
-		self._set_uri(uri, uid)
+		legacy_uid = props['legacy_uid'] if 'legacy_uid' in props else None
+		self._set_uri(uri, uid, legacy_uid)
 
-		dsnames = sorted(dstreams.keys())
-		for dsname in dsnames:
-			ds = _getIOStreamFromReq(dstreams[dsname])
-			src_format, src_size, src_mimetype = self._validateDStream(ds)
+		if not self.uri:
+			raise cherrypy.HTTPError('404 Not Found', 'Node was not found for updating.')
 
-			#cherrypy.log('UID: ' + uid + '; dsname: ' + dsname + ' mimetype: ' + src_mimetype)
-			#cherrypy.log('mimetype guess: ' + self._guessFileExt(src_mimetype))
-			#ds.seek(0)
-			with ds.read() as src_data:
-				content_uri = self.lconn.createOrUpdateDStream(
-					self.uri + '/aic:ds_' + dsname,
-					ds=src_data,
-					dsname = uid + '_' + dsname + self._guessFileExt(src_mimetype),
-					mimetype = src_mimetype
-				)
+		self._check_uid_dupes(uid, legacy_uid)
+		return self.update(uid, None, json.loads(props), **dstreams)
 
-				if dsname == 'source' and 'master' not in dsnames:
-					# Recreate master file automatically if source is provided
-					# without master
-					cherrypy.log('No master file provided with source, re-creating master.')
-					cherrypy.log('DS: '+str(ds))
-					master = self._generateMasterFile(src_data, uid + '_master.jpg')
-					content_uri = self.lconn.createOrUpdateDStream(
-						self.uri + '/aic:ds_master',
-						ds=master.read(),
-						dsname = uid + '_master' + self._guessFileExt(self.master_mimetype),
-						mimetype = self.master_mimetype
-					)
-				src_data = None # Flush datastream
-
-		return {"message": "Resource updated.", "data": {"location": self.uri}} # @TODO Actually verify the URI from response headers.
-
-
+	
 	## PATCH method.
 	#
 	#  Adds or removes properties and mixins in an Asset.
@@ -376,7 +201,7 @@ class Asset(Resource):
 	#  @param delete_props	(dict) Properties to be deleted.
 	def PATCH(self, uid=None, uri=None, insert_props='{}', delete_props='{}'):
 
-		self._setConnection()
+		#self._setConnection()
 		self._set_uri(uri, uid)
 
 		try:
@@ -393,6 +218,7 @@ class Asset(Resource):
 
 		# Open Fedora transaction
 		self.tx_uri = self.lconn.openTransaction()
+		self.uri_in_tx = self.uri.replace(lake_rest_api['base_url'], tx_uri + '/')
 
 		# Collect properties
 		try:
@@ -400,7 +226,7 @@ class Asset(Resource):
 				insert_props=insert_props,
 				delete_props=delete_props
 			)
-			self._update_node(tuples)
+			self._update_node(self.uri_in_tx, tuples)
 		except:
 			self.lconn.rollbackTransaction(self.tx_uri)
 			raise
@@ -413,13 +239,142 @@ class Asset(Resource):
 		return {"message": "Asset updated."}
 
 
+
+	## NON-EXPOSED METHODS ##
+
+	def create(self, mid, props={}, **dstreams):
+		'''Create an asset. @sa POST'''
+
+		# If neither source nor ref_source is present, throw error
+		if 'source' not in dstreams.keys() and 'ref_source' not in dstreams.keys():
+			raise cherrypy.HTTPError('400 Bad Request', 'Required source datastream missing.')
+
+		# Wrap string props in one-element lists
+		for p in props:
+			if not props[p].__class__.__name__ == 'list':
+				props[p] = [props[p]]
+
+		# Before anything else, check that if a legacy_uid parameter is
+		# provied, no other Asset exists with that legacy UID. In the case one exists, 
+		# the function shall return a '409 Conflict'.
+		# The function assumes that multiple legacy UIDs can be assigned.
+		if 'legacy_uid' in props:
+			for uid in props['legacy_uid']:
+				if self.tsconn.assert_node_exists_by_prop(ns_collection['aic'] + 'uid', uid):
+					raise cherrypy.HTTPError(
+						'409 Conflict',
+						'An asset with the same legacy UID already exists. Cannot create a new one.'
+					)
+
+		# Create a new UID
+		uid = self.mint_uid(mid)
+
+		# Generate master if not existing
+		dstreams = self._generate_master(dstreams)
+
+		# First validate all datastreams
+		dsmeta = self._validate_dstreams(dstreams)
+
+		# Open Fedora transaction
+		self.tx_uri = self.lconn.openTransaction()
+		#cherrypy.log('Created TX: {}'.format(self.tx_uri))
+
+		try:
+			# Create Asset node in tx
+			self.uri_in_tx, self.uri = self.create_node_in_tx(uid, self.tx_uri)
+
+			# Set node props
+			init_tuples = self.base_prop_tuples + [
+				(ns_collection['dc'].title, Literal(uid)),
+				(ns_collection['aic'].uid, Literal(uid)),
+			]
+
+			cherrypy.log('Properties: {}'.format(props))
+			tuples = self._build_prop_tuples(insert_props=props, init_insert_tuples=init_tuples)
+			self._update_node(self.uri_in_tx, tuples)
+
+			'''
+			#cherrypy.log('Props available: {}'.format(list(prop_tuples)))
+			for req_name, lake_name in self.props:
+				#cherrypy.log('Req. name: {}; All prop names in request: {}'.format(req_name, props.keys()))
+				if req_name in props.keys():
+					#cherrypy.log('Req. name being parsed: {}'.format(req_name))
+					
+					# Build relationships
+					rel_type = self.reqprops_to_rels[req_name] if req_name in self.reqprops_to_rels else {}
+
+					for value in props[req_name]:
+						if rel_type:
+							value = self._add_mock_node_rel(self.tx_uri, rel_type, value)
+							cherrypy.log('Ref URI in tx: {}'.format(value))
+						prop_tuples.append((lake_name[0], self._build_rdf_object(value, lake_name[1])))
+
+			#cherrypy.log('Props:' + str(prop_tuples))
+
+			self.lconn.updateNodeProperties(self.uri_in_tx, insert_props=prop_tuples)
+			'''
+
+			# Loop over all datastreams and ingest them
+			self._ingest_dstreams(dstreams)
+
+		except:
+			# Roll back transaction if something goes wrong
+			self.lconn.rollbackTransaction(self.tx_uri)
+			raise
+
+		# Commit transaction
+		self.lconn.commitTransaction(self.tx_uri)
+
+		cherrypy.response.status = 201
+		cherrypy.response.headers['Location'] = self.uri
+
+		return {"message": "Asset created.", "data": {"location": res_uri}}
+
+
+	def update(self, uid=None, uri=None, props='{}', **dstreams):
+		'''Updates an asset. @sa PUT'''
+
+		#self._setConnection()
+		dsnames = sorted(dstreams.keys())
+		for dsname in dsnames:
+			ds = _get_iostream_from_req(dstreams[dsname])
+			src_format, src_size, src_mimetype = self._validate_datastream(ds)
+
+			#cherrypy.log('UID: ' + uid + '; dsname: ' + dsname + ' mimetype: ' + src_mimetype)
+			#cherrypy.log('mimetype guess: ' + self._guess_file_ext(src_mimetype))
+			#ds.seek(0)
+			with ds.read() as src_data:
+				content_uri = self.lconn.createOrUpdateDStream(
+					self.uri + '/aic:ds_' + dsname,
+					ds=src_data,
+					dsname = uid + '_' + dsname + self._guess_file_ext(src_mimetype),
+					mimetype = src_mimetype
+				)
+
+				if dsname == 'source' and 'master' not in dsnames:
+					# Recreate master file automatically if source is provided
+					# without master
+					cherrypy.log('No master file provided with source, re-creating master.')
+					cherrypy.log('DS: '+str(ds))
+					master = self._generateMasterFile(src_data, uid + '_master.jpg')
+					content_uri = self.lconn.createOrUpdateDStream(
+						self.uri + '/aic:ds_master',
+						ds=master.read(),
+						dsname = uid + '_master' + self._guess_file_ext(self.master_mimetype),
+						mimetype = self.master_mimetype
+					)
+				src_data = None # Flush datastream
+
+		return {"message": "Resource updated.", "data": {"location": self.uri}} # @TODO Actually verify the URI from response headers.
+
+
 	## Calls an eternal service to generate and returns a UID.
 	#
 	#  @param mid		(string) Second prefix needed for certain types.
 	#  @return string Generated UID.
-	def mintUid(self, mid=None):
+	def mint_uid(self, mid=None):
 		try:
-			uid = UidminterConnector().mintUid(self.pfx, mid)
+			uid = UidminterConnector().mint_uid(self.pfx, mid)
 		except:
 			raise RuntimeError('Could not generate UID.')
 		return uid
@@ -427,15 +382,21 @@ class Asset(Resource):
 
 	def _set_uri(self, uri=None, uid=None, legacy_uid=None):
 		'''Validates the existence of a node from provided URI, UID or legacy UID
-		and set #uri to a value according to the first valid one found.'''
+		and set #uri to a value according to the first valid one found.
+		'''
 
 		if not uri and not uid and not legacy_uid:
 			raise ValueError('No valid identifier provided.')
 
-		if uri and self.lconn.assert_node_exists(uri):
-			self.uri = uri
-			return True
+		# First check the URI.
+		if uri:
+			if self.lconn.assert_node_exists(uri):
+				self.uri = uri
+				return True
+			else:
+				raise cherrypy.HTTPError('404 Not Found', 'No node with the provided URI: {}'.format(uri))
 
+		# If no URI is provided, check UID and legacy UID, in that order.
 		check_prop = ns_collection['aic'] + 'uid' \
 				if uid \
 				else ns_collection['aic'] + 'legacyUid'
@@ -449,13 +410,79 @@ class Asset(Resource):
 			return False
 
 
+	def _check_uid_dupes(self, uid=None, legacy_uid=None):
+		'''Checks if a node with a given UID or a given legacy UID exists.'''
+
+		if not uid and not legacy_uid:
+			raise ValueError('Neither uid or legacy_uid were provided. Cannot check for duplicates.')
+
+		if uid:
+			uri_uid = self.tsconn.find_node_uri_by_prop(ns_collection['aic'] + 'uid', uid)
+			if not self.uri == uri_uid:
+                cherrypy.response.headers['link'] = uri_uid
+				raise cherrypy.HTTPError('409 Conflict', 'A node with UID {} exsists already.'.format(uri))
+		if legacy_uid:
+			uri_legacy_uid = self.tsconn.find_node_uri_by_prop(ns_collection['aic'] + 'legacyUid', legacy_uid)
+			if not self.uri == uri_legacy_uid:
+                cherrypy.response.headers['link'] = legacy_uri_uid
+				raise cherrypy.HTTPError('409 Conflict', 'A node with legacy UID {} exsists already.'.format(legacy_uri))
+
+		return True
+
+
+	def _generate_master(self, dstreams):
+		'''Generates master datastream from source if missing and returns the complete list of datastreams.'''
+		if 'master' not in dstreams.keys() and 'ref_master' not in dstreams.keys():
+			# Generate master if not present
+			cherrypy.log('Master file not provided.')
+			if 'ref_source' in dstreams.keys():
+				cherrypy.log('Requesting {}...'.format(dstreams['ref_source']))
+				req = requests.get(
+					dstreams['ref_source'],
+					headers={'Authorization' : self.auth_str}
+				)
+				req.raise_for_status()
+				dstreams['master'] = self._generateMasterFile(req.content, uid + '_master.jpg')
+			else:
+				dstreams['master'] = self._generateMasterFile(
+					self._get_iostream_from_req(dstreams['source']),
+					uid + '_master.jpg'
+				)
+		else:
+			cherrypy.log('Master file provided.')
+
+		return dstreams
+
+
+	def _validate_dtreams(self, dstreams):
+		dsmeta = {}
+		for dsname in dstreams.keys():
+			ds = self._get_iostream_from_req(dstreams[dsname])
+
+			cherrypy.log('Validation round (' + dsname + '): class name: ' + ds.__class__.__name__)
+
+			if dsname[:4] == 'ref_':
+				cherrypy.log('Skipping validation for reference ds.')
+			else:
+				try:
+					dsmeta[dsname] = self._validate_datastream(ds, dsname)
+					cherrypy.log('Validation for ' + dsname + ': ' + str(dsmeta[dsname]))
+				except Exception as e:
+					raise cherrypy.HTTPError(
+						'415 Unsupported Media Type', 'Validation for datastream {} failed with exception: {}.'\
+						.format(dsname, e)
+					)
+
+		return dsmeta
+
+
 	## Normalize the behaviour of a datastream object regardless of its source.
 	#
 	#  If ds is a byte stream instead of a Part instance, wrap it in an
 	#  anonymous object as a 'file' property.
 	#
 	#  @param ds The BytesIO or bytes object to be normalized.
-	def _getIOStreamFromReq(self, ds):
+	def _get_iostream_from_req(self, ds):
 		if hasattr(ds, 'file'):
 			cherrypy.log('Normalizer: ds.file exists already and is of class type {}.'.format(
 				ds.file.__class__.__name__
@@ -492,15 +519,17 @@ class Asset(Resource):
 							value = lake_rest_api['tags_base_url'] + value
 						elif req_name == 'comment':
 							delete_nodes['comments'] = delete_props['comment']
-						delete_tuples.append((lake_name[0], self._rdfObject(value, lake_name[1])))
+						delete_tuples.append((lake_name[0], self._build_rdf_object(value, lake_name[1])))
 
 				elif delete_props[req_name] == '':
 					# Delete the whole property
-					delete_tuples.append((lake_name[0], self._rdfObject('?' + req_name, 'variable')))
-					where_tuples.append((lake_name[0], self._rdfObject('?' + req_name, 'variable')))
+					delete_tuples.append((lake_name[0], self._build_rdf_object('?' + req_name, 'variable')))
+					where_tuples.append((lake_name[0], self._build_rdf_object('?' + req_name, 'variable')))
 			
 			# Insert tuples + nodes
 			if req_name in insert_props:
+				cherrypy.log('Adding req. name {} from insert_props {}...'.format(req_name, insert_props))
+				cherrypy.log('Insert props: {}'.format(insert_props.__class__.__name__))
 				for value in insert_props[req_name]:
 					# Check if property is a relationship
 					if req_name in self.reqprops_to_rels:
@@ -521,7 +550,7 @@ class Asset(Resource):
 						insert_nodes['comments'] = insert_props['comment']
 						continue
 					cherrypy.log('Value for {}: {}'.format(req_name, value))
-					insert_tuples.append((lake_name[0], self._rdfObject(value, lake_name[1])))
+					insert_tuples.append((lake_name[0], self._build_rdf_object(value, lake_name[1])))
 
 		return {
 			'nodes' : (delete_nodes, insert_nodes),
@@ -529,7 +558,52 @@ class Asset(Resource):
 		}
 
 
-	def _update_node(self, tuples):
+		def _ingest_dstreams(self, dstreams):
+			'''Loops over datastreams and ingests them within a transaction.'''
+
+			for dsname in dstreams.keys():
+
+				if dsname[:4] == 'ref_':
+					# Create a reference node.
+					in_dsname = dsname [4:]
+					cherrypy.log('Creating a reference ds with name: aic:ds_{}'.format(in_dsname))
+					ds_content_uri = self.lconn.createOrUpdateRefDStream(
+						self.uri_in_tx + '/aic:ds_' + in_dsname,
+						dstreams[dsname]
+					)
+				else:
+					in_dsname = dsname
+					cherrypy.log('Ingestion round (' + in_dsname + '): class name: ' + ds.__class__.__name__)
+					# Create an actual datastream.
+					ds = self._get_iostream_from_req(dstreams[dsname])
+					ds.seek(0)
+					ds_content_uri = self.lconn.createOrUpdateDStream(
+						self.uri_in_tx + '/aic:ds_' + dsname,
+						ds = ds,
+						dsname = uid + '_' + in_dsname + \
+								self._guess_file_ext(dsmeta[dsname]['mimetype']),
+						mimetype = dsmeta[dsname]['mimetype']
+					)
+
+				ds_meta_uri = ds_content_uri + '/fcr:metadata'
+
+				# Set source datastream properties
+				prop_tuples = [
+					(ns_collection['dc'].title, Literal(uid + '_' + in_dsname)),
+				]
+				if dsname == 'master':
+					prop_tuples.append(
+						(ns_collection['rdf'].type, ns_collection['aicmix'].MasterDStream)
+					)
+				else:
+					prop_tuples.append(
+						(ns_collection['rdf'].type, ns_collection['aicmix'].Datastream)
+					)
+
+				self.lconn.updateNodeProperties(ds_meta_uri, insert_props=prop_tuples)
+
+
+	def _update_node(self, uri, tuples):
 		'''Updates a node inserting and deleting related nodes if necessary,'''
 
 		delete_nodes, insert_nodes = tuples['nodes']
@@ -543,7 +617,7 @@ class Asset(Resource):
 			if node_type == 'comment':
 				for comment in insert_nodes[node_type]:
 					comment_uri = self.lconn.createOrUpdateNode(
-						self.uri + '/aic:annotations/' + uuid.uuid4(),
+						uri=uri + '/aic:annotations/' + uuid.uuid4(),
 						props = {
 							'content' : comment['content'],
 							'type' : comment['type'] if 'type' in comment else self.default_comment_type,
@@ -552,7 +626,7 @@ class Asset(Resource):
 					
 
 		self.lconn.updateNodeProperties(
-			self.uri,
+			uri,
 			delete_props=delete_tuples,
 			insert_props=insert_tuples,
 			where_props=where_tuples
@@ -560,33 +634,9 @@ class Asset(Resource):
 
 		# Add comment nodes
 		if 'comment' in insert_props and insert_props['comment']:
-			self._insert_comments(url, insert_props['comment'])
+			self._insert_comments(uri, insert_props['comment'])
 
 
-
-#	def _add_mock_node_rel(self, base_uri, rel_type, rel_value):
-#		''' Add a relationship with a federated CITI entity.
-#		If the node does not exist yet, create a mock one.
-#		ONLY FOR TESTING!
-#		'''
-#
-#		cherrypy.log('Relationship type: {}'.format(rel_type))
-#		cherrypy.log('value: {}'.format(rel_value))
-#		ref_uri = '{}/resources/holders/{}/{}-{}'.format(base_uri, rel_type['pfx'], rel_type['pfx'], rel_value)
-#
-#		if not self.lconn.assert_node_exists(ref_uri):
-#			cherrypy.log('Creating ref node.')
-#			ref_uri_res = self.lconn.createOrUpdateNode(ref_uri)
-#			self.lconn.updateNodeProperties(ref_uri_res, insert_props=[
-#				(ns_collection['rdf'].type, URIRef(rel_type['type'])),
-#				(ns_collection['aic'].uid, Literal(rel_value))
-#			])
-#			return ref_uri_res
-#		else:
-#			cherrypy.log('Ref node exists.')
-#			return ref_uri
-
-	
 	## Adds one or more comments.
 	#
 	#  @param subject (string) URI of asset that annotation is referring to.
@@ -595,7 +645,7 @@ class Asset(Resource):
 	def _insert_comments(self, subject, comments):
 		for comment in comments:
 			comment_uri = self.lconn.createOrUpdateNode(
-				url + '/aic:annotations/' + uuid.uuid4(),
+				uri = url + '/aic:annotations/' + uuid.uuid4(),
 				props = {
 					'content' : comment['content'],
 					'type' : comment['type'] if 'type' in comment else self.default_comment_type,
@@ -605,7 +655,7 @@ class Asset(Resource):
 			self.lconn.updateNodeProperties(
 				subject,
 				insert_tuples = (
-					(self.props['comment'][0], self._rdfObject(comment_uri, 'uri'))
+					(self.props['comment'][0], self._build_rdf_object(comment_uri, 'uri'))
 				)
 			)
 

@@ -70,8 +70,7 @@ class Resource(Node):
 	#
 	#  Sets up several connections and MIME types.
 	def __init__(self):
-		#self._setConnection()
-
+		super().__init__()
 		if not mimetypes.inited:
 			mimetypes.init()
 			for mt, ext, strict in self._add_mimetypes:

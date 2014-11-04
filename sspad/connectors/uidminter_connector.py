@@ -13,7 +13,7 @@ class UidminterConnector:
 	# @param UidminterConnector self Object pointer.
 	# @param pfx (string) 2-letter prefix to use for the UID. Depends on the node type.
 	# @param mid (string) Second prefix for certain node types.
-	def mintUid(self, pfx, mid):
+	def mint_uid(self, pfx, mid):
 		try:
 			session = psycopg2.connect(uidminter_db['conn_string'])
 			cur = session.cursor()

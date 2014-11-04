@@ -55,7 +55,7 @@ class LakeConnector:
 	#
 	#  @param uri	(string) URI of the node to be created or updated.
 	#  @param props	(dict) Dictionary of properties to be associated with the node.
-	def createOrUpdateNode(self, uri, props=None):
+	def createOrUpdateNode(self, uri=None, parent='/', props=None):
 		if props != None:
 			g = Graph(namespace_manager = ns_mgr)
 			for t in props:
@@ -64,16 +64,26 @@ class LakeConnector:
 			body = g.serialize(format='turtle')
 		else:
 			body = ''
-		cherrypy.log('Creating node with RDF properties: {}'.format(body))
 
-		res = requests.put(
-			uri,
-			data = body,
-			headers = dict(chain(self.headers.items(),
-				[('Content-type', 'text/turtle')]
-			))
-		)
-		cherrypy.log('Requesting URL:' + res.url)
+		if uri:
+			cherrypy.log('Creating node by PUT with RDF properties: {}'.format(body))
+			res = requests.put(
+				uri,
+				data = body,
+				headers = dict(chain(self.headers.items(),
+					[('Content-type', 'text/turtle')]
+				))
+			)
+		else:
+			cherrypy.log('Creating node by POST with RDF properties: {}'.format(body))
+			res = requests.post(
+				parent,
+				data = body,
+				headers = dict(chain(self.headers.items(),
+					[('Content-type', 'text/turtle')]
+				))
+			)
+		cherrypy.log('Requesting URL: {}'.format(res.url))
 		cherrypy.log('Create/update node response:' + str(res.status_code))
 		if res.status_code > 399:
 			cherrypy.log('HTTP Error: {}'.format(res.text))
@@ -178,7 +188,7 @@ class LakeConnector:
 			.format(delete_triples, insert_triples, where_triples)
 		cherrypy.log.error('Executing SPARQL update: ' + body)
 
-		cherrypy.log('URL: {}'.format(url))
+		cherrypy.log('URI: {}'.format(uri))
 		res = requests.patch(
 			uri,
 			data = body.encode('utf-8'),
