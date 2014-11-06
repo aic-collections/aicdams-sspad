@@ -32,7 +32,7 @@ class LakeConnector:
 		elif res.status_code < 399:
 			return True
 		else:
-			res.rais_for_status()
+			res.raise_for_status()
 
 
 
