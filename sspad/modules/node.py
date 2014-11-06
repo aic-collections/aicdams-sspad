@@ -54,9 +54,6 @@ class Node(metaclass=ABCMeta):
 		return zip(self.prop_req_names, self.prop_lake_names)
 
 
-	def __init__(self):
-		self._setConnection()
-
 
 	## Sets up connections to external services.
 	def _setConnection(self):

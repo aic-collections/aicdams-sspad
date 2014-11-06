@@ -123,7 +123,7 @@ class Asset(Resource):
 	#  @TODO stub
 	def GET(self, uid=None, legacy_uid=None):
 
-		#self._setConnection()
+		self._setConnection()
 
 		if uid:
 			return {'message': '*stub* This is Asset #{}.'.format(uid)}
@@ -160,7 +160,7 @@ class Asset(Resource):
 		cherrypy.log('************************')
 		cherrypy.log('')
 
-		#self._setConnection()
+		self._setConnection()
 
 		return self.create(mid, json.loads(props), **dstreams)
 
@@ -182,6 +182,8 @@ class Asset(Resource):
 	#  @TODO Replacing property set is not supported yet, and might not be needed anyway.
 	def PUT(self, uid=None, uri=None, props='{}', **dstreams):
 
+		self._setConnection()
+
 		legacy_uid = props['legacy_uid'] if 'legacy_uid' in props else None
 		self._set_uri(uri, uid, legacy_uid)
 
@@ -201,7 +203,7 @@ class Asset(Resource):
 	#  @param delete_props	(dict) Properties to be deleted.
 	def PATCH(self, uid=None, uri=None, insert_props='{}', delete_props='{}'):
 
-		#self._setConnection()
+		self._setConnection()
 		self._set_uri(uri, uid)
 
 		try:
@@ -315,7 +317,7 @@ class Asset(Resource):
 			'''
 
 			# Loop over all datastreams and ingest them
-			self._ingest_dstreams(dstreams)
+			self._ingest_instances(dstreams)
 
 		except:
 			# Roll back transaction if something goes wrong
@@ -374,10 +376,10 @@ class Asset(Resource):
 	#  @return string Generated UID.
 	def mint_uid(self, mid=None):
 		try:
-			uid = UidminterConnector().mint_uid(self.pfx, mid)
+			self.uid = UidminterConnector().mint_uid(self.pfx, mid)
 		except:
 			raise RuntimeError('Could not generate UID.')
-		return uid
+		return self.uid
 
 
 	def _set_uri(self, uri=None, uid=None, legacy_uid=None):
@@ -397,10 +399,14 @@ class Asset(Resource):
 				raise cherrypy.HTTPError('404 Not Found', 'No node with the provided URI: {}'.format(uri))
 
 		# If no URI is provided, check UID and legacy UID, in that order.
-		check_prop = ns_collection['aic'] + 'uid' \
-				if uid \
-				else ns_collection['aic'] + 'legacyUid'
-		check_uid = uid if uid else legacy_uid
+		if uid:
+			check_prop = ns_collection['aic'] + 'uid'
+			check_uid = uid
+			self.uid = uid
+		else:
+			ns_collection['aic'] + 'legacyUid'
+			check_uid = legacy_uid
+
 		check_uri = self.tsconn.get_node_uri_by_prop(check_prop, check_uid)
 		
 		if check_uri:
@@ -419,12 +425,12 @@ class Asset(Resource):
 		if uid:
 			uri_uid = self.tsconn.find_node_uri_by_prop(ns_collection['aic'] + 'uid', uid)
 			if not self.uri == uri_uid:
-                cherrypy.response.headers['link'] = uri_uid
+				cherrypy.response.headers['link'] = uri_uid
 				raise cherrypy.HTTPError('409 Conflict', 'A node with UID {} exsists already.'.format(uri))
 		if legacy_uid:
 			uri_legacy_uid = self.tsconn.find_node_uri_by_prop(ns_collection['aic'] + 'legacyUid', legacy_uid)
 			if not self.uri == uri_legacy_uid:
-                cherrypy.response.headers['link'] = legacy_uri_uid
+				cherrypy.response.headers['link'] = legacy_uri_uid
 				raise cherrypy.HTTPError('409 Conflict', 'A node with legacy UID {} exsists already.'.format(legacy_uri))
 
 		return True
@@ -446,7 +452,7 @@ class Asset(Resource):
 			else:
 				dstreams['master'] = self._generateMasterFile(
 					self._get_iostream_from_req(dstreams['source']),
-					uid + '_master.jpg'
+					self.uid + '_master.jpg'
 				)
 		else:
 			cherrypy.log('Master file provided.')
@@ -454,7 +460,7 @@ class Asset(Resource):
 		return dstreams
 
 
-	def _validate_dtreams(self, dstreams):
+	def _validate_dstreams(self, dstreams):
 		dsmeta = {}
 		for dsname in dstreams.keys():
 			ds = self._get_iostream_from_req(dstreams[dsname])
@@ -534,13 +540,13 @@ class Asset(Resource):
 					# Check if property is a relationship
 					if req_name in self.reqprops_to_rels:
 						rel_type = self.reqprops_to_rels[req_name]
-						ref_uri = '{}/resources/holders/{}/{}-{}'.format(self.tx_uri, rel_type['pfx'], rel_type['pfx'], value)
-						#@TODO Implement after collections-shared DB is federated
+						#ref_uri = '{}/resources/holders/{}/{}-{}'.format(self.tx_uri, rel_type['pfx'], rel_type['pfx'], value)
+						ref_uri = self.tsconn.get_node_uri_by_prop(ns_collection['aicdb'] + 'citi_pkey', value)
 						#if not self.lconn.assert_node_exists(ref_uri):
-						#	raise cherrypy.HTTPError(
-						#		'409 Conflict',
-						#		'Referenced node {} does not exist. Cannot create relationship.'.format(ref_uri)
-						#	)
+							#raise cherrypy.HTTPError(
+							#	'404 Not Found',
+							#	'Referenced CITI resource with CITI Pkey {} does not exist. Cannot create relationship.'.format(value)
+							#)
 						value = ref_uri
 					elif req_name == 'tag':
 						insert_nodes['tags'] = insert_props['tag']
@@ -558,7 +564,7 @@ class Asset(Resource):
 		}
 
 
-		def _ingest_dstreams(self, dstreams):
+		def _ingest_instances(self, dstreams):
 			'''Loops over datastreams and ingests them within a transaction.'''
 
 			for dsname in dstreams.keys():
