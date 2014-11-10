@@ -128,7 +128,7 @@ class Asset(Resource):
 	#  @TODO stub
 	def GET(self, uid=None, legacy_uid=None):
 
-		self._setConnection()
+		self._set_connection()
 
 		if uid:
 			return {'message': '*stub* This is Asset #{}.'.format(uid)}
@@ -165,7 +165,7 @@ class Asset(Resource):
 		cherrypy.log('************************')
 		cherrypy.log('')
 
-		self._setConnection()
+		self._set_connection()
 
 		return self.create(mid, json.loads(props), **dstreams)
 
@@ -187,7 +187,7 @@ class Asset(Resource):
 	#  @TODO Replacing property set is not supported yet, and might not be needed anyway.
 	def PUT(self, uid=None, uri=None, props='{}', **dstreams):
 
-		self._setConnection()
+		self._set_connection()
 
 		legacy_uid = props['legacy_uid'] if 'legacy_uid' in props else None
 		self._set_uri(uri, uid, legacy_uid)
@@ -208,7 +208,7 @@ class Asset(Resource):
 	#  @param delete_props	(dict) Properties to be deleted.
 	def PATCH(self, uid=None, uri=None, insert_props='{}', delete_props='{}'):
 
-		self._setConnection()
+		self._set_connection()
 		self._set_uri(uri, uid)
 
 		try:
@@ -322,7 +322,7 @@ class Asset(Resource):
 	def update(self, uid=None, uri=None, props='{}', **dstreams):
 		'''Updates an asset. @sa PUT'''
 
-		#self._setConnection()
+		#self._set_connection()
 		dsnames = sorted(dstreams.keys())
 		for dsname in dsnames:
 			ds = _get_iostream_from_req(dstreams[dsname])

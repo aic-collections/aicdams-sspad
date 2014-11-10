@@ -18,7 +18,7 @@ class Node(metaclass=ABCMeta):
 	#  This is a URI that reflects the node type set in the LAKE CND.
 	#
 	#  @sa https://github.com/aic-collections/aicdams-lake/tree/master-aic/fcrepo-webapp/src/aic/resources/cnd
-	node_type = ns_collection['fedora'].resource
+	node_type = ns_collection['fedora'].Resource
 
 
 	## Additional MIME types.
@@ -56,7 +56,7 @@ class Node(metaclass=ABCMeta):
 
 
 	## Sets up connections to external services.
-	def _setConnection(self):
+	def _set_connection(self):
 		'''Set connectors.'''
 
 		#cherrypy.log('Setting connectors...')
