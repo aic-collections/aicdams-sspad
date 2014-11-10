@@ -51,7 +51,7 @@ class Node(metaclass=ABCMeta):
 
 	@property
 	def props(self):
-		return zip(self.prop_req_names, self.prop_lake_names)
+		return dict(zip(self.prop_req_names, self.prop_lake_names))
 
 
 
@@ -59,7 +59,7 @@ class Node(metaclass=ABCMeta):
 	def _setConnection(self):
 		'''Set connectors.'''
 
-		cherrypy.log('Setting connectors...')
+		#cherrypy.log('Setting connectors...')
 		self.lconn = LakeConnector()
 		self.dgconn = DatagrinderConnector()
 		self.tsconn = TstoreConnector()
@@ -75,9 +75,9 @@ class Node(metaclass=ABCMeta):
 	#
 	#  @return tuple Two resource URIs: one in the transaction and one outside of it.
 	def create_node_in_tx(self, uid, tx_uri):
-		node_tx_uri = self.lconn.createOrUpdateNode(parent='{}/{}'.format(tx_uri,self.path))
+		node_tx_uri = self.lconn.create_or_update_node(parent='{}/{}'.format(tx_uri,self.path))
 
-		return (node_tx_uri, self.tx_uri_to_notx_uri(tx_uri))
+		return (node_tx_uri, self.tx_uri_to_notx_uri(node_tx_uri))
 
 
 	def tx_uri_to_notx_uri(self, tx_uri):

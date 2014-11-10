@@ -39,7 +39,7 @@ class LakeConnector:
 	## Open Fedora transaction.
 	#
 	#  @return string The transaction URI.
-	def openTransaction(self):
+	def open_transaction(self):
 		res = requests.post(
 			self.conf['base_url'] + 'fcr:tx',
 			headers = self.headers
@@ -55,9 +55,10 @@ class LakeConnector:
 	#
 	#  @param uri	(string) URI of the node to be created or updated.
 	#  @param props	(dict) Dictionary of properties to be associated with the node.
-	def createOrUpdateNode(self, uri=None, parent='/', props=None):
-		if props != None:
+	def create_or_update_node(self, uri=None, parent='/', props=None):
+		if props:
 			g = Graph(namespace_manager = ns_mgr)
+			cherrypy.log('Received prop tuples: {}'.format(props))
 			for t in props:
 				g.add((URIRef(''), t[0], t[1]))
 
@@ -96,11 +97,11 @@ class LakeConnector:
 	#  or updates it if it exists already.
 	#
 	#  @param uri		(string) URI of the datastream node to be created or updated.
-	#  @param dsname	(string) Name of the datastream as a downloaded file.
+	#  @param file_name	(string) Name of the datastream as a downloaded file.
 	#  @param ds		(BytesIO) Datastream to be ingested. Alternative to \p path.
 	#  @param path		(string) Path to the datastream. Alternative to \p ds.
 	#  @param mimetype	(string) MIME type of the datastream. Default: application/octet-stream
-	def createOrUpdateDStream(self, uri, dsname, ds=None, path=None, mimetype = 'application/octet-stream'):
+	def create_or_update_datastream(self, uri, file_name, ds=None, path=None, mimetype = 'application/octet-stream'):
 		# @TODO Optimize with with
 		if not ds and not path:
 			raise cherrypy.HTTPError('500 Internal Server Error', "No datastream or file path given.")
@@ -115,7 +116,7 @@ class LakeConnector:
 			headers = dict(chain(
 				self.headers.items(),
 				[
-					('content-disposition', 'inline; filename="' + dsname + '"'),
+					('content-disposition', 'inline; filename="' + file_name + '"'),
 					('content-type', mimetype),
 				]
 			))
@@ -134,7 +135,7 @@ class LakeConnector:
 	#
 	#  @param uri		(string) URI of the datastream node to be created or updated.
 	#  @param ref		(string) External source as a HTTP URL.
-	def createOrUpdateRefDStream(self, uri, ref):
+	def create_or_update_ref_datastream(self, uri, ref):
 		cherrypy.log('Creating an externally referenced node: ' + uri)
 		# Check that external reference exists
 		check = requests.head(ref, headers=self.headers)
@@ -148,7 +149,7 @@ class LakeConnector:
 		#cherrypy.log('Create/update datastream response:' + str(res.status_code))
 
 		# Add external source
-		self.updateNodeProperties(uri + '/fcr:metadata', insert_props=[
+		self.update_node_properties(uri + '/fcr:metadata', insert_props=[
 			(ns_collection['fedorarelsext'].hasExternalContent, URIRef(ref))
 		])
 
@@ -168,10 +169,16 @@ class LakeConnector:
 	#  @param insert_props	(dict) Properties to be inserted.\
 	#  Keys are property names, values are tuples or lists of values. Non-empty string can be used as single values.
 	#  @param where_props	(dict) Conditions. Same syntax as \p insert_props.
-	def updateNodeProperties(self, uri, delete_props=[], insert_props=[], where_props=[]):
+	def update_node_properties(self, uri, delete_props=[], insert_props=[], where_props=[]):
 		''' Modifies node properties using a SPARQL-update query. '''
 
-		cherrypy.log.error("Delete props: " + str(delete_props) + "; Insert props: " + str(insert_props) + "; where props: " + str(where_props))
+		if not delete_props and not insert_props:
+			cherrypy.log('Not received any properties to update.')
+			return False
+
+		cherrypy.log("URI: {}\nDelete props: {}\nInsert props: {}\nwhere props: {}".format(
+			uri, delete_props, insert_props, where_props
+		))
 		g = Graph(namespace_manager = ns_mgr)
 		insert_triples, delete_triples = ('','')
 		where_triples_list = [];

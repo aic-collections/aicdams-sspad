@@ -1,6 +1,7 @@
 import mimetypes
 import io
 import json
+import os
 import uuid
 
 import cherrypy
@@ -54,6 +55,8 @@ class Asset(Resource):
 			'pref_agent_pkey', # Integer
 			'pref_place_pkey', # Integer
 			'pref_exhib_pkey', # Integer
+			'has_master', # String (uri)
+			'has_instance', # String (uri)
 		)
 
 
@@ -77,6 +80,8 @@ class Asset(Resource):
 			(ns_collection['aic'].isPrimaryRepresentationOf, 'uri'),
 			(ns_collection['aic'].isPrimaryRepresentationOf, 'uri'),
 			(ns_collection['aic'].isPrimaryRepresentationOf, 'uri'),
+			(ns_collection['aic'].hasMaster, 'uri'),
+			(ns_collection['aic'].hasInstance, 'uri'),
 		)
 
 
@@ -219,7 +224,7 @@ class Asset(Resource):
 		#cherrypy.log('Delete props:' + str(delete_props))
 
 		# Open Fedora transaction
-		self.tx_uri = self.lconn.openTransaction()
+		self.tx_uri = self.lconn.open_transaction()
 		self.uri_in_tx = self.uri.replace(lake_rest_api['base_url'], tx_uri + '/')
 
 		# Collect properties
@@ -278,46 +283,27 @@ class Asset(Resource):
 		dsmeta = self._validate_dstreams(dstreams)
 
 		# Open Fedora transaction
-		self.tx_uri = self.lconn.openTransaction()
+		self.tx_uri = self.lconn.open_transaction()
 		#cherrypy.log('Created TX: {}'.format(self.tx_uri))
 
 		try:
 			# Create Asset node in tx
 			self.uri_in_tx, self.uri = self.create_node_in_tx(uid, self.tx_uri)
+			cherrypy.log('Node URI in TX: {}; outslide of TX: {}'.format(self.uri_in_tx, self.uri))
 
 			# Set node props
 			init_tuples = self.base_prop_tuples + [
 				(ns_collection['dc'].title, Literal(uid)),
 				(ns_collection['aic'].uid, Literal(uid)),
 			]
+			cherrypy.log('Init tuples: {}'.format(init_tuples))
 
 			cherrypy.log('Properties: {}'.format(props))
 			tuples = self._build_prop_tuples(insert_props=props, init_insert_tuples=init_tuples)
 			self._update_node(self.uri_in_tx, tuples)
 
-			'''
-			#cherrypy.log('Props available: {}'.format(list(prop_tuples)))
-			for req_name, lake_name in self.props:
-				#cherrypy.log('Req. name: {}; All prop names in request: {}'.format(req_name, props.keys()))
-				if req_name in props.keys():
-					#cherrypy.log('Req. name being parsed: {}'.format(req_name))
-					
-					# Build relationships
-					rel_type = self.reqprops_to_rels[req_name] if req_name in self.reqprops_to_rels else {}
-
-					for value in props[req_name]:
-						if rel_type:
-							value = self._add_mock_node_rel(self.tx_uri, rel_type, value)
-							cherrypy.log('Ref URI in tx: {}'.format(value))
-						prop_tuples.append((lake_name[0], self._build_rdf_object(value, lake_name[1])))
-
-			#cherrypy.log('Props:' + str(prop_tuples))
-
-			self.lconn.updateNodeProperties(self.uri_in_tx, insert_props=prop_tuples)
-			'''
-
 			# Loop over all datastreams and ingest them
-			self._ingest_instances(dstreams)
+			self._ingest_instances(dstreams, dsmeta)
 
 		except:
 			# Roll back transaction if something goes wrong
@@ -330,7 +316,7 @@ class Asset(Resource):
 		cherrypy.response.status = 201
 		cherrypy.response.headers['Location'] = self.uri
 
-		return {"message": "Asset created.", "data": {"location": res_uri}}
+		return {"message": "Asset created.", "data": {"location": self.uri}}
 
 
 	def update(self, uid=None, uri=None, props='{}', **dstreams):
@@ -346,10 +332,10 @@ class Asset(Resource):
 			#cherrypy.log('mimetype guess: ' + self._guess_file_ext(src_mimetype))
 			#ds.seek(0)
 			with ds.read() as src_data:
-				content_uri = self.lconn.createOrUpdateDStream(
-					self.uri + '/aic:ds_' + dsname,
-					ds=src_data,
-					dsname = uid + '_' + dsname + self._guess_file_ext(src_mimetype),
+				content_uri = self.create_or_update_instance(
+					parent_uri = self.uri,
+					name = dsname,
+					ds = src_data,
 					mimetype = src_mimetype
 				)
 
@@ -359,10 +345,10 @@ class Asset(Resource):
 					cherrypy.log('No master file provided with source, re-creating master.')
 					cherrypy.log('DS: '+str(ds))
 					master = self._generateMasterFile(src_data, uid + '_master.jpg')
-					content_uri = self.lconn.createOrUpdateDStream(
-						self.uri + '/aic:ds_master',
+					content_uri = self.create_or_update_instance(
+						parent_uri = self.uri,
+						name = dsname,
 						ds=master.read(),
-						dsname = uid + '_master' + self._guess_file_ext(self.master_mimetype),
 						mimetype = self.master_mimetype
 					)
 				src_data = None # Flush datastream
@@ -505,16 +491,18 @@ class Asset(Resource):
 	def _build_prop_tuples(
 			self, insert_props={}, delete_props={}, init_insert_tuples=[]
 			):
-		''' Build delete, insert and where tuples suitable for #LakeConnector:updateNodeProperties.
+		''' Build delete, insert and where tuples suitable for #LakeConnector:update_node_properties.
 		from a list of insert and delete properties.
 		Also builds a list of nodes that need to be deleted and/or inserted to satisfy references.
 		'''
 
+		#cherrypy.log('Initial insert tuples: {}.'.format(init_insert_tuples))
 		insert_tuples = init_insert_tuples
 		delete_tuples, where_tuples = ([],[])
 		insert_nodes, delete_nodes = ({},{})
 
-		for req_name, lake_name in self.props:
+		for req_name in self.props.keys():
+			lake_name = self.props[req_name]
 
 			# Delete tuples + nodes
 			if req_name in delete_props:
@@ -540,8 +528,9 @@ class Asset(Resource):
 					# Check if property is a relationship
 					if req_name in self.reqprops_to_rels:
 						rel_type = self.reqprops_to_rels[req_name]
-						#ref_uri = '{}/resources/holders/{}/{}-{}'.format(self.tx_uri, rel_type['pfx'], rel_type['pfx'], value)
 						ref_uri = self.tsconn.get_node_uri_by_prop(ns_collection['aicdb'] + 'citi_pkey', value)
+						if not ref_uri:
+							ref_uri = '{}/resources/holders/{}/{}-{}'.format(self.tx_uri, rel_type['pfx'], rel_type['pfx'], value)
 						#if not self.lconn.assert_node_exists(ref_uri):
 							#raise cherrypy.HTTPError(
 							#	'404 Not Found',
@@ -564,49 +553,104 @@ class Asset(Resource):
 		}
 
 
-		def _ingest_instances(self, dstreams):
-			'''Loops over datastreams and ingests them within a transaction.'''
+	def _ingest_instances(self, dstreams, dsmeta):
+		'''Loops over datastreams and ingests them within a transaction.'''
 
-			for dsname in dstreams.keys():
+		cherrypy.log('DSmeta: {}'.format(dsmeta))
+		for dsname in dstreams.keys():
 
-				if dsname[:4] == 'ref_':
-					# Create a reference node.
-					in_dsname = dsname [4:]
-					cherrypy.log('Creating a reference ds with name: aic:ds_{}'.format(in_dsname))
-					ds_content_uri = self.lconn.createOrUpdateRefDStream(
-						self.uri_in_tx + '/aic:ds_' + in_dsname,
-						dstreams[dsname]
+			if dsname[:4] == 'ref_':
+				# Create a reference node.
+				in_dsname = dsname [4:]
+				cherrypy.log('Creating a reference ds with name: aic:ds_{}'.format(in_dsname))
+				ds_content_uri = self.create_or_update_instance(
+					parent_uri = self.uri_in_tx,
+					name = in_dsname,
+					ref = dstreams[dsname]
+				)
+			else:
+				in_dsname = dsname
+				#cherrypy.log('Ingestion round (' + in_dsname + '): class name: ' + dstreams[dsname].__class__.__name__)
+				# Create an actual datastream.
+				ds = self._get_iostream_from_req(dstreams[dsname])
+				ds.seek(0)
+				ds_content_uri = self.create_or_update_instance(
+					parent_uri = self.uri_in_tx,
+					name = in_dsname,
+					ds = ds,
+					mimetype = dsmeta[dsname]['mimetype']
+				)
+
+				ds_meta_uri = ds_content_uri + '/aic:content/fcr:metadata'
+
+			# Set source datastream properties
+			prop_tuples = [
+				(ns_collection['rdfs'].label, Literal(self.uid + '_' + in_dsname)),
+			]
+
+			self.lconn.update_node_properties(ds_meta_uri, insert_props=prop_tuples)
+
+
+	def create_or_update_instance(
+			self, parent_uri, name, ref=None, file_name=None, ds=None, path=None, mimetype='application/octet-stream'
+			):
+		'''Creates or updates an instance.
+		@TODO
+		'''
+		
+		rdf_type = ns_collection['aic'].Master\
+				if name == 'master' \
+				else \
+				ns_collection['aic'].Instance
+		#rdf_type = 'aic:Master'\
+		#		if name == 'master' \
+		#		else \
+		#		'aic:Instance'
+
+		rel_name = 'has_master' \
+			if name == 'master' \
+			else \
+			'has_instance'
+
+		uri = parent_uri + '/aic:ds_' + name
+		inst_uri = self.lconn.create_or_update_node(
+			uri = uri,
+			props = self._build_prop_tuples(
+				insert_props = {'type' :  [rdf_type]},
+				delete_props = {},
+				init_insert_tuples = []
+				#(self.props['type'], self._build_rdf_object(rdf_type, 'uri'))
+			)['tuples'][1]
+		)
+		cherrypy.log('Created instance: {}'.format(inst_uri))
+
+		# Create content datastream.
+		if not file_name:
+			file_name = '{}_{}{}'.format(
+				os.path.basename(inst_uri), name, self._guess_file_ext(mimetype)
+			)
+		
+		if ref:
+			inst_content_uri = self.lconn.create_or_update_ref_datastream(
+					uri = inst_uri + '/aic:content', ref = ref
 					)
-				else:
-					in_dsname = dsname
-					cherrypy.log('Ingestion round (' + in_dsname + '): class name: ' + ds.__class__.__name__)
-					# Create an actual datastream.
-					ds = self._get_iostream_from_req(dstreams[dsname])
-					ds.seek(0)
-					ds_content_uri = self.lconn.createOrUpdateDStream(
-						self.uri_in_tx + '/aic:ds_' + dsname,
-						ds = ds,
-						dsname = uid + '_' + in_dsname + \
-								self._guess_file_ext(dsmeta[dsname]['mimetype']),
-						mimetype = dsmeta[dsname]['mimetype']
+		else:
+			inst_content_uri = self.lconn.create_or_update_datastream(
+					uri = inst_uri + '/aic:content',
+					file_name = file_name, ds = ds, path = path, mimetype = mimetype
 					)
 
-				ds_meta_uri = ds_content_uri + '/fcr:metadata'
+		# Add relationship in parent node.
+		self.lconn.update_node_properties(
+			uri = parent_uri,
+			insert_props = self._build_prop_tuples(
+				insert_props = {rel_name : [inst_uri]},
+				delete_props = {},
+				init_insert_tuples = []
+			)['tuples'][1]
+		)
 
-				# Set source datastream properties
-				prop_tuples = [
-					(ns_collection['dc'].title, Literal(uid + '_' + in_dsname)),
-				]
-				if dsname == 'master':
-					prop_tuples.append(
-						(ns_collection['rdf'].type, ns_collection['aicmix'].MasterDStream)
-					)
-				else:
-					prop_tuples.append(
-						(ns_collection['rdf'].type, ns_collection['aicmix'].Datastream)
-					)
-
-				self.lconn.updateNodeProperties(ds_meta_uri, insert_props=prop_tuples)
+		return inst_uri
 
 
 	def _update_node(self, uri, tuples):
@@ -622,8 +666,8 @@ class Asset(Resource):
 		for node_type in insert_nodes.keys():
 			if node_type == 'comment':
 				for comment in insert_nodes[node_type]:
-					comment_uri = self.lconn.createOrUpdateNode(
-						uri=uri + '/aic:annotations/' + uuid.uuid4(),
+					comment_uri = self.lconn.create_or_update_node(
+						uri = uri + '/aic:annotations/' + uuid.uuid4(),
 						props = {
 							'content' : comment['content'],
 							'type' : comment['type'] if 'type' in comment else self.default_comment_type,
@@ -631,7 +675,7 @@ class Asset(Resource):
 					)
 					
 
-		self.lconn.updateNodeProperties(
+		self.lconn.update_node_properties(
 			uri,
 			delete_props=delete_tuples,
 			insert_props=insert_tuples,
@@ -639,8 +683,8 @@ class Asset(Resource):
 		)
 
 		# Add comment nodes
-		if 'comment' in insert_props and insert_props['comment']:
-			self._insert_comments(uri, insert_props['comment'])
+		#if 'comment' in insert_props and insert_props['comment']:
+		#	self._insert_comments(uri, insert_props['comment'])
 
 
 	## Adds one or more comments.
@@ -650,7 +694,7 @@ class Asset(Resource):
 	#  by Fedora from request headers and timestamp.
 	def _insert_comments(self, subject, comments):
 		for comment in comments:
-			comment_uri = self.lconn.createOrUpdateNode(
+			comment_uri = self.lconn.create_or_update_node(
 				uri = url + '/aic:annotations/' + uuid.uuid4(),
 				props = {
 					'content' : comment['content'],
@@ -658,7 +702,7 @@ class Asset(Resource):
 				}
 			)
 
-			self.lconn.updateNodeProperties(
+			self.lconn.update_node_properties(
 				subject,
 				insert_tuples = (
 					(self.props['comment'][0], self._build_rdf_object(comment_uri, 'uri'))
