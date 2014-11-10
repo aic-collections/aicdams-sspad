@@ -662,17 +662,28 @@ class Asset(Resource):
 				self.lconn.delete_node(uri)
 
 		for node_type in insert_nodes.keys():
-			if node_type == 'comment':
-				for comment in insert_nodes[node_type]:
+			if node_type == 'comments':
+				comment_uris = []
+				for comment_props in insert_nodes[node_type]:
 					comment_uri = self.lconn.create_or_update_node(
-						uri = uri + '/aic:annotations/' + uuid.uuid4(),
-						props = {
-							'content' : comment['content'],
-							'type' : comment['type'] if 'type' in comment else self.default_comment_type,
-						}
-					)
-					
+						uri = '{}/aic:annotations/{}'.format(uri, uuid.uuid4()),
+						props = [
+							(
+								self._build_rdf_object(ns_collection['aic'].content, 'uri'),
+								self._build_rdf_object(comment_props['content'], 'literal')
+							),
+							(
+								self._build_rdf_object(ns_collection['aic'].type, 'uri'),
+								self._build_rdf_object(comment_props['type'], 'literal')
+							),
+						]
 
+					)
+					insert_tuples.append((
+						self._build_rdf_object(*self.props['comment']),
+						self._build_rdf_object(comment_uri, 'uri')
+					))
+					
 		self.lconn.update_node_properties(
 			uri,
 			delete_props=delete_tuples,
