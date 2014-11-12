@@ -89,7 +89,7 @@ class TstoreConnector:
 		
 		@param prop (string) The property name as a fully qualified URI.
 		@param value (string) The property value.
-		@param typr (string) Data type according to http://www.w3.org/2001/XMLSchema
+		@param type (string) Data type according to http://www.w3.org/2001/XMLSchema
 
 		@return string
 		'''

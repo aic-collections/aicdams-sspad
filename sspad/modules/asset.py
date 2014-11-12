@@ -576,7 +576,7 @@ class Asset(Resource):
 					mimetype = dsmeta[dsname]['mimetype']
 				)
 
-				ds_meta_uri = ds_content_uri + '/aic:content/fcr:metadata'
+			ds_meta_uri = ds_content_uri + '/aic:content/fcr:metadata'
 
 			# Set source datastream properties
 			prop_tuples = [
