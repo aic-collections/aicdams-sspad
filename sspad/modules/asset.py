@@ -429,12 +429,9 @@ class Asset(Resource):
 			cherrypy.log('Master file not provided.')
 			if 'ref_source' in dstreams.keys():
 				cherrypy.log('Requesting {}...'.format(dstreams['ref_source']))
-				req = requests.get(
-					dstreams['ref_source'],
-					headers={'Authorization' : self.auth_str}
-				)
-				req.raise_for_status()
-				dstreams['master'] = self._generateMasterFile(req.content, uid + '_master.jpg')
+				ds_binary = self.lconn.get_binary_stream(dstreams['ref_source'])
+
+				dstreams['master'] = self._generateMasterFile(ds_binary.content, self.uid + '_master.jpg')
 			else:
 				dstreams['master'] = self._generateMasterFile(
 					self._get_iostream_from_req(dstreams['source']),

@@ -97,14 +97,6 @@ class Node(metaclass=ABCMeta):
 		return ext
 
 
-	## Validate a datastream.
-	#
-	#  Override this method for each Node subclass.
-	@abstractmethod
-	def _validate_datastream(self, ds, dsname='', rules={}):
-		pass
-
-
 	## Returns a RDF triple object from a value and a type.
 	#
 	#  The value must be in the #mixins list.

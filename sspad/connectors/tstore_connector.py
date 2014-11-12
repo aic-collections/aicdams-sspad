@@ -59,9 +59,8 @@ class TstoreConnector:
 			params = {'query': q}
 		)
 		#cherrypy.log('Requesting URL: ' + res.url)
-		#cherrypy.log('h for UID: ' + str(res.text))
+		#cherrypy.log('Query response: ' + str(res.text))
 		res.raise_for_status()
-		cherrypy.log('SPARQL query: {}'.format(unquote(res.request.url)))
 
 		if action == 'ask':
 			return res.text
@@ -69,27 +68,28 @@ class TstoreConnector:
 			ret = []
 			root = ET.fromstring(res.text)
 			for result in root.find('{http://www.w3.org/2005/sparql-results#}results'):
-				row = []
+				row = {}
 				for binding in result:
-					row.append((binding.attrib['name'], binding[0].text))
+					row[binding.attrib['name']] = binding[0].text
 				cherrypy.log('Query result row: {}.'.format(row))
 				ret.append(row)
 			return ret
 
 
 	def assert_node_exists_by_prop(self, prop, value):
-		''' Finds if an image exists with a given UID. '''
+		''' Finds if a node exists with a given literal property. '''
 
 		q = 'ASK {{ ?r <{}> "{}"^^<http://www.w3.org/2001/XMLSchema#string> . }}'.format(prop, value)
 
 		return True if self.query(q, 'ask') == 'true' else False
 
 
-	def get_node_uri_by_prop(self, prop, value):
-		''' Get the URI of a node by a given property.
+	def get_node_uri_by_prop(self, prop, value, type='string'):
+		''' Get the URI of a node by a given literal property.
 		
 		@param prop (string) The property name as a fully qualified URI.
 		@param value (string) The property value.
+		@param typr (string) Data type according to http://www.w3.org/2001/XMLSchema
 
 		@return string
 		'''
@@ -99,6 +99,43 @@ class TstoreConnector:
 		res = self.query(q)
 
 		cherrypy.log('get node by prop response: {} '.format(res))
-		return res[0][0][1] if res else False
+		return res[0]['u'] if res else False
+
+
+	def get_node_uri_by_props(self, props):
+		''' Get the URI of a node by a set of literal properties.
+			Properties are logically connected by AND.
+
+			@param props (list) Property map: list of dicts consisting of: 
+				name (string): Fully qualified property URI
+				value (string): Property value: a literal or URI (not surrounded by <>)
+				type (string, optional): 'uri' or 'literal' (default)
+				dtype (string, optional): data type for literals, according to http://www.w3.org/2001/XMLSchema# (default: string)
+
+		@return string
+		'''
+
+		where_str = ''
+		for prop in props:
+			if 'type' == 'uri':
+				obj = '<{}>'.format(prop['value'])
+			else:
+				if 'dtype' not in prop:
+					prop['dtype'] = '^^<http://www.w3.org/2001/XMLSchema#string>'
+				elif prop['dtype']:
+					prop['dtype'] = '^^<http://www.w3.org/2001/XMLSchema#{}>'.format('dtype')
+				obj = '"{}"{}'.format(prop['value'], prop['dtype'])
+				# NOTE: If prop['dtype'] is set to a null value, no type is passed.
+
+			where_str += '?u <{}> {} .\n'.format(
+				prop['name'], obj
+			)
+
+		q = 'SELECT ?u WHERE {{ {} }} LIMIT 1'.format(where_str)
+
+		res = self.query(q)
+
+		cherrypy.log('get node by props response: {} '.format(res))
+		return res[0]['u'] if res else False
 
 

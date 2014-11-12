@@ -51,6 +51,15 @@ class LakeConnector:
 		return res.headers['location']
 
 
+	def get_binary_stream(self, uri):
+		'''Gets a binary stream.'''
+
+		res = requests.get(uri, headers=self.headers)
+		res.raise_for_status()
+
+		return res
+
+
 	## Creates a container node if it does not exist, or updates it if it exists already.
 	#
 	#  @param uri	(string) URI of the node to be created or updated.
@@ -141,17 +150,17 @@ class LakeConnector:
 		check = requests.head(ref, headers=self.headers)
 		check.raise_for_status()
 
-		# Create ds with empty content
-		res = requests.put(uri, headers=self.headers)
+		res = requests.put(
+			uri,
+			headers = dict(chain(
+				self.headers.items(),
+				[('content-type', 'message/external-body; access-type=URL; URL="{}"'.format(ref))]
+			))
+		)
 		res.raise_for_status()
 
 		#cherrypy.log('Requesting URL:' + res.url)
 		#cherrypy.log('Create/update datastream response:' + str(res.status_code))
-
-		# Add external source
-		self.update_node_properties(uri + '/fcr:metadata', insert_props=[
-			(ns_collection['fedorarelsext'].hasExternalContent, URIRef(ref))
-		])
 
 		cherrypy.log('Response headers for reference DS:' + str(res.headers))
 		if 'location' in res.headers:

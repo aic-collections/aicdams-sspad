@@ -77,3 +77,10 @@ class Resource(Node):
 				mimetypes.add_type(mt, ext, strict)
 
 
+	## Validate a datastream.
+	#
+	#  Override this method for each Node subclass.
+	def _validate_datastream(self, ds, dsname='', rules={}):
+		pass
+
+
