@@ -3,7 +3,7 @@ import cherrypy
 from cherrypy.process.plugins import Daemonizer, PIDFile
 
 from sspad.config import host, server, app
-from sspad.modules import resource, staticImage
+from sspad.modules import resource, staticImage, tag
 
 
 ## Main Web app class.
@@ -13,7 +13,7 @@ class Webapp():
 	exposed = True
 
 	si = staticImage.StaticImage()
-	#@TODO Add other resource prefixes.
+	tag = tag.Tag()
 
 	def GET(self):
 		return {'message': 'Nothing to see here.'}
