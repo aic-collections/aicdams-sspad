@@ -44,7 +44,7 @@ class Asset(Resource):
 			'legacy_uid', # String
 			'batch_uid', # String
 			'tag', # For insert: String, in the following format: <category>/<tag label> - For delete: String (tag URI)
-			'comment', # For insert: Dict: {'type' : <String>, 'content' : <String>} - For delete: String (comment URI)
+			'comment', # For insert: Dict: {'cat' : <String>, 'content' : <String>} - For delete: String (comment URI)
 			#'has_ext_content',
 			'citi_obj_pkey', # Integer
 			'citi_obj_acc_no', # Integer
@@ -666,12 +666,16 @@ class Asset(Resource):
 						uri = '{}/aic:annotations/{}'.format(uri, uuid.uuid4()),
 						props = [
 							(
+								self._build_rdf_object(ns_collection['rdf'].type, 'uri'),
+								self._build_rdf_object(ns_collection['aic'] + 'Comment', 'uri')
+							),
+							(
 								self._build_rdf_object(ns_collection['aic'].content, 'uri'),
 								self._build_rdf_object(comment_props['content'], 'literal')
 							),
 							(
-								self._build_rdf_object(ns_collection['aic'].type, 'uri'),
-								self._build_rdf_object(comment_props['type'], 'literal')
+								self._build_rdf_object(ns_collection['aic'].category, 'uri'),
+								self._build_rdf_object(comment_props['cat'], 'literal')
 							),
 						]
 
@@ -688,31 +692,5 @@ class Asset(Resource):
 			where_props=where_tuples
 		)
 
-		# Add comment nodes
-		#if 'comment' in insert_props and insert_props['comment']:
-		#	self._insert_comments(uri, insert_props['comment'])
 
 
-	## Adds one or more comments.
-	#
-	#  @param subject (string) URI of asset that annotation is referring to.
-	#  @param comments (list) Comment contents. Author and creation date will be added
-	#  by Fedora from request headers and timestamp.
-	def _insert_comments(self, subject, comments):
-		for comment in comments:
-			comment_uri = self.lconn.create_or_update_node(
-				uri = url + '/aic:annotations/' + uuid.uuid4(),
-				props = {
-					'content' : comment['content'],
-					'type' : comment['type'] if 'type' in comment else self.default_comment_type,
-				}
-			)
-
-			self.lconn.update_node_properties(
-				subject,
-				insert_tuples = (
-					(self.props['comment'][0], self._build_rdf_object(comment_uri, 'uri'))
-				)
-			)
-
-	
