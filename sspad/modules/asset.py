@@ -486,7 +486,7 @@ class Asset(Resource):
 
 
 	def _build_prop_tuples(
-			self, insert_props={}, delete_props={}, init_insert_tuples=[]
+			self, insert_props={}, delete_props={}, init_insert_tuples=[], ignore_broken_rels=True
 			):
 		''' Build delete, insert and where tuples suitable for #LakeConnector:update_node_properties.
 		from a list of insert and delete properties.
@@ -527,10 +527,13 @@ class Asset(Resource):
 						rel_type = self.reqprops_to_rels[req_name]
 						ref_uri = self.tsconn.get_node_uri_by_prop(ns_collection['aicdb'] + 'citi_pkey', value)
 						if not ref_uri:
-							raise cherrypy.HTTPError(
-								'404 Not Found',
-								'Referenced CITI resource with CITI Pkey {} does not exist. Cannot create relationship.'.format(value)
-							)
+							if ignore_broken_rels:
+								continue
+							else:
+								raise cherrypy.HTTPError(
+									'404 Not Found',
+									'Referenced CITI resource with CITI Pkey {} does not exist. Cannot create relationship.'.format(value)
+								)
 						value = ref_uri
 					elif req_name == 'tag':
 						insert_nodes['tags'] = insert_props['tag']
