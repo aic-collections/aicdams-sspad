@@ -649,7 +649,7 @@ class Asset(Resource):
 
 
 	def _update_node(self, uri, tuples):
-		'''Updates a node inserting and deleting related nodes if necessary,'''
+		'''Updates a node inserting and deleting related nodes if necessary.'''
 
 		delete_nodes, insert_nodes = tuples['nodes']
 		delete_tuples, insert_tuples, where_tuples = tuples['tuples']

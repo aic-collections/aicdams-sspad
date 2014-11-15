@@ -36,15 +36,15 @@ class Tag(Node):
 
 	## HTTP-EXPOSED METHODS ##
 
-	def GET(self, cat=None, label=None):
+	def GET(self, cat_label=None, label=None):
 		'''Get a tag or list of tags.'''
 
 		self._set_connection()
 
 		if label:
-			return self.get_tag_uri(label, cat)
+			return self.get_uri(label, cat_label)
 		else:
-			return self.get_tags(cat)
+			return self.list(cat_label)
 
 
 	def POST(self, cat, label):
@@ -54,11 +54,14 @@ class Tag(Node):
 
 	## NON EXPOSED METHODS ##
 
-	def get_tags(self, cat=None):
-		cat_cond = '?cat <{}> "{}"^^<http://www.w3.org/2001/XMLSchema#string> .'.format(
-			ns_collection['rdfs'].label, cat
-		) \
-				if cat \
+	def list(self, cat_label=None):
+		'''Lists all tags, optionally narrowing down the selection to a category.'''
+
+		cat_cond = '''
+		?cat <{}> ?cl .
+		FILTER(STR(?cl="{}")) .
+		'''.format(ns_collection['rdfs'].label, cat_label) \
+				if cat_label \
 				else ''
 
 		q = '''

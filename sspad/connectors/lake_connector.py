@@ -76,7 +76,7 @@ class LakeConnector:
 			body = ''
 
 		if uri:
-			cherrypy.log('Creating node by PUT with RDF properties: {}'.format(body))
+			#cherrypy.log('Creating node by PUT with RDF properties: {}'.format(body))
 			res = requests.put(
 				uri,
 				data = body,
