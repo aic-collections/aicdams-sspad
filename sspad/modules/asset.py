@@ -678,7 +678,7 @@ class Asset(Resource):
 							),
 							(
 								self._build_rdf_object(ns_collection['aic'].category, 'uri'),
-								self._build_rdf_object(comment_props['cat'], 'literal')
+								self._build_rdf_object(comment_props['category'], 'literal')
 							),
 						]
 
