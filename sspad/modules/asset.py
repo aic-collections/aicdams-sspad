@@ -167,7 +167,9 @@ class Asset(Resource):
 
 		self._set_connection()
 
-		return self.create(mid, json.loads(props), **dstreams)
+		props_dict = json.loads(props)
+
+		return self.create(mid, props_dict, **dstreams)
 
 
 	## PUT method.
@@ -187,16 +189,25 @@ class Asset(Resource):
 	#  @TODO Replacing property set is not supported yet, and might not be needed anyway.
 	def PUT(self, uid=None, uri=None, props='{}', **dstreams):
 
+		cherrypy.log('\n')
+		cherrypy.log('************************')
+		cherrypy.log('Begin update process.')
+		cherrypy.log('************************')
+		cherrypy.log('')
+
 		self._set_connection()
 
-		legacy_uid = props['legacy_uid'] if 'legacy_uid' in props else None
+		props_dict = json.loads(props)
+
+		legacy_uid = props_dict['legacy_uid'] if 'legacy_uid' in props_dict else None
 		self._set_uri(uri, uid, legacy_uid)
 
 		if not self.uri:
-			raise cherrypy.HTTPError('404 Not Found', 'Node was not found for updating.')
+			return self.create('', props_dict, **dstreams)
+			#raise cherrypy.HTTPError('404 Not Found', 'Node was not found for updating.')
 
 		self._check_uid_dupes(uid, legacy_uid)
-		return self.update(uid, None, json.loads(props), **dstreams)
+		return self.update(uid, None, props_dict, **dstreams)
 
 	
 	## PATCH method.
@@ -307,7 +318,7 @@ class Asset(Resource):
 
 		except:
 			# Roll back transaction if something goes wrong
-			self.lconn.rollbackTransaction(self.tx_uri)
+			#self.lconn.rollbackTransaction(self.tx_uri)
 			raise
 
 		# Commit transaction
@@ -375,6 +386,8 @@ class Asset(Resource):
 
 		if not uri and not uid and not legacy_uid:
 			raise ValueError('No valid identifier provided.')
+
+		self.uri = None
 
 		# First check the URI.
 		if uri:
@@ -507,7 +520,8 @@ class Asset(Resource):
 					# Delete one or more values from property
 					for value in delete_props[req_name]:
 						if req_name == 'tag':
-							value = lake_rest_api['tags_base_url'] + value
+							delete_nodes['tags'] = delete_props['tag']
+							#value = lake_rest_api['tags_base_url'] + value
 						elif req_name == 'comment':
 							delete_nodes['comments'] = delete_props['comment']
 						delete_tuples.append((lake_name[0], self._build_rdf_object(value, lake_name[1])))

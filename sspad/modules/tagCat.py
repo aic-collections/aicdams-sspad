@@ -16,6 +16,8 @@ class TagCat(Node):
 
 	node_type = ns_collection['aiclist'].TagCat
 
+	cont_uri = lake_rest_api['base_url'] + '/support/tags'
+
 
 	@property
 	def prop_req_names(self):
@@ -101,7 +103,7 @@ class TagCat(Node):
 				'type' : 'uri'
 			},
 			{
-				'name' : ns_collection['rdfs'] + 'label',
+				'name' : ns_collection['rdfs'].label,
 				'value' : label
 			}
 		]

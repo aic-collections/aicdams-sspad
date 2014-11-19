@@ -6,6 +6,7 @@ from rdflib import URIRef, Literal
 from sspad.config.datasources import lake_rest_api, datagrinder_rest_api
 from sspad.connectors.tstore_connector import TstoreConnector
 from sspad.modules.node import Node
+from sspad.modules.tagCat import TagCat
 from sspad.resources.rdf_lexicon import ns_collection
 
 
@@ -48,7 +49,9 @@ class Tag(Node):
 
 
 	def POST(self, cat, label):
-		return self.create(label)
+		self._set_connection()
+
+		return self.create(cat, label)
 
 
 
@@ -83,7 +86,7 @@ class Tag(Node):
 		return res
 
 	
-	def get_tag_uri(self, label, cat=None):
+	def get_uri(self, label, cat=None):
 		props = [
 			{
 				'name' : ns_collection['rdfs'].label,
@@ -100,26 +103,11 @@ class Tag(Node):
 		return tsconn.get_node_uri_by_props(props)
 
 
-	def assert_cat_exists(self, label):
-		'''Checks if a tag category with a given label exists.'''
-
-		return True \
-				if self.tsconn.get_node_uri_by_props([
-					{
-						'name' : ns_collection['rdf'] + 'type',
-						'value' : ns_collection['aiclist'] + 'TagCat',
-						'type' : 'uri'
-					},
-					{
-						'name' : ns_collection['rdfs'] + 'label',
-						'value' : label
-					}
-				]) \
-				else False
-
-
 	def create(self, cat_label, label):
-		if not self.assert_cat_exists(cat_label):
+		'''Create a tag under an existing category.'''
+
+		cat = TagCat()
+		if not cat.assert_exists(cat_label):
 			raise cherrypy.HTTPError('404 Not Found', 'Category with label \'{}\' does not exist.'.format(cat_label))
 		else:
 			if self.assert_tag_exists(cat, label):
