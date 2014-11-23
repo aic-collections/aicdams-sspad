@@ -80,7 +80,7 @@ class Tag(Node):
 			ns_collection['fcrepo'].hasParent,
 			ns_collection['aiclist'].TagCat, cat_cond
 		)
-		res = self.tsconn.query(q)
+		res = cherrypy.request.app.config['connectors']['tsconn'].query(q)
 		cherrypy.log('Res: {}'.format(res))
 
 		return res
@@ -116,7 +116,8 @@ class Tag(Node):
 					'A tag with label \'{}\' exists in category \'{}\' already.'.format(label, cat)
 				)
 			else:
-				tag_uri = self.lconn.create_or_update_node(
+				tag_uri = cherrypy.request.app.config['connectors']['lconn'].\
+						create_or_update_node(
 					props = self._build_prop_tuples(
 						insert_props = {
 							'type' :  [self.node_type],

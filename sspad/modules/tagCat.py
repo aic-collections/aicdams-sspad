@@ -71,7 +71,7 @@ class TagCat(Node):
 			},
 		]
 		
-		return tsconn.get_node_uri_by_props(props)
+		return cherrypy.request.app.config['connectors']['tsconn'].get_node_uri_by_props(props)
 
 	
 	def list(self):
@@ -87,7 +87,7 @@ class TagCat(Node):
 			ns_collection['fcrepo'].hasParent,
 			self.node_type,
 		)
-		res = self.tsconn.query(q)
+		res = cherrypy.request.app.config['connectors']['tsconn'].query(q)
 		#cherrypy.log('Res: {}'.format(res))
 
 		return res
@@ -108,7 +108,8 @@ class TagCat(Node):
 			}
 		]
 		return True \
-				if self.tsconn.get_node_uri_by_props(props) \
+				if cherrypy.request.app.config['connectors']['tsconn']\
+						.get_node_uri_by_props(props) \
 				else False
 
 
@@ -118,7 +119,8 @@ class TagCat(Node):
 		if self.assert_exists(label):
 			raise cherrypy.HTTPError('409 Conflict', 'Category with label \'{}\' exist already.'.format(label))
 		else:
-			uri = self.lconn.create_or_update_node(
+			uri = cherrypy.request.app.config['connectors']['lconn'].create_or_update_node(
+				parent = self.cont_uri,
 				props = self._build_prop_tuples(
 					insert_props = {
 						'type' :  [self.node_type],

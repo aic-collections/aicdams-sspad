@@ -45,7 +45,7 @@ class StaticImage(Asset):
 	#  @param fname (string) downloaded file name.
 	def _generateMasterFile(self, file, fname):
 		# @TODO put these values in constants
-		ret = self.dgconn.resizeImageFromData(file, fname, 4096, 4096)
+		ret = cherrypy.request.app.config['connectors']['dgconn'].resizeImageFromData(file, fname, 4096, 4096)
 		return ret
 
 

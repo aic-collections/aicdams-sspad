@@ -54,16 +54,20 @@ class Node(metaclass=ABCMeta):
 		return dict(zip(self.prop_req_names, self.prop_lake_names))
 
 
-
 	## Sets up connections to external services.
 	def _set_connection(self):
 		'''Set connectors.'''
 
-		#cherrypy.log('Setting connectors...')
-		self.lconn = LakeConnector()
-		self.dgconn = DatagrinderConnector()
-		self.tsconn = TstoreConnector()
+		cherrypy.log('Setting connectors...')
+		cherrypy.request.app.config['connectors']['lconn'] = LakeConnector()
+		cherrypy.request.app.config['connectors']['dgconn'] = DatagrinderConnector()
+		cherrypy.request.app.config['connectors']['tsconn']  = TstoreConnector()
 
+		self.lconn = cherrypy.request.app.config['connectors']['lconn']
+		self.dgconn = cherrypy.request.app.config['connectors']['dgconn']
+		self.tsconn = cherrypy.request.app.config['connectors']['tsconn']
+
+ 
 
 	## Creates a node within a transaction in LAKE.
 	#
@@ -75,7 +79,7 @@ class Node(metaclass=ABCMeta):
 	#
 	#  @return tuple Two resource URIs: one in the transaction and one outside of it.
 	def create_node_in_tx(self, uid, tx_uri):
-		node_tx_uri = self.lconn.create_or_update_node(parent='{}/{}'.format(tx_uri,self.path))
+		node_tx_uri = cherrypy.request.app.config['connectors']['lconn'].create_or_update_node(parent='{}/{}'.format(tx_uri,self.path))
 
 		return (node_tx_uri, self.tx_uri_to_notx_uri(node_tx_uri))
 
