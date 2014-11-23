@@ -21,16 +21,14 @@ class Tag(Node):
 	@property
 	def prop_req_names(self):
 		return super().prop_req_names + (
-			'label',
-			#'category'
+			'category',
 		)
 
 
 	@property
 	def prop_lake_names(self):
 		return super().prop_lake_names + (
-			(ns_collection['rdfs'].label, 'literal'),
-			#(ns_collection['aic'].category, 'uri'),
+			(ns_collection['aic'].category, 'uri'),
 		)
 
 
@@ -63,7 +61,7 @@ class Tag(Node):
 		cat_cond = '''
 		?cat <{}> ?cl .
 		FILTER(STR(?cl="{}")) .
-		'''.format(ns_collection['rdfs'].label, cat_label) \
+		'''.format(ns_collection['aic'].label, cat_label) \
 				if cat_label \
 				else ''
 
@@ -76,7 +74,7 @@ class Tag(Node):
 			{} }}
 		'''.format(
 			self.node_type,
-			ns_collection['rdfs'].label, 
+			ns_collection['aic'].label, 
 			ns_collection['fcrepo'].hasParent,
 			ns_collection['aiclist'].TagCat, cat_cond
 		)
@@ -88,19 +86,13 @@ class Tag(Node):
 	
 	def get_uri(self, label, cat=None):
 		props = [
-			{
-				'name' : ns_collection['rdfs'].label,
-				'value' : label,
-			},
-			{
-				'name' : ns_collection['rdf'].type,
-				'value' : ns_collection['aic'].Tag,
-			},
+			(ns_collection['aic'].label, Literal(label, datatype=XSD.string)),
+			(ns_collection['rdf'].type, ns_collection['aic'].Tag),
 		]
 		if cat:
 		   props.append((ns_collection['aic'].category, cat))
 		
-		return tsconn.get_node_uri_by_props(props)
+		return cherrypy.request.app.config['connectors']['tsconn'].get_node_uri_by_props(props)
 
 
 	def create(self, cat_label, label):
@@ -108,12 +100,15 @@ class Tag(Node):
 
 		cat = TagCat()
 		if not cat.assert_exists(cat_label):
-			raise cherrypy.HTTPError('404 Not Found', 'Category with label \'{}\' does not exist.'.format(cat_label))
+			raise cherrypy.HTTPError(
+				'404 Not Found', 'Category with label \'{}\' does not exist.'.format(cat_label)
+			)
 		else:
 			if self.assert_tag_exists(cat, label):
 				raise cherrypy.HTTPError(
 					'409 Conflict',
-					'A tag with label \'{}\' exists in category \'{}\' already.'.format(label, cat)
+					'A tag with label \'{}\' exists in category \'{}\' already.'.\
+							format(label, cat)
 				)
 			else:
 				tag_uri = cherrypy.request.app.config['connectors']['lconn'].\
@@ -132,30 +127,25 @@ class Tag(Node):
 				return tag_uri
 
 
-	def create_cat(self, label):
-		cat_uri = self.lconn.create_or_update_node(
-			props = self._build_prop_tuples(
-				insert_props = {
-					'type' :  [ns_collection['aiclist'].TagCat],
-					'label' : [label],
-
-				},
-				delete_props = {},
-				init_insert_tuples = []
-			)['tuples'][1]
-		)
-
-		return cat_uri
-
-
-	def create_tag(self, cat_label, label):
+	def create(self, cat_label, label):
 		'''Creates a new tag within a category and with a given label.'''
 
-		tag_uri = self.lconn.create_or_update_node(
+		cat = TagCat()
+		cat_uri = cat.get_uri(cat_label)
+		if not cat_uri:
+			raise cherrypy.HTTPError(
+				'404 Not Found',
+				'Tag category with label \'{}\' does not exist. Cannot create tag.'\
+						.format(cat_label)
+			)
+		tag_uri = cherrypy.request.app.config['connectors']['lconn'].\
+				create_or_update_node(
+			parent = cat_uri,
 			props = self._build_prop_tuples(
 				insert_props = {
 					'type' :  [self.node_type],
 					'label' : [label],
+					'category' : [cat_uri],
 
 				},
 				delete_props = {},

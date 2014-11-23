@@ -4,7 +4,7 @@ import xml.etree.ElementTree as ET
 
 from itertools import chain
 from os.path import basename
-from rdflib import Graph, URIRef, Literal
+from rdflib import Graph, URIRef, Literal, Variable
 from rdflib.plugins.sparql.processor import prepareQuery
 from urllib.parse import quote, unquote
 
@@ -106,32 +106,20 @@ class TstoreConnector:
 		''' Get the URI of a node by a set of literal properties.
 			Properties are logically connected by AND.
 
-			@param props (list) Property map: list of dicts consisting of: 
-				name (string): Fully qualified property URI
-				value (string): Property value: a literal or URI (not surrounded by <>)
-				type (string, optional): 'uri' or 'literal' (default)
-				dtype (string, optional): data type for literals, according to http://www.w3.org/2001/XMLSchema# (default: string)
-
+			@param props (list) Property map: list of 2-tuples with URIRef of Literals for predicate and object to query for.
 		@return string
 		'''
 
+		#where_graph = Graph()
 		where_str = ''
 		for prop in props:
-			if 'type' == 'uri':
-				obj = '<{}>'.format(prop['value'])
-			else:
-				if 'dtype' not in prop:
-					prop['dtype'] = '^^<http://www.w3.org/2001/XMLSchema#string>'
-				elif prop['dtype']:
-					prop['dtype'] = '^^<http://www.w3.org/2001/XMLSchema#{}>'.format('dtype')
-				obj = '"{}"{}'.format(prop['value'], prop['dtype'])
-				# NOTE: If prop['dtype'] is set to a null value, no type is passed.
-
-			where_str += '?u <{}> {} .\n'.format(
-				prop['name'], obj
+			cherrypy.log('Prop: {}'.format(prop))
+			where_str += '?u {} {} .\n'.format(
+				prop[0].n3(),
+				prop[1].n3()
 			)
 
-		q = 'SELECT ?u WHERE {{ {} }} LIMIT 1'.format(where_str)
+		q = 'SELECT ?u WHERE {{\n{} }} LIMIT 1'.format(where_str)
 
 		res = self.query(q)
 

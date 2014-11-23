@@ -33,7 +33,6 @@ class Resource(Node):
 	@property
 	def prop_req_names(self):
 		return super().prop_req_names + (
-			'label',
 			'title',
 		)
 
@@ -44,7 +43,6 @@ class Resource(Node):
 	@property
 	def prop_lake_names(self):
 		return super().prop_lake_names + (
-			(ns_collection['rdfs'].label, 'literal'),
 			(ns_collection['dc'].title, 'literal'),
 		)
 

@@ -1,7 +1,7 @@
 import cherrypy
 import requests
 
-from rdflib import URIRef, Literal
+from rdflib import URIRef, Literal, XSD
 
 from sspad.config.datasources import lake_rest_api, datagrinder_rest_api
 from sspad.connectors.tstore_connector import TstoreConnector
@@ -29,7 +29,7 @@ class TagCat(Node):
 	@property
 	def prop_lake_names(self):
 		return super().prop_lake_names + (
-			(ns_collection['rdfs'].label, 'literal'),
+			(ns_collection['aic'].label, 'literal'),
 		)
 
 
@@ -61,14 +61,8 @@ class TagCat(Node):
 		'''Returns the URI of a category by label.'''
 
 		props = [
-			{
-				'name' : ns_collection['rdfs'].label,
-				'value' : label,
-			},
-			{
-				'name' : ns_collection['rdf'].type,
-				'value' : ns_collection['aic'].TagCat,
-			},
+			(ns_collection['rdf'].type, ns_collection['aiclist'].TagCat),
+			(ns_collection['aic'].label, Literal(label, datatype=XSD.string)),
 		]
 		
 		return cherrypy.request.app.config['connectors']['tsconn'].get_node_uri_by_props(props)
@@ -83,7 +77,7 @@ class TagCat(Node):
 			?cat a <{}> .
 		}}
 		'''.format(
-			ns_collection['rdfs'].label, 
+			ns_collection['aic'].label, 
 			ns_collection['fcrepo'].hasParent,
 			self.node_type,
 		)
@@ -97,15 +91,8 @@ class TagCat(Node):
 		'''Checks if a tag category with a given label exists.'''
 
 		props = [
-			{
-				'name' : ns_collection['rdf'].type,
-				'value' : ns_collection['aiclist'].TagCat,
-				'type' : 'uri'
-			},
-			{
-				'name' : ns_collection['rdfs'].label,
-				'value' : label
-			}
+			(ns_collection['rdf'].type, ns_collection['aiclist'].TagCat),
+			(ns_collection['aic'].label, Literal(label, datatype=XSD.string)),
 		]
 		return True \
 				if cherrypy.request.app.config['connectors']['tsconn']\

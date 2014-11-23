@@ -32,13 +32,17 @@ class Node(metaclass=ABCMeta):
 		# [...]
 	)
 
+	reqprops_to_rels = {}
 
 	## Properties as specified in requests.
 	#
 	#  These map to #prop_lake_names.
 	@property
 	def prop_req_names(self):
-		return ('type',)
+		return (
+			'type',
+			'label',
+		)
 
 
 	## Tuples of LAKE namespaces and data types.
@@ -46,7 +50,10 @@ class Node(metaclass=ABCMeta):
 	#  Data type string can be 'literal', 'uri' or 'variable'.
 	@property
 	def prop_lake_names(self):
-		return ((ns_collection['rdf'].type, 'uri'),)
+		return (
+			(ns_collection['rdf'].type, 'uri'),
+			(ns_collection['aic'].label, 'literal'),
+		)
 
 
 	@property
@@ -101,13 +108,6 @@ class Node(metaclass=ABCMeta):
 		return ext
 
 
-	## Returns a RDF triple object from a value and a type.
-	#
-	#  The value must be in the #mixins list.
-	#  Depending on the value of @p type, a literal object, a URI or a variable (?var) is created.
-	#
-	#  @param value		(string) Value to be processed.
-	#  @oaram type		(string) One of 'literal', 'uri', 'variable'.
 	def _build_prop_tuples(
 			self, insert_props={}, delete_props={}, init_insert_tuples=[], ignore_broken_rels=True
 			):
@@ -175,6 +175,13 @@ class Node(metaclass=ABCMeta):
 		}
 
 
+	## Returns a RDF triple object from a value and a type.
+	#
+	#  The value must be in the #mixins list.
+	#  Depending on the value of @p type, a literal object, a URI or a variable (?var) is created.
+	#
+	#  @param value		(string) Value to be processed.
+	#  @oaram type		(string) One of 'literal', 'uri', 'variable'.
 	#
 	#  @return (rdflib.URIRef | rdflib.Literal | rdflib.Variable) rdflib object.
 	def _build_rdf_object(self, value, type):
