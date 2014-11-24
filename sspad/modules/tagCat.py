@@ -29,7 +29,7 @@ class TagCat(Node):
 	@property
 	def prop_lake_names(self):
 		return super().prop_lake_names + (
-			(ns_collection['aic'].label, 'literal'),
+			(ns_collection['aic'].label, 'literal', 'string'),
 		)
 
 
@@ -116,7 +116,7 @@ class TagCat(Node):
 					},
 					delete_props = {},
 					init_insert_tuples = []
-				)['tuples'][1]
+				)
 			)
 
 			return uri

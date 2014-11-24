@@ -68,7 +68,7 @@ class LakeConnector:
 		if props:
 			g = Graph(namespace_manager = ns_mgr)
 			cherrypy.log('Received prop tuples: {}'.format(props))
-			for t in props:
+			for t in props['tuples'][1]:
 				g.add((URIRef(''), t[0], t[1]))
 
 			body = g.serialize(format='turtle')
@@ -188,18 +188,19 @@ class LakeConnector:
 		cherrypy.log("URI: {}\nDelete props: {}\nInsert props: {}\nwhere props: {}".format(
 			uri, delete_props, insert_props, where_props
 		))
-		g = Graph(namespace_manager = ns_mgr)
 		insert_triples, delete_triples = ('','')
 		where_triples_list = [];
+
 		for d in delete_props:
 			delete_triples += '\n\t<> {} {} .'.format(d[0].n3(), d[1].n3())
+
 		for i in insert_props:
 			insert_triples += '\n\t<> {} {} .'.format(i[0].n3(), i[1].n3())
+
 		for w in where_props:
 			where_triples_list.append('\n\t{{<> {} {}}}'.format(w[0].n3(), w[1].n3()))
 		where_triples = '\n\tUNION'.join(where_triples_list)
 
-		# @TODO Use namespaces
 		body = 'DELETE {{{}\n}} INSERT {{{}\n}} WHERE {{{}\n}}'\
 			.format(delete_triples, insert_triples, where_triples)
 		cherrypy.log.error('Executing SPARQL update: ' + body)

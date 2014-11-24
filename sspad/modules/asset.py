@@ -2,7 +2,6 @@ import mimetypes
 import io
 import json
 import os
-import uuid
 
 import cherrypy
 import requests
@@ -133,7 +132,7 @@ class Asset(Resource):
 		if uid:
 			return {'message': '*stub* This is Asset #{}.'.format(uid)}
 		elif legacy_uid:
-			if self.tsconn.assert_node_exists_by_prop(ns_collection['aic'] + 'legacyUid', legacy_uid):
+			if self.connectors['tsconn'].assert_node_exists_by_prop(ns_collection['aic'] + 'legacyUid', legacy_uid):
 				return {'message': '*stub* This is Asset with legacy UID #{}.'.format(legacy_uid)}
 			else:
 				raise cherrypy.HTTPError(
@@ -235,21 +234,24 @@ class Asset(Resource):
 		#cherrypy.log('Delete props:' + str(delete_props))
 
 		# Open Fedora transaction
-		self.tx_uri = self.lconn.open_transaction()
+		self.tx_uri = self.connectors['lconn'].open_transaction()
 		self.uri_in_tx = self.uri.replace(lake_rest_api['base_url'], tx_uri + '/')
 
 		# Collect properties
 		try:
-			tuples = self._build_prop_tuples(
-				insert_props=insert_props,
-				delete_props=delete_props
+			self._update_node(
+				self.uri_in_tx,
+				props = {
+					'insert_props' : insert_props,
+					'delete_props' : delete_props,
+					'init_insert_tuples' : [],
+				}
 			)
-			self._update_node(self.uri_in_tx, tuples)
 		except:
-			self.lconn.rollbackTransaction(self.tx_uri)
+			self.connectors['lconn'].rollbackTransaction(self.tx_uri)
 			raise
 
-		self.lconn.commitTransaction(self.tx_uri)
+		self.connectors['lconn'].commitTransaction(self.tx_uri)
 
 		cherrypy.response.status = 204
 		cherrypy.response.headers['Location'] = self.uri # @TODO Actually verify the URI from response headers.
@@ -278,7 +280,7 @@ class Asset(Resource):
 		# The function assumes that multiple legacy UIDs can be assigned.
 		if 'legacy_uid' in props:
 			for uid in props['legacy_uid']:
-				if self.tsconn.assert_node_exists_by_prop(ns_collection['aic'] + 'legacyUid', uid):
+				if self.connectors['tsconn'].assert_node_exists_by_prop(ns_collection['aic'] + 'legacyUid', uid):
 					raise cherrypy.HTTPError(
 						'409 Conflict',
 						'An asset with the same legacy UID already exists. Cannot create a new one.'
@@ -294,7 +296,7 @@ class Asset(Resource):
 		dsmeta = self._validate_dstreams(dstreams)
 
 		# Open Fedora transaction
-		self.tx_uri = self.lconn.open_transaction()
+		self.tx_uri = self.connectors['lconn'].open_transaction()
 		#cherrypy.log('Created TX: {}'.format(self.tx_uri))
 
 		try:
@@ -307,22 +309,27 @@ class Asset(Resource):
 				(ns_collection['dc'].title, Literal(uid)),
 				(ns_collection['aic'].uid, Literal(uid)),
 			]
-			cherrypy.log('Init tuples: {}'.format(init_tuples))
+			cherrypy.log('Asset create init tuples: {}'.format(init_tuples))
 
-			cherrypy.log('Properties: {}'.format(props))
-			tuples = self._build_prop_tuples(insert_props=props, init_insert_tuples=init_tuples)
-			self._update_node(self.uri_in_tx, tuples)
+			cherrypy.log('Asset create properties: {}'.format(props))
+			self._update_node(
+				self.uri_in_tx,
+				props = {
+					'insert_props' : props,
+					'init_insert_tuples' : init_tuples
+				}
+			)
 
 			# Loop over all datastreams and ingest them
 			self._ingest_instances(dstreams, dsmeta)
 
 		except:
 			# Roll back transaction if something goes wrong
-			#self.lconn.rollbackTransaction(self.tx_uri)
+			#self.connectors['lconn'].rollbackTransaction(self.tx_uri)
 			raise
 
 		# Commit transaction
-		self.lconn.commitTransaction(self.tx_uri)
+		self.connectors['lconn'].commitTransaction(self.tx_uri)
 
 		cherrypy.response.status = 201
 		cherrypy.response.headers['Location'] = self.uri
@@ -391,7 +398,7 @@ class Asset(Resource):
 
 		# First check the URI.
 		if uri:
-			if self.lconn.assert_node_exists(uri):
+			if self.connectors['lconn'].assert_node_exists(uri):
 				self.uri = uri
 				return True
 			else:
@@ -406,7 +413,7 @@ class Asset(Resource):
 			ns_collection['aic'] + 'legacyUid'
 			check_uid = legacy_uid
 
-		check_uri = self.tsconn.get_node_uri_by_prop(check_prop, check_uid)
+		check_uri = self.connectors['tsconn'].get_node_uri_by_prop(check_prop, check_uid)
 		
 		if check_uri:
 			self.uri = check_uri
@@ -422,12 +429,12 @@ class Asset(Resource):
 			raise ValueError('Neither uid or legacy_uid were provided. Cannot check for duplicates.')
 
 		if uid:
-			uri_uid = self.tsconn.find_node_uri_by_prop(ns_collection['aic'] + 'uid', uid)
+			uri_uid = self.connectors['tsconn'].find_node_uri_by_prop(ns_collection['aic'] + 'uid', uid)
 			if not self.uri == uri_uid:
 				cherrypy.response.headers['link'] = uri_uid
 				raise cherrypy.HTTPError('409 Conflict', 'A node with UID {} exsists already.'.format(uri))
 		if legacy_uid:
-			uri_legacy_uid = self.tsconn.find_node_uri_by_prop(ns_collection['aic'] + 'legacyUid', legacy_uid)
+			uri_legacy_uid = self.connectors['tsconn'].find_node_uri_by_prop(ns_collection['aic'] + 'legacyUid', legacy_uid)
 			if not self.uri == uri_legacy_uid:
 				cherrypy.response.headers['link'] = legacy_uri_uid
 				raise cherrypy.HTTPError('409 Conflict', 'A node with legacy UID {} exsists already.'.format(legacy_uri))
@@ -442,7 +449,7 @@ class Asset(Resource):
 			cherrypy.log('Master file not provided.')
 			if 'ref_source' in dstreams.keys():
 				cherrypy.log('Requesting {}...'.format(dstreams['ref_source']))
-				ds_binary = self.lconn.get_binary_stream(dstreams['ref_source'])
+				ds_binary = self.connectors['lconn'].get_binary_stream(dstreams['ref_source'])
 
 				dstreams['master'] = self._generateMasterFile(ds_binary.content, self.uid + '_master.jpg')
 			else:
@@ -508,7 +515,7 @@ class Asset(Resource):
 				# Create a reference node.
 				in_dsname = dsname [4:]
 				cherrypy.log('Creating a reference ds with name: aic:ds_{}'.format(in_dsname))
-				ds_content_uri = self.create_or_update_instance(
+				inst_uri = self.create_or_update_instance(
 					parent_uri = self.uri_in_tx,
 					name = in_dsname,
 					ref = dstreams[dsname]
@@ -519,21 +526,12 @@ class Asset(Resource):
 				# Create an actual datastream.
 				ds = self._get_iostream_from_req(dstreams[dsname])
 				ds.seek(0)
-				ds_content_uri = self.create_or_update_instance(
+				inst_uri = self.create_or_update_instance(
 					parent_uri = self.uri_in_tx,
 					name = in_dsname,
 					ds = ds,
 					mimetype = dsmeta[dsname]['mimetype']
 				)
-
-			ds_meta_uri = ds_content_uri + '/aic:content/fcr:metadata'
-
-			# Set source datastream properties
-			prop_tuples = [
-				(ns_collection['rdfs'].label, Literal(self.uid + '_' + in_dsname)),
-			]
-
-			self.lconn.update_node_properties(ds_meta_uri, insert_props=prop_tuples)
 
 
 	def create_or_update_instance(
@@ -547,10 +545,6 @@ class Asset(Resource):
 				if name == 'master' \
 				else \
 				ns_collection['aic'].Instance
-		#rdf_type = 'aic:Master'\
-		#		if name == 'master' \
-		#		else \
-		#		'aic:Instance'
 
 		rel_name = 'has_master' \
 			if name == 'master' \
@@ -558,14 +552,15 @@ class Asset(Resource):
 			'has_instance'
 
 		uri = parent_uri + '/aic:ds_' + name
-		inst_uri = self.lconn.create_or_update_node(
-			uri = uri,
+		inst_uri = self.connectors['lconn'].create_or_update_node(
+			uri = parent_uri + '/aic:ds_' + name,
 			props = self._build_prop_tuples(
-				insert_props = {'type' :  [rdf_type]},
-				delete_props = {},
+				insert_props = {
+					'type' :  [rdf_type],
+					'label' : [self.uid + '_' + name],
+				},
 				init_insert_tuples = []
-				#(self.props['type'], self._build_rdf_object(rdf_type, 'uri'))
-			)['tuples'][1]
+			)
 		)
 		cherrypy.log('Created instance: {}'.format(inst_uri))
 
@@ -576,71 +571,26 @@ class Asset(Resource):
 			)
 		
 		if ref:
-			inst_content_uri = self.lconn.create_or_update_ref_datastream(
+			inst_content_uri = self.connectors['lconn'].create_or_update_ref_datastream(
 					uri = inst_uri + '/aic:content', ref = ref
 					)
 		else:
-			inst_content_uri = self.lconn.create_or_update_datastream(
+			inst_content_uri = self.connectors['lconn'].create_or_update_datastream(
 					uri = inst_uri + '/aic:content',
 					file_name = file_name, ds = ds, path = path, mimetype = mimetype
 					)
 
+
 		# Add relationship in parent node.
-		self.lconn.update_node_properties(
+		self._update_node(
 			uri = parent_uri,
-			insert_props = self._build_prop_tuples(
-				insert_props = {rel_name : [inst_uri]},
-				delete_props = {},
-				init_insert_tuples = []
-			)['tuples'][1]
+			props = {
+				'insert_props' : {rel_name : [inst_uri]},
+				'init_insert_tuples' : [],
+			}
 		)
 
 		return inst_uri
-
-
-	def _update_node(self, uri, tuples):
-		'''Updates a node inserting and deleting related nodes if necessary.'''
-
-		delete_nodes, insert_nodes = tuples['nodes']
-		delete_tuples, insert_tuples, where_tuples = tuples['tuples']
-
-		for node_type in delete_nodes.keys():
-			for uri in delete_nodes[node_type]:
-				self.lconn.delete_node(uri)
-
-		for node_type in insert_nodes.keys():
-			if node_type == 'comments':
-				comment_uris = []
-				for comment_props in insert_nodes[node_type]:
-					comment_uri = self.lconn.create_or_update_node(
-						uri = '{}/aic:annotations/{}'.format(uri, uuid.uuid4()),
-						props = [
-							(
-								self._build_rdf_object(ns_collection['rdf'].type, 'uri'),
-								self._build_rdf_object(ns_collection['aic'] + 'Comment', 'uri')
-							),
-							(
-								self._build_rdf_object(ns_collection['aic'].content, 'uri'),
-								self._build_rdf_object(comment_props['content'], 'literal')
-							),
-							(
-								self._build_rdf_object(ns_collection['aic'].category, 'uri'),
-								self._build_rdf_object(comment_props['category'], 'literal')
-							),
-						]
-
-					)
-					insert_tuples.append((
-						self._build_rdf_object(*self.props['comment']),
-						self._build_rdf_object(comment_uri, 'uri')
-					))
-					
-		self.lconn.update_node_properties(
-			uri,
-			delete_props=delete_tuples,
-			insert_props=insert_tuples,
-			where_props=where_tuples
-		)
 
 
 

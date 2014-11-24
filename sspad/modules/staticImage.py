@@ -34,7 +34,7 @@ class StaticImage(Asset):
 	@property
 	def prop_lake_names(self):
 		return super().prop_lake_names + (
-			(ns_collection['aic'].citiImgDBankUid, 'literal'),
+			(ns_collection['aic'].citiImgDBankUid, 'literal', 'string'),
 			#(ns_collection['aic'].viewInfo, 'literal'),
 		)
 

@@ -43,7 +43,7 @@ class Resource(Node):
 	@property
 	def prop_lake_names(self):
 		return super().prop_lake_names + (
-			(ns_collection['dc'].title, 'literal'),
+			(ns_collection['dc'].title, 'literal', 'string'),
 		)
 
 
