@@ -10,7 +10,7 @@ from rdflib import URIRef, Literal
 
 from sspad.config.datasources import lake_rest_api
 from sspad.connectors.uidminter_connector import UidminterConnector
-from sspad.modules.resource import Resource
+from sspad.models.resource import Resource
 from sspad.resources.rdf_lexicon import ns_collection, ns_mgr
 
 

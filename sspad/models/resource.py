@@ -2,7 +2,7 @@ import mimetypes
 
 import cherrypy
 
-from sspad.modules.node import Node
+from sspad.models.node import Node
 from sspad.resources.rdf_lexicon import ns_collection, ns_mgr
 
 ## Resource class.

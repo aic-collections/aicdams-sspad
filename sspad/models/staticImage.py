@@ -3,7 +3,7 @@ import cherrypy
 from wand import image
 
 from sspad.config.datasources import lake_rest_api, datagrinder_rest_api
-from sspad.modules.asset import Asset
+from sspad.models.asset import Asset
 from sspad.resources.rdf_lexicon import ns_collection
 
 

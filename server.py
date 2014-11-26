@@ -3,7 +3,7 @@ import cherrypy
 from cherrypy.process.plugins import Daemonizer, PIDFile
 
 from sspad.config import host, server, app
-from sspad.modules import resource, staticImage, tagCat, tag
+from sspad.models import resource, staticImage, tagCat, tag
 
 
 ## Main Web app class.

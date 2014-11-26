@@ -5,7 +5,7 @@ from rdflib import URIRef, Literal, XSD
 
 from sspad.config.datasources import lake_rest_api, datagrinder_rest_api
 from sspad.connectors.tstore_connector import TstoreConnector
-from sspad.modules.node import Node
+from sspad.models.node import Node
 from sspad.resources.rdf_lexicon import ns_collection
 
 
