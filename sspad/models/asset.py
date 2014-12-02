@@ -14,10 +14,11 @@ from sspad.models.resource import Resource
 from sspad.resources.rdf_lexicon import ns_collection, ns_mgr
 
 
-## Asset class.
-#
-#  This is the base class for all Assets.
 class Asset(Resource):
+	'''Asset class.
+
+	This is the base class for all Assets.
+	'''
 
 	pfx = ''
 
@@ -25,20 +26,31 @@ class Asset(Resource):
 	node_type = ns_collection['aic'].Asset
 
 
-	## MIME type used for master generation.
-	#
-	#  @TODO Use another method to map MIME types to various generated datastreams.
-	master_mimetype = 'image/jpeg'
+
+	@property
+	def master_mimetype(self):
+		'''MIME type used for master generation.
+
+		@return string
+
+		@TODO Use another method to map MIME types to various generated datastreams.
+		'''
+
+		return 'image/jpeg'
 
 
 	default_comment_type = 'general'
 
 
-	## Properties as specified in requests.
-	#
-	#  These map to #prop_lake_names.
+
 	@property
 	def prop_req_names(self):
+		'''Properties as specified in requests.
+
+		These map to #prop_lake_names.
+
+		@return tuple
+		'''
 		return super().prop_req_names + (
 			'legacy_uid', # String
 			'batch_uid', # String
@@ -59,11 +71,16 @@ class Asset(Resource):
 		)
 
 
-	## Tuples of LAKE namespaces and data types.
-	#
-	#  Data type string can be 'literal', 'uri' or 'variable'.
+
 	@property
 	def prop_lake_names(self):
+		'''Tuples of LAKE namespaces and data types.
+
+		Data type string can be 'literal', 'uri' or 'variable'.
+
+		@return tuple
+		'''
+
 		return super().prop_lake_names + (
 			(ns_collection['aic'].legacyUid, 'literal'),
 			(ns_collection['aic'].batchUid, 'literal'),
@@ -84,19 +101,28 @@ class Asset(Resource):
 		)
 
 
-	## Request properties to resource prefix mapping.
-	#  Keys are properties in prop_req_names. 
-	#  Values are prefixes assigned to the resource that the Asset should be linked to
-	reqprops_to_rels = {
-		'citi_obj_pkey' : {'type' : ns_collection['aic'].Object, 'pfx' : 'OB'},
-		'pref_obj_pkey' : {'type' : ns_collection['aic'].Object, 'pfx' : 'OB'},
-		'citi_agent_pkey' : {'type' : ns_collection['aic'].Actor, 'pfx' : 'AC'},
-		'pref_agent_pkey' : {'type' : ns_collection['aic'].Actor, 'pfx' : 'AC'},
-		'citi_place_pkey' : {'type' : ns_collection['aic'].Place, 'pfx' : 'PL'},
-		'pref_place_pkey' : {'type' : ns_collection['aic'].Place, 'pfx' : 'PL'},
-		'citi_exhib_pkey' : {'type' : ns_collection['aic'].Event, 'pfx' : 'EV'},
-		'pref_exhib_pkey' : {'type' : ns_collection['aic'].Event, 'pfx' : 'EV'},
-	}
+
+	@property
+	def reqprops_to_rels(self):
+		'''Request properties to resource prefix mapping.
+
+		Keys are properties in prop_req_names.
+		Values are prefixes assigned to the resource that the Asset should be linked to.
+
+		@return dict
+		'''
+
+		return {
+			'citi_obj_pkey' : {'type' : ns_collection['aic'].Object, 'pfx' : 'OB'},
+			'pref_obj_pkey' : {'type' : ns_collection['aic'].Object, 'pfx' : 'OB'},
+			'citi_agent_pkey' : {'type' : ns_collection['aic'].Actor, 'pfx' : 'AC'},
+			'pref_agent_pkey' : {'type' : ns_collection['aic'].Actor, 'pfx' : 'AC'},
+			'citi_place_pkey' : {'type' : ns_collection['aic'].Place, 'pfx' : 'PL'},
+			'pref_place_pkey' : {'type' : ns_collection['aic'].Place, 'pfx' : 'PL'},
+			'citi_exhib_pkey' : {'type' : ns_collection['aic'].Event, 'pfx' : 'EV'},
+			'pref_exhib_pkey' : {'type' : ns_collection['aic'].Event, 'pfx' : 'EV'},
+		}
+
 
 
 	@property
@@ -108,9 +134,14 @@ class Asset(Resource):
 		)
 
 
-	## Path between the repo root and the asset node.
+
 	@property
 	def path(self):
+		'''Path between the repo root and the asset node.
+
+		@return string
+		'''
+
 		pfx = self.pfx + '/' if self.pfx else ''
 		return 'resources/assets/' + pfx
 
@@ -118,14 +149,17 @@ class Asset(Resource):
 
 	## HTTP-EXPOSED METHODS ##
 
-	## GET method.
-	#
-	#  Lists all Assets or shows properties for an asset with given uid.
-	#
-	#  @param uid (string) UID of Asset to display.
-	#
-	#  @TODO stub
 	def GET(self, uid=None, legacy_uid=None):
+		'''GET method.
+
+		Lists all Assets or shows properties for an asset with given uid.
+
+		@param uid (string) UID of Asset to display.
+
+		@return string
+
+		@TODO stub
+		'''
 
 		self._set_connection()
 
@@ -143,21 +177,24 @@ class Asset(Resource):
 			return {'message': '*stub* This is a list of Assets.'}
 
 
-	## POST method.
-	#
-	#  Create a new Asset node with automatic UID by providing data and node properties.
-	#
-	#  @param mid			(string) Mid-prefix.
-	#  @param props	(dict) Properties to be associated with new node.
-	#  @param **dstreams	(BytesIO) Arbitrary datastream(s).
-	#  Name of the parameter is the datastream name.
-	#  If the datastream is to be ingested directly into LAKE, the variable value is the actual data.
-	#  If the datastream is in an external URL and must be a reference, 
-	#  the variable name is prefixed with ref_ and the value is a URL (e.g. 'ref_source' will ingest a reference ds called 'source').
-	#  Only the 'source' datastream is mandatory (or 'ref_source' if it is a reference).
-	#
-	#  @return (dict) Message with new node information.
+
 	def POST(self, mid, props='{}', **dstreams):
+		'''POST method.
+
+		Create a new Asset node with automatic UID by providing data and node properties.
+
+		@param mid			(string) Mid-prefix.
+		@param props	(dict) Properties to be associated with new node.
+		@param **dstreams	(BytesIO) Arbitrary datastream(s).
+			Name of the parameter is the datastream name.
+			If the datastream is to be ingested directly into LAKE, the variable value is the actual data.
+			If the datastream is in an external URL and must be a reference,
+			the variable name is prefixed with ref_ and the value is a URL (e.g. 'ref_source' will ingest a reference ds called 'source').
+			Only the 'source' datastream is mandatory (or 'ref_source' if it is a reference).
+
+		@return (dict) Message with new node information.
+		'''
+
 		cherrypy.log('\n')
 		cherrypy.log('************************')
 		cherrypy.log('Begin ingestion process.')
@@ -171,22 +208,24 @@ class Asset(Resource):
 		return self.create(mid, props_dict, **dstreams)
 
 
-	## PUT method.
-	#
-	#  Adds or replaces datastreams or replaces the whole property set of an Asset.
-	#
-	#  @param uid		(string) Asset UID. Specify this or 'uri' only if the node is known to exist,
-	#	  otherwise a 404 Not Found will be thrown.
-	#  @param uri		(string) Asset URI. If this is not provided, node will be searched by UID.
-	#  @param props	(dict) Properties to be associated with new or updated node. 
-	#	  The 'legacy_uid' property is searched for conflicts or to find nodes when neither 'uri' or 'uid' are known.
-	#  @param **dstreams	(BytesIO) Arbitrary datastream(s). Name of the parameter is the datastream name.
-	#  Only the 'source' datastream is mandatory.
-	#
-	#  @return (dict) Message with node information.
-	#
-	#  @TODO Replacing property set is not supported yet, and might not be needed anyway.
+
 	def PUT(self, uid=None, uri=None, props='{}', **dstreams):
+		'''PUT method.
+
+		Adds or replaces datastreams or replaces the whole property set of an Asset.
+
+		@param uid		(string) Asset UID. Specify this or 'uri' only if the node is known to exist,
+		   otherwise a 404 Not Found will be thrown.
+		@param uri		(string) Asset URI. If this is not provided, node will be searched by UID.
+		@param props	(dict) Properties to be associated with new or updated node.
+		   The 'legacy_uid' property is searched for conflicts or to find nodes when neither 'uri' or 'uid' are known.
+		@param **dstreams	(BytesIO) Arbitrary datastream(s). Name of the parameter is the datastream name.
+		Only the 'source' datastream is mandatory.
+
+		@return (dict) Message with node information.
+
+		@TODO Replacing property set is not supported yet, and might not be needed anyway.
+		'''
 
 		cherrypy.log('\n')
 		cherrypy.log('************************')
@@ -208,15 +247,19 @@ class Asset(Resource):
 		self._check_uid_dupes(uid, legacy_uid)
 		return self.update(uid, None, props_dict, **dstreams)
 
-	
-	## PATCH method.
-	#
-	#  Adds or removes properties and mixins in an Asset.
-	#
-	#  @param uid				(string) Asset UID.
-	#  @param insert_props	(dict) Properties to be inserted.
-	#  @param delete_props	(dict) Properties to be deleted.
+
+
 	def PATCH(self, uid=None, uri=None, insert_props='{}', delete_props='{}'):
+		'''PATCH method.
+
+		Adds or removes properties and mixins in an Asset.
+
+		@param uid				(string) Asset UID.
+		@param insert_props	(dict) Properties to be inserted.
+		@param delete_props	(dict) Properties to be deleted.
+
+		@return (dict) Message with new node information.
+		'''
 
 		self._set_connection()
 		self._set_uri(uri, uid)
@@ -275,7 +318,7 @@ class Asset(Resource):
 				props[p] = [props[p]]
 
 		# Before anything else, check that if a legacy_uid parameter is
-		# provied, no other Asset exists with that legacy UID. In the case one exists, 
+		# provied, no other Asset exists with that legacy UID. In the case one exists,
 		# the function shall return a '409 Conflict'.
 		# The function assumes that multiple legacy UIDs can be assigned.
 		if 'legacy_uid' in props:
@@ -337,6 +380,7 @@ class Asset(Resource):
 		return {"message": "Asset created.", "data": {"location": self.uri}}
 
 
+
 	def update(self, uid=None, uri=None, props='{}', **dstreams):
 		'''Updates an asset. @sa PUT'''
 
@@ -374,11 +418,15 @@ class Asset(Resource):
 		return {"message": "Resource updated.", "data": {"location": self.uri}} # @TODO Actually verify the URI from response headers.
 
 
-	## Calls an eternal service to generate and returns a UID.
-	#
-	#  @param mid		(string) Second prefix needed for certain types.
-	#  @return string Generated UID.
+
 	def mint_uid(self, mid=None):
+		'''Calls an eternal service to generate and returns a UID.
+
+		@param mid (string) Second prefix needed for certain types.
+
+		@return (string) Generated UID.
+		'''
+
 		try:
 			self.uid = UidminterConnector().mint_uid(self.pfx, mid)
 		except:
@@ -386,9 +434,17 @@ class Asset(Resource):
 		return self.uid
 
 
+
 	def _set_uri(self, uri=None, uid=None, legacy_uid=None):
 		'''Validates the existence of a node from provided URI, UID or legacy UID
 		and set #uri to a value according to the first valid one found.
+		At leaast one of uri, uid or legacy_uid values must be provided.
+
+		@param uri (string, optional) URI of node, if known.
+		@param uid (string, optional) AIC UID of Asset, if known.
+		@param legacy_uid (string, optional) Legacy UID of Asset, if known.
+
+		@return (bool) Whether the class-level member #uri was set.
 		'''
 
 		if not uri and not uid and not legacy_uid:
@@ -414,7 +470,7 @@ class Asset(Resource):
 			check_uid = legacy_uid
 
 		check_uri = self.connectors['tsconn'].get_node_uri_by_prop(check_prop, check_uid)
-		
+
 		if check_uri:
 			self.uri = check_uri
 			return True
@@ -422,8 +478,19 @@ class Asset(Resource):
 			return False
 
 
+
 	def _check_uid_dupes(self, uid=None, legacy_uid=None):
-		'''Checks if a node with a given UID or a given legacy UID exists.'''
+		'''Checks if a node with a given UID or a given legacy UID exists.
+		At least one of uid or legacy_uid must be provided.
+
+		@param uid (string, optional) UID of node to check duplicates for.
+		@param legacy_uid (string, optional) Legacy UID of node to check duplicates for.
+
+		@return (boolean) Whether a duplicate has been found.
+		@throws (HTTPError) 409 Conflict if a duplicate exists.
+
+		@TODO Only return boolean and let caller method raise exceptions if appropriate.
+		'''
 
 		if not uid and not legacy_uid:
 			raise ValueError('Neither uid or legacy_uid were provided. Cannot check for duplicates.')
@@ -442,8 +509,15 @@ class Asset(Resource):
 		return True
 
 
+
 	def _generate_master(self, dstreams):
-		'''Generates master datastream from source if missing and returns the complete list of datastreams.'''
+		'''Generates master datastream from source if missing and returns the complete list of datastreams.
+
+		@param dstreams (dict) Dict of datastreams where keys are datastream names and values are datastreams.
+
+		@return (dict) Updated list of datastreams.
+		'''
+
 		if 'master' not in dstreams.keys() and 'ref_master' not in dstreams.keys():
 			# Generate master if not present
 			cherrypy.log('Master file not provided.')
@@ -463,7 +537,16 @@ class Asset(Resource):
 		return dstreams
 
 
+
 	def _validate_dstreams(self, dstreams):
+		'''Ensures that provided datastreams are valid and conform to a set of conditions.
+		This methiod is overridden for each asset type.
+
+		@param dstreams (dict) Dict of datastreams. Keys are dataastream names and values are datastreams.
+
+		@return (dict) Datastream metadata coming from validators.
+		'''
+
 		dsmeta = {}
 		for dsname in dstreams.keys():
 			ds = self._get_iostream_from_req(dstreams[dsname])
@@ -485,13 +568,18 @@ class Asset(Resource):
 		return dsmeta
 
 
-	## Normalize the behaviour of a datastream object regardless of its source.
-	#
-	#  If ds is a byte stream instead of a Part instance, wrap it in an
-	#  anonymous object as a 'file' property.
-	#
-	#  @param ds The BytesIO or bytes object to be normalized.
+
 	def _get_iostream_from_req(self, ds):
+		'''Normalize the behaviour of a datastream object regardless of its source.
+
+		If ds is a byte stream instead of a Part instance, wrap it in an
+		anonymous object as a 'file' property.
+
+		@param ds The BytesIO or bytes object to be normalized.
+
+		@return (BytesIO)
+		'''
+
 		if hasattr(ds, 'file'):
 			cherrypy.log('Normalizer: ds.file exists already and is of class type {}.'.format(
 				ds.file.__class__.__name__
@@ -505,8 +593,15 @@ class Asset(Resource):
 			return ds
 
 
+
 	def _ingest_instances(self, dstreams, dsmeta):
-		'''Loops over datastreams and ingests them within a transaction.'''
+		'''Loops over datastreams and ingests them by calling #create_or_update_instance() iteratively within a transaction.
+
+		@param dstreams (dict) Dict of datastreams. Keys are datastream names and values are datastreams.
+		@param dsmeta (dict) Dict of datastream metadata. Keys are datastream names and values are dicts of property names and values.
+
+		@return (boolean) True
+		'''
 
 		cherrypy.log('DSmeta: {}'.format(dsmeta))
 		for dsname in dstreams.keys():
@@ -534,13 +629,23 @@ class Asset(Resource):
 				)
 
 
+
 	def create_or_update_instance(
 			self, parent_uri, name, ref=None, file_name=None, ds=None, path=None, mimetype='application/octet-stream'
 			):
 		'''Creates or updates an instance.
-		@TODO
+
+		@param parent_uri (string) URI of the container Asset node for the instance.
+		@param name (string) Name of the datastream, e.g. 'master' or 'source'.
+		@param ref (string, optional) Reference URI for remote source.
+		@param file_name (string, optional) File name for the downloaded datastream. If empty, this is built from the asset UID and instance name (default).
+		@param ds (BytesIO, optional) Raw datastream.
+		@param path (string, optional) Reference path for source file in current filesystem.
+		@param mimetype (string, optional) MIME type of provided datastream. Default is 'application/octet-stream'.
+
+		@return (string) New instance URI.
 		'''
-		
+
 		rdf_type = ns_collection['aic'].Master\
 				if name == 'master' \
 				else \
@@ -569,7 +674,7 @@ class Asset(Resource):
 			file_name = '{}_{}{}'.format(
 				os.path.basename(inst_uri), name, self._guess_file_ext(mimetype)
 			)
-		
+
 		if ref:
 			inst_content_uri = self.connectors['lconn'].create_or_update_ref_datastream(
 					uri = inst_uri + '/aic:content', ref = ref

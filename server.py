@@ -6,10 +6,12 @@ from sspad.config import host, server, app
 from sspad.models import resource, staticImage, tagCat, tag
 
 
-## Main Web app class.
-#
-# Contains the RESTful API and all its top-level locations.
 class Webapp():
+	'''Main Web app class.
+
+	Contains the RESTful API and all its top-level locations.
+	'''
+
 	exposed = True
 
 	si = staticImage.StaticImage()
@@ -17,6 +19,8 @@ class Webapp():
 	tag = tag.Tag()
 
 	def GET(self):
+		'''Homepage - does nothing'''
+
 		return {'message': 'Nothing to see here.'}
 
 
