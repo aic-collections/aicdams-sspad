@@ -49,7 +49,7 @@ class TstoreConnector:
 			accept = 'application/sparql-results+xml'
 
 		res = requests.get(
-			self.conf['base_url'], 
+			self.conf['base_url'],
 			headers = dict(chain(self.headers.items(),
 				[(
 					'Accept',
@@ -86,7 +86,7 @@ class TstoreConnector:
 
 	def get_node_uri_by_prop(self, prop, value, type='string'):
 		''' Get the URI of a node by a given literal property.
-		
+
 		@param prop (string) The property name as a fully qualified URI.
 		@param value (string) The property value.
 		@param type (string) Data type according to http://www.w3.org/2001/XMLSchema
@@ -106,7 +106,8 @@ class TstoreConnector:
 		''' Get the URI of a node by a set of literal properties.
 			Properties are logically connected by AND.
 
-			@param props (list) Property map: list of 2-tuples with URIRef of Literals for predicate and object to query for.
+		@param props (list) Property map: list of 2-tuples with URIRef of Literals for predicate and object to query for.
+
 		@return string
 		'''
 

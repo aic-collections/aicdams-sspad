@@ -14,36 +14,63 @@ from sspad.resources.rdf_lexicon import ns_collection
 
 
 class Node(metaclass=ABCMeta):
-	## RDF type.
-	#
-	#  This is a URI that reflects the node type set in the LAKE CND.
-	#
-	#  @sa https://github.com/aic-collections/aicdams-lake/tree/master-aic/fcrepo-webapp/src/aic/resources/cnd
-	node_type = ns_collection['fedora'].Resource
+	'''Node is the base class for all Fedora nodes.'''
+
+	def node_type(self):
+		'''RDF type.
+
+		This is a URI that reflects the node type set in the LAKE CND.
+
+		@sa https://github.com/aic-collections/aicdams-lake/tree/master-aic/fcrepo-webapp/src/aic/resources/cnd
+		'''
+		return ns_collection['fedora'].Resource
 
 
-	## Additional MIME types.
-	#
-	#  They are added to the known list for guessing file extensions.
-	_add_mimetypes = (
-		('image/jpeg', '.jpeg', True),
-		('image/psd', '.psd', False),
-		('image/vnd.adobe.photoshop', '.psd', True),
-		('image/x-psd', '.psd', False),
-		# [...]
-	)
 
-	reqprops_to_rels = {}
+	def _add_mimetypes(self):
+		'''Additional MIME types.
 
-	## Properties as specified in requests.
-	#
-	#  These map to #prop_lake_names.
+		They are added to the known list for guessing file extensions.
+
+		@return tuple
+		'''
+		return (
+			('image/jpeg', '.jpeg', True),
+			('image/psd', '.psd', False),
+			('image/vnd.adobe.photoshop', '.psd', True),
+			('image/x-psd', '.psd', False),
+		)
+
+
+
+	def reqprops_to_rels(self):
+		'''Request properties to resource prefix mapping.
+
+		Keys are properties in prop_req_names.
+		Values are prefixes assigned to the resource that the Asset should be linked to.
+
+		@return dict
+		'''
+
+		return {}
+
+
+
+
 	@property
 	def prop_req_names(self):
+		'''Properties as specified in requests.
+
+		These map to #prop_lake_names.
+
+		@return tuple
+		'''
+
 		return (
 			'type',
 			'label',
 		)
+
 
 
 	@property
@@ -54,6 +81,8 @@ class Node(metaclass=ABCMeta):
 		Second element is a string defining property type, which can be 'literal', 'uri' or 'variable'.
 		Third element is optional and only available for 'literal' data type and defines the XMLSchema data type.
 
+		@return tuple
+
 		@TODO Add lang option.
 		'''
 
@@ -63,14 +92,17 @@ class Node(metaclass=ABCMeta):
 		)
 
 
+
 	@property
 	def props(self):
 		return dict(zip(self.prop_req_names, self.prop_lake_names))
 
 
-	## Sets up connections to external services.
+
+	## METHODS ##
+
 	def _set_connection(self):
-		'''Set connectors.'''
+		'''Sets up connections to external services.'''
 
 		cherrypy.log('Setting connectors...')
 		cherrypy.request.app.config['connectors']['lconn'] = LakeConnector()
@@ -79,21 +111,21 @@ class Node(metaclass=ABCMeta):
 
 		self.connectors = cherrypy.request.app.config['connectors']
 
- 
 
-	## Creates a node within a transaction in LAKE.
-	#
-	#  @FIXME This is currently broken due to a change in Fedora code that might or might not be
-	#  a bug: https://www.pivotaltracker.com/story/show/79747630
-	#
-	#  @param uid		(string) UID of the node to be generated.
-	#  @param tx_uri	(string) URI of the transaction.
-	#
-	#  @return tuple Two resource URIs: one in the transaction and one outside of it.
+
 	def create_node_in_tx(self, uid, tx_uri):
+		'''Creates a node within a transaction in LAKE.
+
+		@param uid		(string) UID of the node to be generated.
+		@param tx_uri	(string) URI of the transaction.
+
+		@return tuple Two resource URIs: one in the transaction and one outside of it.
+		'''
+
 		node_tx_uri = self.connectors['lconn'].create_or_update_node(parent='{}/{}'.format(tx_uri,self.path))
 
 		return (node_tx_uri, self.tx_uri_to_notx_uri(node_tx_uri))
+
 
 
 	def tx_uri_to_notx_uri(self, tx_uri):
@@ -102,23 +134,40 @@ class Node(metaclass=ABCMeta):
 		return re.sub(r'/tx:[^\/]+/', '/', tx_uri) # FIXME Ugly. Use more reliable methods.
 
 
-	## Guesses file extension from MIME types.
-	#
-	#  @param mimetype	(string) MIME type, such as 'image/jpeg'
-	#
-	#  @return string Extetnsion guessed (including leading period)
 	def _guess_file_ext(self, mimetype):
+		'''Guesses file extension from MIME types.
+
+		@param mimetype	(string) MIME type, such as 'image/jpeg'
+
+		@return (string) Extetnsion guessed (including leading period)
+		'''
+
 		ext = mimetypes.guess_extension(mimetype) or '.bin'
 		cherrypy.log.error('Guessing MIME type for {}: {}'.format(mimetype, ext))
 		return ext
 
 
+
 	def _build_prop_tuples(
 			self, insert_props={}, delete_props={}, init_insert_tuples=[], ignore_broken_rels=True
 			):
-		''' Build delete, insert and where tuples suitable for #LakeConnector:update_node_properties.
-		from a list of insert and delete properties.
-		Also builds a list of nodes that need to be deleted and/or inserted to satisfy references.
+		'''Build delete, insert and where tuples suitable for #LakeConnector:update_node_properties
+			from a list of insert and delete properties.
+			Also builds a list of nodes that need to be deleted and/or inserted to satisfy references.
+
+			@param insert_props (dict, optional) Properties to be inserted.
+			@param delete_props (dict, optional) Properties to be deleted.
+			@param init_insert_tuples (list, optional) Initial properties coming from default settings,
+				already formatted as tuples.
+			@param ignore_broken_rels (boolean, optional) If set to True (default), the application throws
+				an exception if a realtionship with a CITI object is broken.
+				If False, the property is skipped and the process goes forward.
+				WARNING: DO NOT SET TO TRUE IN PRODUCTION ENVIRONMENT!
+
+			@return (dict) Dict containing two elements:
+				'nodes' is a tuple containing a list of nodes to be deleted and a list of nodes to be created.
+				'tuples' is a tuple containing a list of tuples to be added, one of tuples to be removed,
+				and one of WHERE conditions.
 		'''
 
 		cherrypy.log('Initial insert tuples: {}.'.format(init_insert_tuples))
@@ -183,14 +232,14 @@ class Node(metaclass=ABCMeta):
 
 	def _build_rdf_object(self, value, type, datatype=None):
 		'''Returns an RDF object from a value and a type.
-		
+
 		The value must be in the #mixins list.
 		Depending on the value of @p type, a literal object, a URI or a variable (?var) is created.
-		
+
 		@param value	(string) Value to be processed.
 		@oaram type		(string) One of 'literal', 'uri', 'variable'.
 		@oaram datatype	(string, optional) Data type for 'literal' type.
-		
+
 		@return (rdflib.URIRef | rdflib.Literal | rdflib.Variable) rdflib object.
 		'''
 
@@ -205,11 +254,13 @@ class Node(metaclass=ABCMeta):
 
 	def _update_node(self, uri, props):
 		'''Updates a node inserting and deleting related nodes if necessary.
-		
+
 		@param uri (stirng) URI of the node to be updated.
 		@param tuples (dict) Map of properties and nodes to be updated, to be passed to #_build_prop_tuples.
+
+		@return None
 		'''
-		
+
 		tuples = self._build_prop_tuples(**props)
 
 		delete_nodes, insert_nodes = tuples['nodes']
@@ -234,18 +285,12 @@ class Node(metaclass=ABCMeta):
 								'category' : [comment_props['category']],
 							}
 						)
-						#props = [
-						#	(URIRef(ns_collection['rdf'].type), URIRef(ns_collection['aic'].Comment)),
-						#	(URIRef(ns_collection['aic'].content), Literal(comment_props['content'], datatype=XSD.string)),
-						#	## @TODO Comment category should be a URI
-						#	(URIRef(ns_collection['aic'].category), Literal(comment_props['category'], datatype=XSD.string)),
-						#]
-
 					)
+
 					insert_tuples.append(
 						(self._build_rdf_object(*self.props['comment']), URIRef(comment_uri))
 					)
-					
+
 		self.connectors['lconn'].update_node_properties(
 			uri,
 			delete_props=delete_tuples,

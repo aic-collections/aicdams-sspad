@@ -5,31 +5,35 @@ import cherrypy
 from sspad.models.node import Node
 from sspad.resources.rdf_lexicon import ns_collection, ns_mgr
 
-## Resource class.
-#
-#  Resources are all nodes in LAKE that can have metadata. They include two
-#  main categories: holders and assets.
 class Resource(Node):
+	'''Resource class.
 
-	## Resource prefix.
-	#
-	#  This is used in the node UID and designates the resource type.
-	#  It is mandatory to define it for each resource type.
-	#  @TODO Call uidminter and generate a (cached) map of pfx to Resource subclass names.
-	pfx = ''
+	Resources are all nodes in LAKE that can have metadata. They include two
+	main categories: holders and assets.
+	'''
+
+	@property
+	def pfx(self):
+		'''Resource prefix.
+
+		This is used in the node UID and designates the resource type.
+		It is mandatory to define it for each resource type.
+
+		@return string
+
+		@TODO Call uidminter and generate a (cached) map of pfx to Resource subclass names.
+		'''
+
+		return ''
 
 
-	## RDF type.
-	#
-	#  This is a URI that reflects the node type set in the LAKE CND.
-	#
-	#  @sa https://github.com/aic-collections/aicdams-lake/tree/master-aic/fcrepo-webapp/src/aic/resources/cnd
-	node_type = ns_collection['aic'].Resource
+
+	@property
+	def node_type(self):
+		return ns_collection['aic'].Resource
 
 
-	## Properties as specified in requests.
-	#
-	#  These map to #prop_lake_names.
+
 	@property
 	def prop_req_names(self):
 		return super().prop_req_names + (
@@ -37,9 +41,7 @@ class Resource(Node):
 		)
 
 
-	## Tuples of LAKE namespaces and data types.
-	#
-	#  Data type string can be 'literal', 'uri' or 'variable'.
+
 	@property
 	def prop_lake_names(self):
 		return super().prop_lake_names + (
@@ -47,27 +49,40 @@ class Resource(Node):
 		)
 
 
-	## Mix-ins considered for updating.
+
 	@property
 	def mixins(self):
+		'''Mix-ins considered for updating.
+
+		@return tuple
+		'''
 		return (
 			'aicmix:Citi',
 			'aicmix:CitiPrivate',
 		)
 
 
-	## Base properties to assign to this node type.
+
 	@property
 	def base_prop_tuples(self):
+		'''Base properties to assign to this node type.
+
+		@return list
+		'''
+
 		return [
 			(ns_collection['rdf'].type, self.node_type),
 		]
 
 
-	## Class constructor.
-	#
-	#  Sets up several connections and MIME types.
+
 	def __init__(self):
+		'''Class constructor.
+
+		Sets up several connections and MIME types.
+
+		@return None
+		'''
 		super().__init__()
 		if not mimetypes.inited:
 			mimetypes.init()
@@ -75,10 +90,13 @@ class Resource(Node):
 				mimetypes.add_type(mt, ext, strict)
 
 
-	## Validate a datastream.
-	#
-	#  Override this method for each Node subclass.
+
 	def _validate_datastream(self, ds, dsname='', rules={}):
+		'''Validate a datastream.
+
+		Override this method for each Node subclass.
+		'''
+
 		pass
 
 

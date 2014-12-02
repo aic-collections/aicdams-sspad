@@ -20,10 +20,9 @@ class Asset(Resource):
 	This is the base class for all Assets.
 	'''
 
-	pfx = ''
-
-
-	node_type = ns_collection['aic'].Asset
+	@property
+	def node_type(self):
+		return ns_collection['aic'].Asset
 
 
 
@@ -45,12 +44,6 @@ class Asset(Resource):
 
 	@property
 	def prop_req_names(self):
-		'''Properties as specified in requests.
-
-		These map to #prop_lake_names.
-
-		@return tuple
-		'''
 		return super().prop_req_names + (
 			'legacy_uid', # String
 			'batch_uid', # String
@@ -74,16 +67,9 @@ class Asset(Resource):
 
 	@property
 	def prop_lake_names(self):
-		'''Tuples of LAKE namespaces and data types.
-
-		Data type string can be 'literal', 'uri' or 'variable'.
-
-		@return tuple
-		'''
-
 		return super().prop_lake_names + (
-			(ns_collection['aic'].legacyUid, 'literal'),
-			(ns_collection['aic'].batchUid, 'literal'),
+			(ns_collection['aic'].legacyUid, 'literal', 'string'),
+			(ns_collection['aic'].batchUid, 'literal', 'string'),
 			(ns_collection['aic'].hasTag, 'uri'),
 			(ns_collection['aic'].hasComment, 'uri'),
 			#(ns_collection['fcrepo'].hasExternalContent, 'uri'),
@@ -104,14 +90,6 @@ class Asset(Resource):
 
 	@property
 	def reqprops_to_rels(self):
-		'''Request properties to resource prefix mapping.
-
-		Keys are properties in prop_req_names.
-		Values are prefixes assigned to the resource that the Asset should be linked to.
-
-		@return dict
-		'''
-
 		return {
 			'citi_obj_pkey' : {'type' : ns_collection['aic'].Object, 'pfx' : 'OB'},
 			'pref_obj_pkey' : {'type' : ns_collection['aic'].Object, 'pfx' : 'OB'},
@@ -220,7 +198,7 @@ class Asset(Resource):
 		@param props	(dict) Properties to be associated with new or updated node.
 		   The 'legacy_uid' property is searched for conflicts or to find nodes when neither 'uri' or 'uid' are known.
 		@param **dstreams	(BytesIO) Arbitrary datastream(s). Name of the parameter is the datastream name.
-		Only the 'source' datastream is mandatory.
+		Only the 'source' datastream is mandatory. @sa POST
 
 		@return (dict) Message with node information.
 
@@ -306,7 +284,10 @@ class Asset(Resource):
 	## NON-EXPOSED METHODS ##
 
 	def create(self, mid, props={}, **dstreams):
-		'''Create an asset. @sa POST'''
+		'''Create an asset. @sa POST
+
+		@return (dict) Message with new asset node information.
+		'''
 
 		# If neither source nor ref_source is present, throw error
 		if 'source' not in dstreams.keys() and 'ref_source' not in dstreams.keys():
@@ -382,7 +363,10 @@ class Asset(Resource):
 
 
 	def update(self, uid=None, uri=None, props='{}', **dstreams):
-		'''Updates an asset. @sa PUT'''
+		'''Updates an asset. @sa PUT
+
+		@return (dict) Message with updated asset node information.
+		'''
 
 		#self._set_connection()
 		dsnames = sorted(dstreams.keys())
