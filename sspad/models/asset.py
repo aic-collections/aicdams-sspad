@@ -399,14 +399,15 @@ class Asset(Resource):
 					)
 				src_data = None # Flush datastream
 
-		return {"message": "Resource updated.", "data": {"location": self.uri}} # @TODO Actually verify the URI from response headers.
+		# @TODO Actually verify the URI from response headers.
+		return {"message": "Resource updated.", "data": {"location": self.uri}}
 
 
 
 	def mint_uid(self, mid=None):
-		'''Calls an eternal service to generate and returns a UID.
+		'''Calls an external service to generate and returns a UID.
 
-		@param mid (string) Second prefix needed for certain types.
+		@param mid (string, optional) Second prefix needed for certain types.
 
 		@return (string) Generated UID.
 		'''
@@ -579,10 +580,12 @@ class Asset(Resource):
 
 
 	def _ingest_instances(self, dstreams, dsmeta):
-		'''Loops over datastreams and ingests them by calling #create_or_update_instance() iteratively within a transaction.
+		'''Loops over datastreams and ingests them by
+			calling #create_or_update_instance() iteratively within a transaction.
 
 		@param dstreams (dict) Dict of datastreams. Keys are datastream names and values are datastreams.
-		@param dsmeta (dict) Dict of datastream metadata. Keys are datastream names and values are dicts of property names and values.
+		@param dsmeta (dict) Dict of datastream metadata.
+			Keys are datastream names and values are dicts of property names and values.
 
 		@return (boolean) True
 		'''
@@ -680,6 +683,4 @@ class Asset(Resource):
 		)
 
 		return inst_uri
-
-
 

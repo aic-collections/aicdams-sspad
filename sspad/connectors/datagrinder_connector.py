@@ -5,38 +5,61 @@ from cherrypy import log
 from sspad.config.datasources import datagrinder_rest_api
 
 
-## Datagrinder connector class.
-#
-#  Handles requests to datagrinder for multimedia processing.
 class DatagrinderConnector:
+	'''Datagrinder connector class.
 
-	## Datagrinder host configuration.
-	_conf = datagrinder_rest_api
+	Handles requests to datagrinder for multimedia processing.
+	'''
 
-	## Base URL built from conf parameters.
-	_base_url = '{}://{}{}'. format(_conf['proto'], _conf['host'], _conf['root'])
+	@property
+	def _conf(self):
+		'''Datagrinder host configuration.
+
+		@return dict
+		'''
+
+		return datagrinder_rest_api
 
 
-	## Class constructor.
-	#
-	# Sets authorization parameters based on incoming auth headers.
-	#
-	#  @param string auth Authorization string as passed by incoming headers.
+
+	@property
+	def _base_url(self):
+		'''Base URL built from conf parameters.
+
+		@return string
+		'''
+
+		return '{}://{}{}'. format(_conf['proto'], _conf['host'], _conf['root'])
+
+
+
+	## METHODS ##
+
 	def __init__(self):
+		'''Class constructor.
+
+		Sets authorization parameters based on incoming auth headers.
+
+		@return None
+		'''
+
 		auth_str = cherrypy.request.headers['Authorization']\
 			if 'Authorization' in cherrypy.request.headers\
 			else None
 		self.headers = {'Authorization': auth_str}
 
 
-	## Resizes an image downloaded from a URL reference.
-	#
-	#  @param url (string) Source image URL.
-	#  @param w (int) Maximum width in pixels.
-	#  @param h (int) Maximum height in pixels.
-	#
-	#  @return BytesIO The resized image stream.
+
 	def resizeImagefromUrl(self, url, w=None, h=None):
+		'''Resizes an image downloaded from a URL reference.
+
+		@param url (string) Source image URL.
+		@param w (int) Maximum width in pixels.
+		@param h (int) Maximum height in pixels.
+
+		@return (BytesIO) The resized image stream.
+		'''
+
 		params = {'file': url, 'width': w, 'height': h}
 		res = requests.get(
 			self._base_url + 'resize.jpg',
@@ -48,14 +71,17 @@ class DatagrinderConnector:
 		return io.BufferedReader(res.content)
 
 
-	## Resizes an image downloaded from a provided datastream.
-	#
-	#  @param image (BytesIO) Image datastream.
-	#  @param w (int) Maximum width in pixels.
-	#  @param h (int) Maximum height in pixels.
-	#
-	#  @return BytesIO The resized image stream.
+
 	def resizeImageFromData(self, image, fname, w=0, h=0):
+		'''Resizes an image downloaded from a provided datastream.
+
+		@param image (BytesIO) Image datastream.
+		@param w (int) Maximum width in pixels.
+		@param h (int) Maximum height in pixels.
+
+		@return BytesIO The resized image stream.
+		'''
+
 		data = {'width': w, 'height': h}
 		files = {'file': (fname, image)}
 

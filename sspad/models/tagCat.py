@@ -14,9 +14,22 @@ class TagCat(Node):
 
 	exposed = True
 
-	node_type = ns_collection['aiclist'].TagCat
 
-	cont_uri = lake_rest_api['base_url'] + '/support/tags'
+	@property
+	def node_type(self):
+		return ns_collection['aiclist'].TagCat
+
+
+
+	@property
+	def cont_uri(self):
+		'''URI of container node where all tags should be stored.
+
+		@return string
+		'''
+
+		return lake_rest_api['base_url'] + '/support/tags'
+
 
 
 	@property
@@ -24,6 +37,7 @@ class TagCat(Node):
 		return super().prop_req_names + (
 			'label',
 		)
+
 
 
 	@property
@@ -37,7 +51,13 @@ class TagCat(Node):
 	## HTTP-EXPOSED METHODS ##
 
 	def GET(self, label=None):
-		'''Get a category URI from a label or a list of categories.'''
+		'''Get a category URI from a label or a list of categories.
+
+		@param label (string, optional) Category label. If empty (default),
+			a list of all categoies is returned; otherwise, a single category URI is returned.
+
+		@return (string | list) Category URI or list of categories.
+		'''
 
 		self._set_connection()
 
@@ -47,7 +67,12 @@ class TagCat(Node):
 
 
 	def POST(self, label):
-		'''Create a tag category with a given label.'''
+		'''Create a tag category with a given label.
+
+		@param label (string) Category label.
+
+		@return (string) New category URI.
+		'''
 
 		self._set_connection()
 
@@ -58,18 +83,26 @@ class TagCat(Node):
 	## NON EXPOSED METHODS ##
 
 	def get_uri(self, label):
-		'''Returns the URI of a category by label.'''
+		'''Returns the URI of a category by label.
+
+		@param label (string) Category label.
+
+		@return (string) Category URI.
+		'''
 
 		props = [
 			(ns_collection['rdf'].type, ns_collection['aiclist'].TagCat),
 			(ns_collection['aic'].label, Literal(label, datatype=XSD.string)),
 		]
-		
+
 		return cherrypy.request.app.config['connectors']['tsconn'].get_node_uri_by_props(props)
 
-	
+
 	def list(self):
-		'''Lists all categories and their labels.'''
+		'''Lists all categories and their labels.
+
+		@return (list) List of all category URIs.
+		'''
 
 		q = '''
 		SELECT ?cat ?label WHERE {{
@@ -77,7 +110,7 @@ class TagCat(Node):
 			?cat a <{}> .
 		}}
 		'''.format(
-			ns_collection['aic'].label, 
+			ns_collection['aic'].label,
 			ns_collection['fcrepo'].hasParent,
 			self.node_type,
 		)
@@ -101,8 +134,13 @@ class TagCat(Node):
 
 
 	def create(self, label):
-		'''Creates a new tag category.'''
-		
+		'''Create a tag category with a given label.
+
+		@param label (string) Category label.
+
+		@return (string) New category URI.
+		'''
+
 		if self.assert_exists(label):
 			raise cherrypy.HTTPError('409 Conflict', 'Category with label \'{}\' exist already.'.format(label))
 		else:

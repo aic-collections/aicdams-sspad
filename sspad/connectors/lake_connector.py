@@ -8,22 +8,44 @@ from sspad.config.datasources import lake_rest_api
 from sspad.resources.rdf_lexicon import ns_collection, ns_mgr
 
 class LakeConnector:
+	'''Handles communication with the LAKE (Fedora) REST API.'''
 
-	conf = lake_rest_api
+
+	@property
+	def conf(self):
+		'''LAKE host configuration.
+
+		@return dict
+		'''
+
+		return lake_rest_api
 
 
-	## Class constructor.
-	#
-	#  Sets authorization parameters based on incoming auth headers.
+
 	def __init__(self):
+		'''Class constructor.
+
+		Sets authorization parameters based on incoming auth headers.
+
+		@return None
+		'''
+
 		auth_str = cherrypy.request.headers['Authorization']\
 			if 'Authorization' in cherrypy.request.headers\
 			else None
 		self.headers = {'Authorization': auth_str}
 
 
+
 	def assert_node_exists(self, uri):
-		'''Check if a node exists already.'''
+		'''Check if a node exists already.
+
+		@param uri (string) URI to check.
+
+		@return (boolean) Whether node exists.
+
+		@throw HTTPError If the request is invalid (i.e. any other HTTP error than 404)
+		'''
 
 		res = requests.get(uri, headers = self.headers)
 		cherrypy.log('Check if node exists: {}'.format(res.status_code))
@@ -36,10 +58,12 @@ class LakeConnector:
 
 
 
-	## Open Fedora transaction.
-	#
-	#  @return string The transaction URI.
 	def open_transaction(self):
+		'''Open Fedora transaction.
+
+		@return (string) The transaction URI.
+		'''
+
 		res = requests.post(
 			self.conf['base_url'] + 'fcr:tx',
 			headers = self.headers
@@ -51,6 +75,7 @@ class LakeConnector:
 		return res.headers['location']
 
 
+
 	def get_binary_stream(self, uri):
 		'''Gets a binary stream.'''
 
@@ -60,11 +85,16 @@ class LakeConnector:
 		return res
 
 
-	## Creates a container node if it does not exist, or updates it if it exists already.
-	#
-	#  @param uri	(string) URI of the node to be created or updated.
-	#  @param props	(dict) Dictionary of properties to be associated with the node.
+
 	def create_or_update_node(self, uri=None, parent='/', props=None):
+		'''Creates a container node if it does not exist, or updates it if it exists already.
+
+		@param uri (string, optional) URI of the node to be created or updated.
+		@param parent (string, optional) Parent path relative to repository root. Default is '/'.
+		@param props (dict, optional) Dictionary of properties to be associated with the node.
+
+		@return (string) New node URI.
+		'''
 		if props:
 			g = Graph(namespace_manager = ns_mgr)
 			cherrypy.log('Received prop tuples: {}'.format(props))
@@ -102,15 +132,23 @@ class LakeConnector:
 		return res.headers['location']
 
 
-	## Creates a datastream under an existing container node if it does not exist,\
-	#  or updates it if it exists already.
-	#
-	#  @param uri		(string) URI of the datastream node to be created or updated.
-	#  @param file_name	(string) Name of the datastream as a downloaded file.
-	#  @param ds		(BytesIO) Datastream to be ingested. Alternative to \p path.
-	#  @param path		(string) Path to the datastream. Alternative to \p ds.
-	#  @param mimetype	(string) MIME type of the datastream. Default: application/octet-stream
-	def create_or_update_datastream(self, uri, file_name, ds=None, path=None, mimetype = 'application/octet-stream'):
+
+	def create_or_update_datastream(
+			self, uri, file_name, ds=None, path=None, mimetype='application/octet-stream'
+			):
+		'''Creates a datastream under an existing container node if it does not exist,\
+		or updates it if it exists already.
+
+		@param uri (string) URI of the datastream node to be created or updated.
+		@param file_name (string) Name of the datastream as a downloaded file.
+		@param ds (BytesIO, optional) Datastream to be ingested. Alternative to \p path.
+		@param path (string, optional) Path to the datastream. Alternative to \p ds.
+		@param mimetype (string, optional) MIME type of the datastream.
+			Default: application/octet-stream
+
+		@return (string | None) New node URI if a new node is created.
+		'''
+
 		# @TODO Optimize with with
 		if not ds and not path:
 			raise cherrypy.HTTPError('500 Internal Server Error', "No datastream or file path given.")
@@ -140,11 +178,16 @@ class LakeConnector:
 			return res.headers['location']
 
 
-	## Creates or updates a datastream with an externally referenced content.
-	#
-	#  @param uri		(string) URI of the datastream node to be created or updated.
-	#  @param ref		(string) External source as a HTTP URL.
+
 	def create_or_update_ref_datastream(self, uri, ref):
+		'''Creates or updates a datastream with an externally referenced content.
+
+		@param uri (string) URI of the datastream node to be created or updated.
+		@param ref (string) External source as a HTTP URL.
+
+		@eturn (string) New datasteram URI if a new one is crated.
+		'''
+
 		cherrypy.log('Creating an externally referenced node: ' + uri)
 		# Check that external reference exists
 		check = requests.head(ref, headers=self.headers)
@@ -168,18 +211,22 @@ class LakeConnector:
 
 
 
-
-	## Updates the properties of an existing node.
-	#
-	#  @param uri			(string) Node URI.
-	#  @param delete_props	(dict) Properties to be deleted.\
-	#  If the value of a property is a tuple or a list, thespecific value(s) will be deleted.\
-	#  If it is an empty string (""), the whole property and its values are deleted.
-	#  @param insert_props	(dict) Properties to be inserted.\
-	#  Keys are property names, values are tuples or lists of values. Non-empty string can be used as single values.
-	#  @param where_props	(dict) Conditions. Same syntax as \p insert_props.
 	def update_node_properties(self, uri, delete_props=[], insert_props=[], where_props=[]):
-		''' Modifies node properties using a SPARQL-update query. '''
+		'''Updates the properties of an existing node from a set of insert, delete
+			and where tuples formatted by #Node._build_prop_tuples.
+
+		@param uri (string) Node URI.
+		@param delete_props	(dict) Properties to be deleted.
+		If the value of a property is a tuple or a list, thespecific value(s) will be deleted.
+		If it is an empty string (""), the whole property and its values are deleted.
+		@param insert_props	(dict) Properties to be inserted.
+		Keys are property names, values are tuples or lists of values.
+		Non-empty string can be used as single values.
+		@param where_props	(dict) Conditions. Same syntax as \p insert_props.
+
+		@return (boolean) True on success.
+		'''
+
 
 		if not delete_props and not insert_props:
 			cherrypy.log('Not received any properties to update.')
@@ -222,10 +269,15 @@ class LakeConnector:
 		return True
 
 
-	## Commits an open transaction.
-	#
-	# @param tx_uri The full transaction URI.
+
 	def commitTransaction(self, tx_uri):
+		'''Commits an open transaction.
+
+		@param tx_uri The full transaction URI.
+
+		@return (boolean) True on success.
+		'''
+
 		cherrypy.log.error('Committing transaction: {}'.format(tx_uri.split('tx:')[-1]))
 		res = requests.post(
 			tx_uri + '/fcr:tx/fcr:commit',
@@ -238,10 +290,14 @@ class LakeConnector:
 		return True
 
 
-	## Rolls back an open transaction.
-	#
-	# @param tx_uri The full transaction URI.
+
 	def rollbackTransaction(self, tx_uri):
+		'''Rolls back an open transaction.
+
+		@param tx_uri The full transaction URI.
+
+		@return (boolean) True on success.
+		'''
 		cherrypy.log.error('Rolling back transaction: {}'.format(tx_uri.split('tx:')[-1]))
 		res = requests.post(
 			tx_uri + '/fcr:tx/fcr:rollback',

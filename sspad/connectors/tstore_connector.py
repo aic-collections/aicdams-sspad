@@ -9,36 +9,70 @@ from rdflib.plugins.sparql.processor import prepareQuery
 from urllib.parse import quote, unquote
 
 from sspad.config.datasources import tstore_rest_api, tstore_schema_rest_api
-#from sspad.resources.rdf_lexicon import ns_mgr
 from sspad.resources.rdf_lexicon import ns_collection
 
 
-## TstoreConnector class.
-#
-# Handles operations related to the triplestore indexer and schema.
 class TstoreConnector:
+	'''TstoreConnector class.
 
-	## Triplestore config for indexer.
-	conf = tstore_rest_api
+	Handles operations related to the triplestore indexer and schema.
+	'''
 
-	## Triplestore config for repo schema information.
-	sconf = tstore_schema_rest_api
+	@property
+	def conf(self):
+		'''Triplestore config for indexer.
+
+		@return dict
+		'''
+
+		return tstore_rest_api
 
 
-	## Class constructor.
-	#
-	# Sets authorization parameters based on incoming auth headers.
-	#
-	# @param auth (string) Authorization string as passed by incoming headers.
+
+	@property
+	def conf(self):
+		'''Triplestore config for repo schema information.
+
+		@return dict
+		'''
+
+		return tstore_schema_rest_api
+
+
+
+	## METHODS ##
+
 	def __init__(self):
+		'''Class constructor.
+
+		Sets authorization parameters based on incoming auth headers.
+
+		@param auth (string) Authorization string as passed by incoming headers.
+
+		@return None
+		'''
+
 		auth_str = cherrypy.request.headers['Authorization']\
 			if 'Authorization' in cherrypy.request.headers\
 			else None
 		self.headers = {'Authorization': auth_str}
 
 
+
 	def query(self, q, action='select'):
-		'''Sends a SPARQL query and returns the results.'''
+		'''Sends a SPARQL query and returns the results.
+
+		@param q (string) SPARQL query string.
+
+		@param action (string, optional) Type of query action, which determines the query
+			output format. It is one of 'ask', 'select', 'construct'. Defaults to 'select'
+			for unspecified or unrecognized values.
+
+		@return Depending on the value of \p action: if 'select' or 'construct', it is
+			a dict of bound values. If 'ask', it is a boolean value.
+
+		@TODO Return rdflib.Graph instance for \p action == 'construct'
+		'''
 
 		cherrypy.log('Querying tstore: {}'.format(q))
 		if action == 'ask':
@@ -63,6 +97,7 @@ class TstoreConnector:
 		res.raise_for_status()
 
 		if action == 'ask':
+			#return True if res.text == 'true' or res.text == 'True' else False
 			return res.text
 		else:
 			ret = []
@@ -77,7 +112,13 @@ class TstoreConnector:
 
 
 	def assert_node_exists_by_prop(self, prop, value):
-		''' Finds if a node exists with a given literal property. '''
+		'''Finds if a node exists with a given literal property.
+
+		@param prop (string) Property to query.
+		@param value (string) Value of property to query.
+
+		@return (boolean) Whether a node with the requested property value exists.
+		'''
 
 		q = 'ASK {{ ?r <{}> "{}"^^<http://www.w3.org/2001/XMLSchema#string> . }}'.format(prop, value)
 
@@ -89,7 +130,7 @@ class TstoreConnector:
 
 		@param prop (string) The property name as a fully qualified URI.
 		@param value (string) The property value.
-		@param type (string) Data type according to http://www.w3.org/2001/XMLSchema
+		@param type (string, optional) Data type according to http://www.w3.org/2001/XMLSchema. Default is 'string'.
 
 		@return string
 		'''

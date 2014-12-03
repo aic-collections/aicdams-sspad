@@ -34,6 +34,7 @@ class Node(metaclass=ABCMeta):
 
 		@return tuple
 		'''
+
 		return (
 			('image/jpeg', '.jpeg', True),
 			('image/psd', '.psd', False),
@@ -75,7 +76,7 @@ class Node(metaclass=ABCMeta):
 
 	@property
 	def prop_lake_names(self):
-		'''Tuples defiing properties stored in LAKE for this model.
+		'''Tuples defining properties stored in LAKE for this model.
 
 		First tuple element is the property URI.
 		Second element is a string defining property type, which can be 'literal', 'uri' or 'variable'.

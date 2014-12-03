@@ -1,19 +1,33 @@
 import psycopg2
 from sspad.config.datasources import uidminter_db
 
-## UidminterConnector class.
-#
-#  Handles generation of persistent UIDs via uidminter service.
 class UidminterConnector:
+	'''UidminterConnector class.
 
-	config = uidminter_db
+	Handles generation of persistent UIDs via uidminter service.
+	'''
 
-	## Generates a new persistent UID.
-	#
-	# @param UidminterConnector self Object pointer.
-	# @param pfx (string) 2-letter prefix to use for the UID. Depends on the node type.
-	# @param mid (string) Second prefix for certain node types.
+	@property
+	def conf(self):
+		'''UIDMinter host configuration.
+
+		@return dict
+		'''
+
+		return uidminter_db
+
+
+
 	def mint_uid(self, pfx, mid):
+		'''Generates a new persistent UID.
+
+		@param UidminterConnector self Object pointer.
+		@param pfx (string) 2-letter prefix to use for the UID. Depends on the node type.
+		@param mid (string) Second prefix for certain node types.
+
+		@return (string) New UID.
+		'''
+
 		try:
 			session = psycopg2.connect(uidminter_db['conn_string'])
 			cur = session.cursor()
@@ -29,4 +43,4 @@ class UidminterConnector:
 		session.close()
 
 		return new_uid
-	
+

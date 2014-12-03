@@ -36,7 +36,18 @@ class Tag(Node):
 	## HTTP-EXPOSED METHODS ##
 
 	def GET(self, cat_label=None, label=None):
-		'''Get a tag or list of tags.'''
+		'''Get a tag or list of tags.
+
+		@param cat_label (string, optional) Category label. If empty (default),
+			a list of all tags is returned. Otherwise, a list of all tags for the
+			category bearing that label is returned.
+			This parameter is mandatory if label is not emppty.
+		@param label (string, optional) Tag label. If empty (default), a list
+			of tag is returned. Otherwise, the URI of a tag with the given label
+			is returned.
+
+		@return (string | list) List of tags URI, their labels and category URIs or a single tag URI.
+		'''
 
 		self._set_connection()
 
@@ -57,7 +68,14 @@ class Tag(Node):
 	## NON EXPOSED METHODS ##
 
 	def list(self, cat_label=None):
-		'''Lists all tags, optionally narrowing down the selection to a category.'''
+		'''Lists all tags, optionally narrowing down the selection to a category.
+
+		@param cat_label (string, optional) Category label. If empty (default),
+			a list of all tags is returned. Otherwise, a list of all tags for the
+			category bearing that label is returned.
+
+		@return (list) List of dicts containing tag URI, label and category URI.
+		'''
 
 		cat_cond = '''
 		?cat <{}> ?cl .
@@ -84,9 +102,15 @@ class Tag(Node):
 
 		return res
 
-	
+
 	def get_uri(self, label, cat_uri):
-		'''Gets tag URI by a given label.'''
+		'''Gets tag URI by a given label.
+
+		@param cat_uri (string) Category URI.
+		@param label (string) Tag label.
+
+		@return (string) Tag URI.
+		'''
 
 		props = [
 			(
@@ -102,12 +126,18 @@ class Tag(Node):
 				URIRef(cat_uri),
 			),
 		]
-		
+
 		return cherrypy.request.app.config['connectors']['tsconn'].get_node_uri_by_props(props)
 
 
 	def create(self, cat_label, label):
-		'''Creates a new tag within a category and with a given label.'''
+		'''Creates a new tag within a category and with a given label.
+
+		@param cat_label (string) Category label.
+		@param label (string) Tag label.
+
+		@return (string) Tag URI.
+		'''
 
 		cat_uri = TagCat().get_uri(cat_label)
 		if not cat_uri:
