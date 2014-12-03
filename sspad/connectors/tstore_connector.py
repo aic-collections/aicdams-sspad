@@ -99,8 +99,7 @@ class TstoreConnector:
 		res.raise_for_status()
 
 		if action == 'ask':
-			#return True if res.text == 'true' or res.text == 'True' else False
-			return res.text
+			return True if res.text == 'true' or res.text == 'True' else False
 		else:
 			ret = []
 			root = ET.fromstring(res.text)
@@ -124,7 +123,7 @@ class TstoreConnector:
 
 		q = 'ASK {{ ?r <{}> "{}"^^<http://www.w3.org/2001/XMLSchema#string> . }}'.format(prop, value)
 
-		return True if self.query(q, 'ask') == 'true' else False
+		return self.query(q, 'ask')
 
 
 	def get_node_uri_by_prop(self, prop, value, type='string'):
