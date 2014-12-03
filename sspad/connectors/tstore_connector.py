@@ -32,7 +32,7 @@ class TstoreConnector:
 
 
 	@property
-	def conf(self):
+	def sconf(self):
 		'''Triplestore config for repo schema information.
 
 		@return dict
@@ -112,6 +112,7 @@ class TstoreConnector:
 			return ret
 
 
+
 	def assert_node_exists_by_prop(self, prop, value):
 		'''Finds if a node exists with a given literal property.
 
@@ -124,6 +125,7 @@ class TstoreConnector:
 		q = 'ASK {{ ?r <{}> "{}"^^<http://www.w3.org/2001/XMLSchema#string> . }}'.format(prop, value)
 
 		return self.query(q, 'ask')
+
 
 
 	def get_node_uri_by_prop(self, prop, value, type='string'):
@@ -142,6 +144,7 @@ class TstoreConnector:
 
 		cherrypy.log('get node by prop response: {} '.format(res))
 		return res[0]['u'] if res else False
+
 
 
 	def get_node_uri_by_props(self, props):

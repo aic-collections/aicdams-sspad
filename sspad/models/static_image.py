@@ -15,7 +15,10 @@ class StaticImage(Asset):
 	@package sspad.models
 	'''
 
+	@property
 	def pfx(self):
+		'''@sa Resource::pfx'''
+
 		return  'SI'
 
 

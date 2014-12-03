@@ -3,13 +3,12 @@ import requests
 
 from rdflib import URIRef, Literal, XSD
 
-from sspad.config.datasources import lake_rest_api, datagrinder_rest_api
-from sspad.connectors.tstore_connector import TstoreConnector
-from sspad.models.node import Node
+from sspad.config.datasources import lake_rest_api
+from sspad.models.sspad_model import SspadModel
 from sspad.resources.rdf_lexicon import ns_collection
 
 
-class TagCat(Node):
+class TagCat(SspadModel):
 	'''Tag Category model class.
 
 	Tag categories are ordered lists containing aiclist:Tag nodes in LAKE.

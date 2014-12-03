@@ -5,7 +5,7 @@ from sspad.models.tag_cat import TagCat
 import requests
 
 
-class Tag(SspadController):
+class TagCtrl(SspadController):
 	'''Tag Controller class.
 
 	Handles operations with LAKE tags.

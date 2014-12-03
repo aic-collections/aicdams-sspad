@@ -5,12 +5,12 @@ from rdflib import URIRef, Literal
 
 from sspad.config.datasources import lake_rest_api, datagrinder_rest_api
 from sspad.connectors.tstore_connector import TstoreConnector
-from sspad.models.node import Node
+from sspad.models.sspad_model import SspadModel
 from sspad.models.tag_cat import TagCat
 from sspad.resources.rdf_lexicon import ns_collection
 
 
-class Tag(Node):
+class Tag(SspadModel):
 	'''Tag model class.
 
 	This defines tags stored in LAKE.

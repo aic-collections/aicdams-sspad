@@ -1,3 +1,4 @@
+import cherrypy
 import psycopg2
 from sspad.config.datasources import uidminter_db
 
@@ -34,6 +35,7 @@ class UidminterConnector:
 		except:
 			raise RuntimeError("Could not connect to PostgreSQL database.")
 
+		#cherrypy.log('Minting UID with prefix {} and mid {}'.format(pfx, mid))
 		cur.callproc('mintuid', (pfx, mid))
 		new_uid = cur.fetchone()[0]
 		#print('New UID: ', new_uid)

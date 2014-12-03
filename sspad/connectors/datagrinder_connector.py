@@ -29,7 +29,7 @@ class DatagrinderConnector:
 		@return string
 		'''
 
-		return '{}://{}{}'. format(_conf['proto'], _conf['host'], _conf['root'])
+		return '{}://{}{}'. format(self._conf['proto'], self._conf['host'], self._conf['root'])
 
 
 

@@ -2,7 +2,7 @@ from sspad.controllers.asset_ctrl import AssetCtrl
 from sspad.models.static_image import StaticImage
 
 
-class StaticImage(AssetCtrl):
+class StaticImageCtrl(AssetCtrl):
 	'''Static Image class.
 
 	This class runs and manages Image actions.
