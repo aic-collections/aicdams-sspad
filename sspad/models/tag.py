@@ -6,16 +6,23 @@ from rdflib import URIRef, Literal
 from sspad.config.datasources import lake_rest_api, datagrinder_rest_api
 from sspad.connectors.tstore_connector import TstoreConnector
 from sspad.models.node import Node
-from sspad.models.tagCat import TagCat
+from sspad.models.tag_cat import TagCat
 from sspad.resources.rdf_lexicon import ns_collection
 
 
 class Tag(Node):
+	'''Tag model class.
+
+	This defines tags stored in LAKE.
+
+	@package sspad.models
+	'''
 
 
-	exposed = True
+	@property
+	def node_type(self):
+		return ns_collection['aiclist'].Tag
 
-	node_type = ns_collection['aiclist'].Tag
 
 
 	@property
@@ -30,38 +37,6 @@ class Tag(Node):
 		return super().prop_lake_names + (
 			(ns_collection['aic'].category, 'uri'),
 		)
-
-
-
-	## HTTP-EXPOSED METHODS ##
-
-	def GET(self, cat_label=None, label=None):
-		'''Get a tag or list of tags.
-
-		@param cat_label (string, optional) Category label. If empty (default),
-			a list of all tags is returned. Otherwise, a list of all tags for the
-			category bearing that label is returned.
-			This parameter is mandatory if label is not emppty.
-		@param label (string, optional) Tag label. If empty (default), a list
-			of tag is returned. Otherwise, the URI of a tag with the given label
-			is returned.
-
-		@return (string | list) List of tags URI, their labels and category URIs or a single tag URI.
-		'''
-
-		self._set_connection()
-
-		if label:
-			cat_uri = TagCat().get_uri(cat_label)
-			return self.get_uri(label, cat_label)
-		else:
-			return self.list(cat_label)
-
-
-	def POST(self, cat, label):
-		self._set_connection()
-
-		return self.create(cat, label)
 
 
 

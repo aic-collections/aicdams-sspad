@@ -3,7 +3,7 @@ import cherrypy
 from cherrypy.process.plugins import Daemonizer, PIDFile
 
 from sspad.config import host, server, app
-from sspad.models import resource, staticImage, tagCat, tag
+from sspad.controllers import static_image_ctrl, tag_cat_ctrl, tag_ctrl
 
 
 class Webapp():
@@ -14,9 +14,9 @@ class Webapp():
 
 	exposed = True
 
-	si = staticImage.StaticImage()
-	tagCat = tagCat.TagCat()
-	tag = tag.Tag()
+	si = static_image_ctrl.StaticImageCtrl()
+	tagCat = tag_cat_ctrl.TagCatCtrl()
+	tag = tag_ctrl.TagCtrl()
 
 	def GET(self):
 		'''Homepage - does nothing'''

@@ -8,15 +8,13 @@ from sspad.resources.rdf_lexicon import ns_collection
 
 
 class StaticImage(Asset):
-	'''Static Image class.
+	'''Static Image model class.
 
 	This class runs and manages Image actions.
+
+	@package sspad.models
 	'''
 
-	exposed = True
-
-
-	@property
 	def pfx(self):
 		return  'SI'
 
@@ -27,6 +25,7 @@ class StaticImage(Asset):
 		return ns_collection['aic'].StillImage
 
 
+
 	@property
 	def prop_req_names(self):
 		return super().prop_req_names + (
@@ -35,12 +34,14 @@ class StaticImage(Asset):
 		)
 
 
+
 	@property
 	def prop_lake_names(self):
 		return super().prop_lake_names + (
 			(ns_collection['aic'].citiImgDBankUid, 'literal', 'string'),
 			#(ns_collection['aic'].viewInfo, 'literal'),
 		)
+
 
 
 	def _generateMasterFile(self, file, fname):
@@ -56,10 +57,11 @@ class StaticImage(Asset):
 		return ret
 
 
+
 	def _validate_datastream(self, ds, dsname='', rules={}):
 		'''Checks that the input file is a valid image.
 
-		@sa #Resource._validate_datastream
+		@sa #Resource::_validate_datastream()
 
 		@param ds (BytesIO) Datastream to be validated.
 		@param dsname (string, optional) Datastream name. This is just used for logging purposes. TODO eliminate
@@ -82,3 +84,4 @@ class StaticImage(Asset):
 			if mimetype != rules['mimetype']:
 				raise TypeError('MIME type of uploaded image does not match the expected one.')
 		return {'format': format, 'size': size, 'mimetype': mimetype}
+

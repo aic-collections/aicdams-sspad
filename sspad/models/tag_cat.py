@@ -10,9 +10,12 @@ from sspad.resources.rdf_lexicon import ns_collection
 
 
 class TagCat(Node):
+	'''Tag Category model class.
 
+	Tag categories are ordered lists containing aiclist:Tag nodes in LAKE.
 
-	exposed = True
+	@package sspad.models
+	'''
 
 
 	@property
@@ -47,40 +50,6 @@ class TagCat(Node):
 		)
 
 
-
-	## HTTP-EXPOSED METHODS ##
-
-	def GET(self, label=None):
-		'''Get a category URI from a label or a list of categories.
-
-		@param label (string, optional) Category label. If empty (default),
-			a list of all categoies is returned; otherwise, a single category URI is returned.
-
-		@return (string | list) Category URI or list of categories.
-		'''
-
-		self._set_connection()
-
-		return self.get_uri(label) \
-				if label \
-				else self.list()
-
-
-	def POST(self, label):
-		'''Create a tag category with a given label.
-
-		@param label (string) Category label.
-
-		@return (string) New category URI.
-		'''
-
-		self._set_connection()
-
-		return self.create(label)
-
-
-
-	## NON EXPOSED METHODS ##
 
 	def get_uri(self, label):
 		'''Returns the URI of a category by label.

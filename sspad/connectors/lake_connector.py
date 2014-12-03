@@ -8,7 +8,10 @@ from sspad.config.datasources import lake_rest_api
 from sspad.resources.rdf_lexicon import ns_collection, ns_mgr
 
 class LakeConnector:
-	'''Handles communication with the LAKE (Fedora) REST API.'''
+	'''@package sspad.connectors
+
+	Handles communication with the LAKE (Fedora) REST API.
+	'''
 
 
 	@property
@@ -213,7 +216,7 @@ class LakeConnector:
 
 	def update_node_properties(self, uri, delete_props=[], insert_props=[], where_props=[]):
 		'''Updates the properties of an existing node from a set of insert, delete
-			and where tuples formatted by #Node._build_prop_tuples.
+			and where tuples formatted by Node::_build_prop_tuples .
 
 		@param uri (string) Node URI.
 		@param delete_props	(dict) Properties to be deleted.
@@ -222,7 +225,7 @@ class LakeConnector:
 		@param insert_props	(dict) Properties to be inserted.
 		Keys are property names, values are tuples or lists of values.
 		Non-empty string can be used as single values.
-		@param where_props	(dict) Conditions. Same syntax as \p insert_props.
+		@param where_props	(dict) Conditions. Same syntax as @p insert_props.
 
 		@return (boolean) True on success.
 		'''

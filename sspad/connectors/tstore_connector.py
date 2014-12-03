@@ -16,6 +16,8 @@ class TstoreConnector:
 	'''TstoreConnector class.
 
 	Handles operations related to the triplestore indexer and schema.
+
+	@package sspad.connectors
 	'''
 
 	@property

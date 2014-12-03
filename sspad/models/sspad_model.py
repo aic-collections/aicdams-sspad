@@ -13,9 +13,15 @@ from sspad.connectors.tstore_connector import TstoreConnector
 from sspad.resources.rdf_lexicon import ns_collection
 
 
-class Node(metaclass=ABCMeta):
-	'''Node is the base class for all Fedora nodes.'''
+class SspadModel(metaclass=ABCMeta):
+	'''SspadModel class.
 
+	This is the base class for all Fedora nodes.
+
+	@package sspad.models
+	'''
+
+	@property
 	def node_type(self):
 		'''RDF type.
 
@@ -27,6 +33,7 @@ class Node(metaclass=ABCMeta):
 
 
 
+	@property
 	def _add_mimetypes(self):
 		'''Additional MIME types.
 
@@ -44,6 +51,7 @@ class Node(metaclass=ABCMeta):
 
 
 
+	@property
 	def reqprops_to_rels(self):
 		'''Request properties to resource prefix mapping.
 
@@ -102,8 +110,11 @@ class Node(metaclass=ABCMeta):
 
 	## METHODS ##
 
-	def _set_connection(self):
-		'''Sets up connections to external services.'''
+	def __init__(self):
+		'''Sets up connections to external services.
+
+		@return None
+		'''
 
 		cherrypy.log('Setting connectors...')
 		cherrypy.request.app.config['connectors']['lconn'] = LakeConnector()

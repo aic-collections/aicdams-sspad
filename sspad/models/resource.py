@@ -2,10 +2,10 @@ import mimetypes
 
 import cherrypy
 
-from sspad.models.node import Node
+from sspad.models.sspad_model import SspadModel
 from sspad.resources.rdf_lexicon import ns_collection, ns_mgr
 
-class Resource(Node):
+class Resource(SspadModel):
 	'''Resource class.
 
 	Resources are all nodes in LAKE that can have metadata. They include two
