@@ -45,7 +45,6 @@ class Asset(Resource):
 			'legacy_uid', # String
 			'batch_uid', # String
 			'tag', # For insert: String, in the following format: <category>/<tag label> - For delete: String (tag URI)
-			'comment', # For insert: Dict: {'cat' : <String>, 'content' : <String>} - For delete: String (comment URI)
 			#'has_ext_content',
 			'citi_obj_pkey', # Integer
 			'citi_obj_acc_no', # Integer
@@ -68,7 +67,6 @@ class Asset(Resource):
 			(ns_collection['aic'].legacyUid, 'literal', XSD.string),
 			(ns_collection['aic'].batchUid, 'literal', XSD.string),
 			(ns_collection['aic'].hasTag, 'uri'),
-			(ns_collection['aic'].hasComment, 'uri'),
 			#(ns_collection['fcrepo'].hasExternalContent, 'uri'),
 			(ns_collection['aic'].represents, 'uri'),
 			(ns_collection['aic'].represents, 'uri'),
@@ -165,7 +163,7 @@ class Asset(Resource):
 
 		try:
 			# Create Asset node in tx
-			self.uri_in_tx, self.uri = self.create_node_in_tx(uid, self.tx_uri)
+			self.create_node_in_tx(uid, self.tx_uri)
 			cherrypy.log('Node URI in TX: {}; outslide of TX: {}'.format(self.uri_in_tx, self.uri))
 
 			# Set node props
@@ -240,42 +238,6 @@ class Asset(Resource):
 
 		# @TODO Actually verify the URI from response headers.
 		return {"message": "Resource updated.", "data": {"location": self.uri}}
-
-
-
-	def patch(self, uid=None, uri=None, insert_props={}, delete_props={}):
-		'''Adds or removes properties and mixins in an Asset.
-
-		@sa AssetCtrl::PATCH()
-		'''
-
-		# @TODO Do this in the controller, remove uid parameter and make uri mandatory
-		self.set_uri(uri, uid)
-
-		#cherrypy.log('Insert props:' + str(insert_props))
-		#cherrypy.log('Delete props:' + str(delete_props))
-
-		# Open Fedora transaction
-		self.tx_uri = self.connectors['lconn'].open_transaction()
-		self.uri_in_tx = self.uri.replace(lake_rest_api['base_url'], tx_uri + '/')
-
-		# Collect properties
-		try:
-			self._update_node(
-				self.uri_in_tx,
-				props = {
-					'insert_props' : insert_props,
-					'delete_props' : delete_props,
-					'init_insert_tuples' : [],
-				}
-			)
-		except:
-			self.connectors['lconn'].rollbackTransaction(self.tx_uri)
-			raise
-
-		self.connectors['lconn'].commitTransaction(self.tx_uri)
-
-		return True
 
 
 

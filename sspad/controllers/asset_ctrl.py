@@ -156,11 +156,7 @@ class AssetCtrl(SspadController):
 	def PATCH(self, uid=None, uri=None, insert_props='{}', delete_props='{}'):
 		'''PATCH method.
 
-		@param uid (string) Asset UID.
-		@param insert_props	(dict) Properties to be inserted.
-		@param delete_props	(dict) Properties to be deleted.
-
-		@return (dict) Message with new node information.
+		@sa SspadModel::patch()
 		'''
 
 		cherrypy.log('\n')
@@ -170,6 +166,7 @@ class AssetCtrl(SspadController):
 		cherrypy.log('')
 
 		model = self.model()
+		model.set_uri(uri, uid)
 
 		try:
 			insert_props = json.loads(insert_props)
@@ -181,7 +178,7 @@ class AssetCtrl(SspadController):
 			)
 
 		try:
-			model.patch(uid, uri, insert_props, delete_props)
+			model.patch(insert_props, delete_props)
 		except:
 			# @TODO
 			raise cherrypy.HTTPError('400 Bad Request')

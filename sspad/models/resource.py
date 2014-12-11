@@ -41,6 +41,7 @@ class Resource(SspadModel):
 	def prop_req_names(self):
 		return super().prop_req_names + (
 			'title',
+			'comment', # For insert: Dict: {'cat' : <String>, 'content' : <String>} - For delete: String (comment URI)
 		)
 
 
@@ -49,6 +50,7 @@ class Resource(SspadModel):
 	def prop_lake_names(self):
 		return super().prop_lake_names + (
 			(ns_collection['dc'].title, 'literal', XSD.string),
+			(ns_collection['aic'].hasComment, 'uri'),
 		)
 
 
@@ -97,6 +99,7 @@ class Resource(SspadModel):
 		if type == 'comments':
 			## Create comment nodes.
 			for comment_props in props:
+				cherrypy.log('Inserting comment in props: {}'.format(comment_props))
 				comment_uri = Comment().create(self.temp_uri, comment_props['content'], comment_props['category'])
 				prop_list.append((self._build_rdf_object(*self.props['comment']), URIRef(comment_uri)))
 

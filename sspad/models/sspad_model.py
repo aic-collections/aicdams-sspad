@@ -7,6 +7,7 @@ from abc import ABCMeta, abstractmethod
 from rdflib import URIRef, Literal, Variable, XSD
 from urllib.parse import urlparse
 
+from sspad.config.datasources import lake_rest_api
 from sspad.connectors.datagrinder_connector import DatagrinderConnector
 from sspad.connectors.lake_connector import LakeConnector
 from sspad.connectors.tstore_connector import TstoreConnector
@@ -127,7 +128,7 @@ class SspadModel(metaclass=ABCMeta):
 
 
 
-	## METHODS ##
+	## GENERAL METHODS ##
 
 	def __init__(self):
 		'''Sets up connections to external services.
@@ -144,6 +145,15 @@ class SspadModel(metaclass=ABCMeta):
 
 
 
+	def tx_uri_to_notx_uri(self, tx_uri):
+		'''Converts node URI inside transaction to URI outside of transaction.'''
+
+		return re.sub(r'/tx:[^\/]+/', '/', tx_uri) # FIXME Ugly. Use more reliable methods.
+
+
+
+	## CRUD METHODS ##
+
 	def create_node_in_tx(self, uid, tx_uri):
 		'''Creates a node within a transaction in LAKE.
 
@@ -153,17 +163,52 @@ class SspadModel(metaclass=ABCMeta):
 		@return tuple Two resource URIs: one in the transaction and one outside of it.
 		'''
 
-		node_tx_uri = self.connectors['lconn'].create_or_update_node(parent='{}/{}'.format(tx_uri,self.path))
+		self.uri_in_tx = self.connectors['lconn'].create_or_update_node(parent='{}/{}'.format(tx_uri,self.path))
 
-		return (node_tx_uri, self.tx_uri_to_notx_uri(node_tx_uri))
+		self.uri = self.tx_uri_to_notx_uri(self.uri_in_tx)
+
+		return True
 
 
 
-	def tx_uri_to_notx_uri(self, tx_uri):
-		'''Converts node URI inside transaction to URI outside of transaction.'''
+	def patch(self, insert_props={}, delete_props={}):
+		'''Adds or removes properties and mixins in a node.
 
-		return re.sub(r'/tx:[^\/]+/', '/', tx_uri) # FIXME Ugly. Use more reliable methods.
+		@param uid (string) Node UID.
+		@param insert_props	(dict) Properties to be inserted.
+		@param delete_props	(dict) Properties to be deleted.
 
+		@return (dict) Message with new node information.
+		'''
+
+		#cherrypy.log('Insert props:' + str(insert_props))
+		#cherrypy.log('Delete props:' + str(delete_props))
+
+		# Open Fedora transaction
+		tx_uri = self.connectors['lconn'].open_transaction()
+		self.uri_in_tx = self.uri.replace(lake_rest_api['base_url'], tx_uri + '/')
+
+		# Collect properties
+		try:
+			self._update_node(
+				self.temp_uri,
+				props = {
+					'insert_props' : insert_props,
+					'delete_props' : delete_props,
+					'init_insert_tuples' : [],
+				}
+			)
+		except:
+			self.connectors['lconn'].rollbackTransaction(tx_uri)
+			raise
+
+		self.connectors['lconn'].commitTransaction(tx_uri)
+
+		return True
+
+
+
+	## PRIVATE METHODS ##
 
 	def _guess_file_ext(self, mimetype):
 		'''Guesses file extension from MIME types.
@@ -264,7 +309,6 @@ class SspadModel(metaclass=ABCMeta):
 	def _build_rdf_object(self, value, type, datatype=None):
 		'''Returns an RDF object from a value and a type.
 
-		The value must be in the #mixins list.
 		Depending on the value of @p type, a literal object, a URI or a variable (?var) is created.
 
 		@param value	(string) Value to be processed.

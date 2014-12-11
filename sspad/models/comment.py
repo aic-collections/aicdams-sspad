@@ -81,6 +81,9 @@ class Comment(Annotation):
 		@return (dict) Message with new comment node information.
 		'''
 
+		# Avoiding circular reference
+		from sspad.models.resource import Resource
+
 		if not cat:
 			cat = self.default_cat
 
@@ -99,6 +102,15 @@ class Comment(Annotation):
 				delete_props = {},
 				init_insert_tuples = self.base_prop_tuples
 			)
+		)
+
+		# Add relationship to comment.
+		self.connectors['lconn'].update_node_properties(
+			subject_uri,
+			insert_props=[(
+                self._build_rdf_object(*Resource().props['comment']),
+                URIRef(comment_uri)
+            )],
 		)
 
 		return comment_uri
