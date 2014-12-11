@@ -40,8 +40,13 @@ class AssetCtrl(SspadController):
 		if uid:
 			return {'message': '*stub* This is Asset #{}.'.format(uid)}
 		elif legacy_uid:
-			if model.connectors['tsconn'].assert_node_exists_by_prop(ns_collection['aic'] + 'legacyUid', legacy_uid):
-				return {'message': '*stub* This is Asset with legacy UID #{}.'.format(legacy_uid)}
+			if model.connectors['tsconn'].assert_node_exists_by_prop(
+				ns_collection['aic'] + 'legacyUid', legacy_uid
+			):
+				return {
+					'message': '*stub* This is Asset with legacy UID #{}.'\
+							.format(legacy_uid)
+				}
 			else:
 				raise cherrypy.HTTPError(
 					'404 Not Found',
@@ -77,7 +82,18 @@ class AssetCtrl(SspadController):
 
 		props_dict = json.loads(props)
 
-		return self.model().create(mid, props_dict, **dstreams)
+		model = self.model()
+
+		try:
+			ret = model.create(mid, props_dict, **dstreams)
+		except:
+			# @TODO Diffrentiate exceptions
+			raise
+
+		cherrypy.response.status = 201
+		cherrypy.response.headers['Location'] = model.uri
+
+		return ret
 
 
 
@@ -90,7 +106,7 @@ class AssetCtrl(SspadController):
 		   otherwise a 404 Not Found will be thrown.
 		@param uri		(string) Asset URI. If this is not provided, node will be searched by UID.
 		@param props	(dict) Properties to be associated with new or updated node.
-		   The 'legacy_uid' property is searched for conflicts or to find nodes when neither 'uri' or 'uid' are known.
+		   The optional 'legacy_uid' property is searched for conflicts or to find nodes when neither 'uri' or 'uid' are known.
 		@param **dstreams	(BytesIO) Arbitrary datastream(s). Name of the parameter is the datastream name.
 		Only the 'source' datastream is mandatory. @sa POST
 
@@ -111,14 +127,29 @@ class AssetCtrl(SspadController):
 
 		model = self.model()
 
-		model.set_uri(uri, uid, legacy_uid)
+		if not model.set_uri(uri, uid, legacy_uid):
+			# If no URI could be set from given parameters, create new node.
+			try:
+				ret = model.create('', props_dict, **dstreams)
+			except:
+				# @TODO Diffrentiate exceptions
+				raise
 
-		if not model.uri:
-			return model.create('', props_dict, **dstreams)
-			#raise cherrypy.HTTPError('404 Not Found', 'Node was not found for updating.')
+			cherrypy.response.status = 201
+			cherrypy.response.headers['Location'] = model.uri
 
-		self._check_uid_dupes(uid, legacy_uid)
-		return model.update(uid, None, props_dict, **dstreams)
+		else:
+
+			# If a URI is found, update the node.
+			try:
+				model.update(uri=model.uri, props=props_dict, **dstreams)
+			except Exception as e:
+				raise cherrypy.HTTPError(500, str(e))
+
+			cherrypy.response.status = 204
+			cherrypy.response.headers['Location'] = model.uri
+
+		return ret
 
 
 
@@ -139,6 +170,15 @@ class AssetCtrl(SspadController):
 		cherrypy.log('')
 
 		model = self.model()
+
+		try:
+			insert_props = json.loads(insert_props)
+			delete_props = json.loads(delete_props)
+		except:
+			raise cherrypy.HTTPError(
+				'400 Bad Request',
+				'Properties are invalid. Please review your request.'
+			)
 
 		try:
 			model.patch(uid, uri, insert_props, delete_props)

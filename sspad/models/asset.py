@@ -142,17 +142,16 @@ class Asset(Resource):
 			if not props[p].__class__.__name__ == 'list':
 				props[p] = [props[p]]
 
-		# Before anything else, check that if a legacy_uid parameter is
-		# provied, no other Asset exists with that legacy UID. In the case one exists,
-		# the function shall return a '409 Conflict'.
-		# The function assumes that multiple legacy UIDs can be assigned.
+		# Before anything else, check if any of the legacy UIDs given has a duplicate.
+		# If that is the case, throw a 409 Conflict HTTP error.
 		if 'legacy_uid' in props:
-			for uid in props['legacy_uid']:
-				if self.connectors['tsconn'].assert_node_exists_by_prop(ns_collection['aic'] + 'legacyUid', uid):
-					raise cherrypy.HTTPError(
-						'409 Conflict',
-						'An asset with the same legacy UID already exists. Cannot create a new one.'
-					)
+			for legacy_uid in props['legacy_uid']:
+				check_uri = self.connectors['tsconn'].get_node_uri_by_prop(
+					ns_collection['aic'] + 'legacyUid', legacy_uid
+				)
+				if check_uri:
+					cherrypy.response.headers['link'] = check_uri
+					raise cherrypy.HTTPError('409 Conflict', 'A node with legacy UID \'{}\' exists already.'.format(legacy_uid))
 
 		# Create a new UID
 		uid = self.mint_uid(mid)
@@ -199,14 +198,11 @@ class Asset(Resource):
 		# Commit transaction
 		self.connectors['lconn'].commitTransaction(self.tx_uri)
 
-		cherrypy.response.status = 201
-		cherrypy.response.headers['Location'] = self.uri
-
 		return {"message": "Asset created.", "data": {"location": self.uri}}
 
 
 
-	def update(self, uid=None, uri=None, props='{}', **dstreams):
+	def update(self, uid=None, uri=None, props={}, **dstreams):
 		'''Updates an asset.
 
 		@sa AssetCtrl::PUT()
@@ -250,23 +246,14 @@ class Asset(Resource):
 
 
 
-	def patch(self, uid=None, uri=None, insert_props='{}', delete_props='{}'):
+	def patch(self, uid=None, uri=None, insert_props={}, delete_props={}):
 		'''Adds or removes properties and mixins in an Asset.
 
 		@sa AssetCtrl::PATCH()
 		'''
 
-		self._set_connection()
+		# @TODO Do this in the controller, remove uid parameter and make uri mandatory
 		self.set_uri(uri, uid)
-
-		try:
-			insert_props = json.loads(insert_props)
-			delete_props = json.loads(delete_props)
-		except:
-			raise cherrypy.HTTPError(
-				'400 Bad Request',
-				'Properties are invalid. Please review your request.'
-			)
 
 		#cherrypy.log('Insert props:' + str(insert_props))
 		#cherrypy.log('Delete props:' + str(delete_props))
@@ -294,6 +281,7 @@ class Asset(Resource):
 		return True
 
 
+
 	def mint_uid(self, mid=None):
 		'''Calls an external service to generate and returns a UID.
 
@@ -312,8 +300,8 @@ class Asset(Resource):
 
 	def set_uri(self, uri=None, uid=None, legacy_uid=None):
 		'''Validates the existence of a node from provided URI, UID or legacy UID
-		and set #uri to a value according to the first valid one found.
-		At leaast one of uri, uid or legacy_uid values must be provided.
+		and sets #uri to a value according to the first valid one found.
+		At least one of uri, uid or legacy_uid values must be provided.
 
 		@param uri (string, optional) URI of node, if known.
 		@param uid (string, optional) AIC UID of Asset, if known.
@@ -341,7 +329,7 @@ class Asset(Resource):
 			check_uid = uid
 			self.uid = uid
 		else:
-			ns_collection['aic'] + 'legacyUid'
+			check_prop = ns_collection['aic'] + 'legacyUid'
 			check_uid = legacy_uid
 
 		check_uri = self.connectors['tsconn'].get_node_uri_by_prop(check_prop, check_uid)
@@ -354,7 +342,7 @@ class Asset(Resource):
 
 
 
-	def _check_uid_dupes(self, uid=None, legacy_uid=None):
+	def has_uid_dupes(self, uid=None, legacy_uid=None):
 		'''Checks if a node with a given UID or a given legacy UID exists.
 		At least one of uid or legacy_uid must be provided.
 
@@ -373,15 +361,13 @@ class Asset(Resource):
 		if uid:
 			uri_uid = self.connectors['tsconn'].find_node_uri_by_prop(ns_collection['aic'] + 'uid', uid)
 			if not self.uri == uri_uid:
-				cherrypy.response.headers['link'] = uri_uid
-				raise cherrypy.HTTPError('409 Conflict', 'A node with UID {} exsists already.'.format(uri))
+				return {'uid' : uri_uid}
 		if legacy_uid:
-			uri_legacy_uid = self.connectors['tsconn'].find_node_uri_by_prop(ns_collection['aic'] + 'legacyUid', legacy_uid)
+			uri_legacy_uid = self.connectors['tsconn'].get_node_uri_by_prop(ns_collection['aic'] + 'legacyUid', legacy_uid)
 			if not self.uri == uri_legacy_uid:
-				cherrypy.response.headers['link'] = legacy_uri_uid
-				raise cherrypy.HTTPError('409 Conflict', 'A node with legacy UID {} exsists already.'.format(legacy_uri))
+				return {'legacy_uid' : uri_uid}
 
-		return True
+		return False
 
 
 
