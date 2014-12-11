@@ -38,9 +38,6 @@ class Asset(Resource):
 		return 'image/jpeg'
 
 
-	default_comment_type = 'general'
-
-
 
 	@property
 	def prop_req_names(self):

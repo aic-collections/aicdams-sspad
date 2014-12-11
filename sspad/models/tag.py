@@ -3,8 +3,6 @@ import requests
 
 from rdflib import URIRef, Literal
 
-from sspad.config.datasources import lake_rest_api, datagrinder_rest_api
-from sspad.connectors.tstore_connector import TstoreConnector
 from sspad.models.sspad_model import SspadModel
 from sspad.models.tag_cat import TagCat
 from sspad.resources.rdf_lexicon import ns_collection
@@ -40,8 +38,6 @@ class Tag(SspadModel):
 
 
 
-	## NON EXPOSED METHODS ##
-
 	def list(self, cat_label=None):
 		'''Lists all tags, optionally narrowing down the selection to a category.
 
@@ -61,14 +57,14 @@ class Tag(SspadModel):
 
 		q = '''
 		SELECT ?uri ?label ?cat WHERE {{
-			?uri a <{}> . 
-			?uri <{}> ?label . 
+			?uri a <{}> .
+			?uri <{}> ?label .
 			?uri <{}> ?cat .
 			?cat a <{}> .
 			{} }}
 		'''.format(
 			self.node_type,
-			ns_collection['aic'].label, 
+			ns_collection['aic'].label,
 			ns_collection['fcrepo'].hasParent,
 			ns_collection['aiclist'].TagCat, cat_cond
 		)

@@ -108,6 +108,25 @@ class SspadModel(metaclass=ABCMeta):
 
 
 
+	@property
+	def base_prop_tuples(self):
+		'''Base properties to assign to this node type.
+
+		@return list
+		'''
+
+		return [
+			(ns_collection['rdf'].type, self.node_type),
+		]
+
+
+
+	@property
+	def temp_uri(self):
+		return self.uri_in_tx if self.uri_in_tx else self.uri
+
+
+
 	## METHODS ##
 
 	def __init__(self):
@@ -279,30 +298,11 @@ class SspadModel(metaclass=ABCMeta):
 		delete_tuples, insert_tuples, where_tuples = tuples['tuples']
 
 		for node_type in delete_nodes.keys():
-			for uri in delete_nodes[node_type]:
-				self.connectors['lconn'].delete_node(uri)
+			for del_uri in delete_nodes[node_type]:
+				self.connectors['lconn'].delete_node(del_uri)
 
 		for node_type in insert_nodes.keys():
-			if node_type == 'comments':
-				## Create comment nodes.
-				comment_uris = []
-				for comment_props in insert_nodes[node_type]:
-					# @TODO This should be moved to a separate Comment model.
-					comment_uri = self.connectors['lconn'].create_or_update_node(
-						uri = '{}/aic:annotations/{}'.format(uri, uuid.uuid4()),
-						props = self._build_prop_tuples(
-							insert_props = {
-								'type' : [ns_collection['aic'].Comment],
-								## @TODO Comment category should be a URI
-								'content' : [comment_props['content']],
-								'category' : [comment_props['category']],
-							}
-						)
-					)
-
-					insert_tuples.append(
-						(self._build_rdf_object(*self.props['comment']), URIRef(comment_uri))
-					)
+			insert_tuples += self._insert_nodes_in_tuples(node_type, insert_nodes[node_type])
 
 		self.connectors['lconn'].update_node_properties(
 			uri,
@@ -312,3 +312,17 @@ class SspadModel(metaclass=ABCMeta):
 		)
 
 
+
+	def _insert_nodes_in_tuples(self, type, props):
+		'''Performs additional operations for nodes to be added.
+
+		Override this method in sub-classes.
+
+		@param type (string) Node type name.
+		@param props (list) List of dicts of properties (key: property name, value: property value)
+			to be added to node. Each dict makes up a distinct node.
+
+		@return (list) Insert tuples for the additional nodes.
+		'''
+
+		return []

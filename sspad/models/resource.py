@@ -2,9 +2,10 @@ import mimetypes
 
 import cherrypy
 
-from rdflib import XSD
+from rdflib import URIRef, XSD
 
 from sspad.models.sspad_model import SspadModel
+from sspad.models.comment import Comment
 from sspad.resources.rdf_lexicon import ns_collection, ns_mgr
 
 class Resource(SspadModel):
@@ -65,19 +66,6 @@ class Resource(SspadModel):
 
 
 
-	@property
-	def base_prop_tuples(self):
-		'''Base properties to assign to this node type.
-
-		@return list
-		'''
-
-		return [
-			(ns_collection['rdf'].type, self.node_type),
-		]
-
-
-
 	def __init__(self):
 		'''Class constructor.
 
@@ -102,3 +90,14 @@ class Resource(SspadModel):
 		pass
 
 
+	def _insert_nodes_in_tuples(self, type, props):
+		'''@sa SspadModel::_insert_nodes_in_tuples()'''
+
+		prop_list = []
+		if type == 'comments':
+			## Create comment nodes.
+			for comment_props in props:
+				comment_uri = Comment().create(self.temp_uri, comment_props['content'], comment_props['category'])
+				prop_list.append((self._build_rdf_object(*self.props['comment']), URIRef(comment_uri)))
+
+		return prop_list
