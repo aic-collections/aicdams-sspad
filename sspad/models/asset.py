@@ -6,7 +6,7 @@ import os
 import cherrypy
 import requests
 
-from rdflib import URIRef, Literal
+from rdflib import URIRef, Literal, XSD
 
 from sspad.config.datasources import lake_rest_api
 from sspad.connectors.uidminter_connector import UidminterConnector
@@ -68,8 +68,8 @@ class Asset(Resource):
 	@property
 	def prop_lake_names(self):
 		return super().prop_lake_names + (
-			(ns_collection['aic'].legacyUid, 'literal', 'string'),
-			(ns_collection['aic'].batchUid, 'literal', 'string'),
+			(ns_collection['aic'].legacyUid, 'literal', XSD.string),
+			(ns_collection['aic'].batchUid, 'literal', XSD.string),
 			(ns_collection['aic'].hasTag, 'uri'),
 			(ns_collection['aic'].hasComment, 'uri'),
 			#(ns_collection['fcrepo'].hasExternalContent, 'uri'),
@@ -173,8 +173,8 @@ class Asset(Resource):
 
 			# Set node props
 			init_tuples = self.base_prop_tuples + [
-				(ns_collection['dc'].title, Literal(uid)),
-				(ns_collection['aic'].uid, Literal(uid)),
+				(ns_collection['dc'].title, Literal(uid, datatype=XSD.string)),
+				(ns_collection['aic'].uid, Literal(uid, datatype=XSD.string)),
 			]
 			cherrypy.log('Asset create init tuples: {}'.format(init_tuples))
 

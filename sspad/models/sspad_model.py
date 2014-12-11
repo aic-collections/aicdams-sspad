@@ -97,7 +97,7 @@ class SspadModel(metaclass=ABCMeta):
 
 		return (
 			(ns_collection['rdf'].type, 'uri'),
-			(ns_collection['aic'].label, 'literal', 'string'),
+			(ns_collection['aic'].label, 'literal', XSD.string),
 		)
 
 
@@ -287,6 +287,7 @@ class SspadModel(metaclass=ABCMeta):
 				## Create comment nodes.
 				comment_uris = []
 				for comment_props in insert_nodes[node_type]:
+					# @TODO This should be moved to a separate Comment model.
 					comment_uri = self.connectors['lconn'].create_or_update_node(
 						uri = '{}/aic:annotations/{}'.format(uri, uuid.uuid4()),
 						props = self._build_prop_tuples(

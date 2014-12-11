@@ -2,6 +2,8 @@ import mimetypes
 
 import cherrypy
 
+from rdflib import XSD
+
 from sspad.models.sspad_model import SspadModel
 from sspad.resources.rdf_lexicon import ns_collection, ns_mgr
 
@@ -45,7 +47,7 @@ class Resource(SspadModel):
 	@property
 	def prop_lake_names(self):
 		return super().prop_lake_names + (
-			(ns_collection['dc'].title, 'literal', 'string'),
+			(ns_collection['dc'].title, 'literal', XSD.string),
 		)
 
 

@@ -1,5 +1,6 @@
 import cherrypy
 
+from rdflib import XSD
 from wand import image
 
 from sspad.config.datasources import lake_rest_api, datagrinder_rest_api
@@ -25,24 +26,28 @@ class StaticImage(Asset):
 
 	@property
 	def node_type(self):
+		'''@sa SspadModel::node_types'''
+
 		return ns_collection['aic'].StillImage
 
 
 
 	@property
 	def prop_req_names(self):
+		'''@sa SspadModel::prop_req_names'''
+
 		return super().prop_req_names + (
 			'citi_imgdbank_pkey',
-			#'view_info',
 		)
 
 
 
 	@property
 	def prop_lake_names(self):
+		'''@sa SspadModel::prop_lake_names'''
+
 		return super().prop_lake_names + (
-			(ns_collection['aic'].citiImgDBankUid, 'literal', 'string'),
-			#(ns_collection['aic'].viewInfo, 'literal'),
+			(ns_collection['aic'].citiImgDBankUid, 'literal', XSD.string),
 		)
 
 
