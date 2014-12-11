@@ -14,6 +14,7 @@ class Annotation(SspadModel):
 
 	This is the base class for all Annotations, which includes Comments, Captions, etc.
 
+		@package sspad.models
 		@author Stefano Cossu <scossu@artic.edu>
 		@date 12/11/2014
 	'''
@@ -58,25 +59,18 @@ class Annotation(SspadModel):
 	def list(self, subject):
 		'''Lists all annotations for the given subject URI.
 
-		@param uri (string) Subject URI.
-
-		@return list List of annotation dicts.
+		@sa AnnotationCtrl::GET()
 		'''
 
 		pass
 
 
 
-	def create(self, subject_uri, content, cat=None):
+	def create(self, subject_uri, content):
 		'''Create an Annotation.
 
 		@sa AnnotationCtrl::POST()
-
-		@return (dict) Message with new Annotation node information.
 		'''
-
-		if not cat:
-			cat = self.default_cat
 
 		parent_uri = '{}/{}/{}'.format(
 			subject_uri, self.cont_name, uuid.uuid4()

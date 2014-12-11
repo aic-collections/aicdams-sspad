@@ -2,8 +2,6 @@ from sspad.controllers.sspad_controller import SspadController
 from sspad.models.tag import Tag
 from sspad.models.tag_cat import TagCat
 
-import requests
-
 
 class TagCtrl(SspadController):
 	'''Tag Controller class.
