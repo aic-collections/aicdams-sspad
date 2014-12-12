@@ -314,7 +314,6 @@ class Asset(Resource):
         @param legacy_uid (string, optional) Legacy UID of node to check duplicates for.
 
         @return (boolean) Whether a duplicate has been found.
-        @throws (HTTPError) 409 Conflict if a duplicate exists.
         '''
 
         if not uid and not legacy_uid:
@@ -490,6 +489,11 @@ class Asset(Resource):
 
         inst_uri = parent_uri + '/aic:ds_' + name
 
+        if not file_name:
+            file_name = '{}_{}{}'.format(
+                os.path.basename(inst_uri), name, self._guess_file_ext(mimetype)
+            )
+
         # If instance is not found, create the container
         if not self.connectors['lconn'].assert_node_exists(inst_uri):
             inst_uri = self.connectors['lconn'].create_or_update_node(
@@ -505,11 +509,6 @@ class Asset(Resource):
             cherrypy.log('Created instance: {}'.format(inst_uri))
 
         # Create or replace content datastream.
-        if not file_name:
-            file_name = '{}_{}{}'.format(
-                os.path.basename(inst_uri), name, self._guess_file_ext(mimetype)
-            )
-
         if ref:
             inst_content_uri = self.connectors['lconn'].create_or_update_ref_datastream(
                 uri = inst_uri + '/aic:content', ref = ref
@@ -519,7 +518,6 @@ class Asset(Resource):
                 uri = inst_uri + '/aic:content',
                 file_name=file_name, ds=ds, path=path, mimetype=mimetype
             )
-
 
         # Add relationship in parent node.
         self._update_node(

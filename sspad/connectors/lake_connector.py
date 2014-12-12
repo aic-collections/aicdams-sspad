@@ -1,6 +1,10 @@
 from itertools import chain
-import cherrypy, requests
+
 from os.path import basename
+
+import cherrypy
+import requests
+
 from rdflib import Graph, URIRef, Literal
 from rdflib.plugins.sparql.processor import prepareQuery
 

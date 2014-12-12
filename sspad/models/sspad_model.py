@@ -29,7 +29,10 @@ class SspadModel(metaclass=ABCMeta):
         This is a URI that reflects the node type set in the LAKE CND.
 
         @sa https://github.com/aic-collections/aicdams-lake/tree/master-aic/fcrepo-webapp/src/aic/resources/cnd
+
+        @return rdflib.URIRef
         '''
+
         return ns_collection['fedora'].Resource
 
 
@@ -122,8 +125,31 @@ class SspadModel(metaclass=ABCMeta):
 
 
 
+    #@property
+    #def tx_uri(self):
+    #    '''Returns the current transaction URI.
+
+    #    If no transaction is open, it opens a new one.
+
+
+    #    @return string
+    #    '''
+
+    #    if not self._tx_uri:
+    #        self._open_transaction()
+
+    #    return self._tx_uri
+
+
+
     @property
     def temp_uri(self):
+        '''Returns the current model's URI in the current transaction if a transaction
+            is open; otherwise it returns the permanent model URI.
+
+        @return string
+        '''
+
         return self.uri_in_tx if self.uri_in_tx else self.uri
 
 
@@ -145,13 +171,6 @@ class SspadModel(metaclass=ABCMeta):
 
 
 
-    def tx_uri_to_notx_uri(self, tx_uri):
-        '''Converts node URI inside transaction to URI outside of transaction.'''
-
-        return re.sub(r'/tx:[^\/]+/', '/', tx_uri) # FIXME Ugly. Use more reliable methods.
-
-
-
     ## CRUD METHODS ##
 
     def create_node_in_tx(self, uid):
@@ -162,9 +181,12 @@ class SspadModel(metaclass=ABCMeta):
         @return tuple Two resource URIs: one in the transaction and one outside of it.
         '''
 
+        if not self.tx_uri:
+            self._open_connection()
+
         self.uri_in_tx = self.connectors['lconn'].create_or_update_node(parent='{}/{}'.format(self.tx_uri,self.path))
 
-        self.uri = self.tx_uri_to_notx_uri(self.uri_in_tx)
+        self.uri = self._tx_uri_to_notx_uri(self.uri_in_tx)
 
         return True
 
@@ -208,6 +230,13 @@ class SspadModel(metaclass=ABCMeta):
 
 
     ## PRIVATE METHODS ##
+
+    def _tx_uri_to_notx_uri(self, tx_uri):
+        '''Converts node URI inside transaction to URI outside of transaction.'''
+
+        return re.sub(r'/tx:[^\/]+/', '/', tx_uri) # FIXME Ugly. Use more reliable methods.
+
+
 
     def _guess_file_ext(self, mimetype):
         '''Guesses file extension from MIME types.
@@ -369,6 +398,19 @@ class SspadModel(metaclass=ABCMeta):
         '''
 
         return []
+
+
+
+    def _open_transaction(self):
+        '''Opens a transaction in LAKE and sets the #_tx_uri private class variable.
+
+        The #tx_uri public property calls this method if #_tx_uri is not set.
+        NOTE: It is advisable to use the #temp_uri instead of #uri or #tx_uri where applicable.
+
+        @return None
+        '''
+
+        self.tx_uri = self.connectors['lconn'].open_transaction()
 
 
 
