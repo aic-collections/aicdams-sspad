@@ -3,15 +3,15 @@ from sspad.models.static_image import StaticImage
 
 
 class StaticImageCtrl(AssetCtrl):
-	'''Static Image class.
+    '''Static Image class.
 
-	This class runs and manages Image actions.
-	'''
+    This class runs and manages Image actions.
+    '''
 
-	exposed = True
+    exposed = True
 
-	@property
-	def model(self):
-		'''@see AssetCtrl::model'''
+    @property
+    def model(self):
+        '''@see AssetCtrl::model'''
 
-		return StaticImage
+        return StaticImage

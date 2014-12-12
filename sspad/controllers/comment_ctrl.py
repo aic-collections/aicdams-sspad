@@ -5,54 +5,54 @@ from sspad.models.comment import Comment
 
 
 class CommentCtrl(AnnotationCtrl):
-	'''Comment Controller class.
+    '''Comment Controller class.
 
-	Handles operations with comments.
+    Handles operations with comments.
 
-	@package sspad.controllers
-	@author Stefano Cossu <scossu@artic.edu>
-	@date 12/11/2014
-	'''
-
-
-	exposed = True
+    @package sspad.controllers
+    @author Stefano Cossu <scossu@artic.edu>
+    @date 12/11/2014
+    '''
 
 
-	@property
-	def model(self):
-		'''@sa SspadController::model'''
-
-		return Comment
+    exposed = True
 
 
+    @property
+    def model(self):
+        '''@sa SspadController::model'''
 
-	def GET(self, subject, cat=None):
-		'''Lists all annotations for the given subject URI.
-
-		@param uri (string) Subject URI.
-
-		@return (list) List of annotation dicts.
-		'''
-
-		return self.model().list(subject, cat)
+        return Comment
 
 
 
-	def POST(self, subject, content, category=None):
-		'''Create an Annotation.
+    def GET(self, subject, cat=None):
+        '''Lists all annotations for the given subject URI.
 
-		@param subject (string) URI of subject Resource.
-		@param content (string) Content of the Comment.
-		@param category (string) Comment category.
+        @param uri (string) Subject URI.
 
-		@return (dict) Message with new Annotation node information.
-		'''
+        @return (list) List of annotation dicts.
+        '''
 
-		cherrypy.log('\n')
-		cherrypy.log('*****************')
-		cherrypy.log('Creating comment.')
-		cherrypy.log('*****************')
-		cherrypy.log('')
+        return self.model().list(subject, cat)
 
-		return self.model().create(subject, content, category)
+
+
+    def POST(self, subject, content, category=None):
+        '''Create an Annotation.
+
+        @param subject (string) URI of subject Resource.
+        @param content (string) Content of the Comment.
+        @param category (string) Comment category.
+
+        @return (dict) Message with new Annotation node information.
+        '''
+
+        cherrypy.log('\n')
+        cherrypy.log('*****************')
+        cherrypy.log('Creating comment.')
+        cherrypy.log('*****************')
+        cherrypy.log('')
+
+        return self.model().create(subject, content, category)
 

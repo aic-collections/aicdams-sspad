@@ -5,47 +5,47 @@ import requests
 
 
 class AnnotationCtrl(SspadController):
-	'''Annotation Controller class.
+    '''Annotation Controller class.
 
-	Handles operations with annotations.
+    Handles operations with annotations.
 
-	@package sspad.controllers
-	@author Stefano Cossu <scossu@artic.edu>
-	@date 12/11/2014
-	'''
-
-
-	exposed = True
+    @package sspad.controllers
+    @author Stefano Cossu <scossu@artic.edu>
+    @date 12/11/2014
+    '''
 
 
-	@property
-	def model(self):
-		'''@sa SspadController::model'''
-
-		return Annotation
+    exposed = True
 
 
+    @property
+    def model(self):
+        '''@sa SspadController::model'''
 
-	def GET(self, subject):
-		'''Lists all annotations for the given subject URI.
-
-		@param uri (string) Subject URI.
-
-		@return (list) List of annotation dicts.
-		'''
-
-		return self.model().list(subject)
+        return Annotation
 
 
 
-	def POST(self, subject, content):
-		'''Create an Annotation.
+    def GET(self, subject):
+        '''Lists all annotations for the given subject URI.
 
-		@param subject (string) URI of subject Resource.
-		@param content (string) Content of the annotation.
+        @param uri (string) Subject URI.
 
-		@return (dict) Message with new Annotation node information.
-		'''
+        @return (list) List of annotation dicts.
+        '''
 
-		return self.model().create(subject, content)
+        return self.model().list(subject)
+
+
+
+    def POST(self, subject, content):
+        '''Create an Annotation.
+
+        @param subject (string) URI of subject Resource.
+        @param content (string) Content of the annotation.
+
+        @return (dict) Message with new Annotation node information.
+        '''
+
+        return self.model().create(subject, content)
 

@@ -7,31 +7,31 @@ from sspad.controllers import comment_ctrl, static_image_ctrl, tag_cat_ctrl, tag
 
 
 class Webapp():
-	'''Main Web app class.
+    '''Main Web app class.
 
-	Contains the RESTful API and all its top-level locations.
-	'''
+    Contains the RESTful API and all its top-level locations.
+    '''
 
-	exposed = True
+    exposed = True
 
-	si = static_image_ctrl.StaticImageCtrl()
-	tagCat = tag_cat_ctrl.TagCatCtrl()
-	tag = tag_ctrl.TagCtrl()
-	comment = comment_ctrl.CommentCtrl()
+    si = static_image_ctrl.StaticImageCtrl()
+    tagCat = tag_cat_ctrl.TagCatCtrl()
+    tag = tag_ctrl.TagCtrl()
+    comment = comment_ctrl.CommentCtrl()
 
-	def GET(self):
-		'''Homepage - does nothing'''
+    def GET(self):
+        '''Homepage - does nothing'''
 
-		return {'message': 'Nothing to see here.'}
+        return {'message': 'Nothing to see here.'}
 
 
 if __name__ == '__main__':
-	cherrypy.config.update(server.conf)
+    cherrypy.config.update(server.conf)
 
-	Daemonizer(cherrypy.engine).subscribe()
-	PIDFile(cherrypy.engine, host.pidfile).subscribe()
+    Daemonizer(cherrypy.engine).subscribe()
+    PIDFile(cherrypy.engine, host.pidfile).subscribe()
 
-	webapp = Webapp()
-	cherrypy.tree.mount(webapp, '/', app.rest_conf)
-	cherrypy.engine.start()
-	cherrypy.engine.block()
+    webapp = Webapp()
+    cherrypy.tree.mount(webapp, '/', app.rest_conf)
+    cherrypy.engine.start()
+    cherrypy.engine.block()
