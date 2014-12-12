@@ -163,19 +163,18 @@ class Asset(Resource):
 
 		try:
 			# Create Asset node in tx
-			self.create_node_in_tx(uid, self.tx_uri)
-			cherrypy.log('Node URI in TX: {}; outslide of TX: {}'.format(self.uri_in_tx, self.uri))
+			self.create_node_in_tx(self.uid)
 
 			# Set node props
 			init_tuples = self.base_prop_tuples + [
-				(ns_collection['dc'].title, Literal(uid, datatype=XSD.string)),
-				(ns_collection['aic'].uid, Literal(uid, datatype=XSD.string)),
+				(ns_collection['dc'].title, Literal(self.uid, datatype=XSD.string)),
+				(ns_collection['aic'].uid, Literal(self.uid, datatype=XSD.string)),
 			]
 			cherrypy.log('Asset create init tuples: {}'.format(init_tuples))
 
 			cherrypy.log('Asset create properties: {}'.format(props))
 			self._update_node(
-				self.uri_in_tx,
+				self.temp_uri,
 				props = {
 					'insert_props' : props,
 					'init_insert_tuples' : init_tuples
@@ -187,17 +186,17 @@ class Asset(Resource):
 
 		except:
 			# Roll back transaction if something goes wrong
-			#self.connectors['lconn'].rollbackTransaction(self.tx_uri)
+			self._rollback_transaction()
 			raise
 
 		# Commit transaction
-		self.connectors['lconn'].commitTransaction(self.tx_uri)
+		self._commit_transaction()
 
 		return {"message": "Asset created.", "data": {"location": self.uri}}
 
 
 
-	def update(self, uid=None, uri=None, props={}, **dstreams):
+	def update(self, props={}, **dstreams):
 		'''Updates an asset.
 
 		@sa AssetCtrl::PUT()
@@ -310,8 +309,6 @@ class Asset(Resource):
 
 		@return (boolean) Whether a duplicate has been found.
 		@throws (HTTPError) 409 Conflict if a duplicate exists.
-
-		@TODO Only return boolean and let caller method raise exceptions if appropriate.
 		'''
 
 		if not uid and not legacy_uid:
@@ -432,8 +429,8 @@ class Asset(Resource):
 				# Create a reference node.
 				in_dsname = dsname [4:]
 				cherrypy.log('Creating a reference ds with name: aic:ds_{}'.format(in_dsname))
-				inst_uri = self.create_or_update_instance(
-					parent_uri = self.uri_in_tx,
+				inst_uri = self._create_or_update_instance(
+					parent_uri = self.temp_uri,
 					name = in_dsname,
 					ref = dstreams[dsname]
 				)
@@ -443,8 +440,8 @@ class Asset(Resource):
 				# Create an actual datastream.
 				ds = self._get_iostream_from_req(dstreams[dsname])
 				ds.seek(0)
-				inst_uri = self.create_or_update_instance(
-					parent_uri = self.uri_in_tx,
+				inst_uri = self._create_or_update_instance(
+					parent_uri = self.temp_uri,
 					name = in_dsname,
 					ds = ds,
 					mimetype = dsmeta[dsname]['mimetype']

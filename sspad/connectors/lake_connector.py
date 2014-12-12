@@ -273,7 +273,7 @@ class LakeConnector:
 
 
 
-	def commitTransaction(self, tx_uri):
+	def commit_transaction(self, tx_uri):
 		'''Commits an open transaction.
 
 		@param tx_uri The full transaction URI.
@@ -294,7 +294,7 @@ class LakeConnector:
 
 
 
-	def rollbackTransaction(self, tx_uri):
+	def rollback_transaction(self, tx_uri):
 		'''Rolls back an open transaction.
 
 		@param tx_uri The full transaction URI.

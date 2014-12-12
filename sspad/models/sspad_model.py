@@ -154,16 +154,15 @@ class SspadModel(metaclass=ABCMeta):
 
 	## CRUD METHODS ##
 
-	def create_node_in_tx(self, uid, tx_uri):
+	def create_node_in_tx(self, uid):
 		'''Creates a node within a transaction in LAKE.
 
 		@param uid		(string) UID of the node to be generated.
-		@param tx_uri	(string) URI of the transaction.
 
 		@return tuple Two resource URIs: one in the transaction and one outside of it.
 		'''
 
-		self.uri_in_tx = self.connectors['lconn'].create_or_update_node(parent='{}/{}'.format(tx_uri,self.path))
+		self.uri_in_tx = self.connectors['lconn'].create_or_update_node(parent='{}/{}'.format(self.tx_uri,self.path))
 
 		self.uri = self.tx_uri_to_notx_uri(self.uri_in_tx)
 
@@ -185,8 +184,8 @@ class SspadModel(metaclass=ABCMeta):
 		#cherrypy.log('Delete props:' + str(delete_props))
 
 		# Open Fedora transaction
-		tx_uri = self.connectors['lconn'].open_transaction()
-		self.uri_in_tx = self.uri.replace(lake_rest_api['base_url'], tx_uri + '/')
+		self.tx_uri = self.connectors['lconn'].open_transaction()
+		self.uri_in_tx = self.uri.replace(lake_rest_api['base_url'], self.tx_uri + '/')
 
 		# Collect properties
 		try:
@@ -199,10 +198,10 @@ class SspadModel(metaclass=ABCMeta):
 				}
 			)
 		except:
-			self.connectors['lconn'].rollbackTransaction(tx_uri)
+			self._rollback_tansaction()
 			raise
 
-		self.connectors['lconn'].commitTransaction(tx_uri)
+		self._commit_transaction()
 
 		return True
 
@@ -370,3 +369,32 @@ class SspadModel(metaclass=ABCMeta):
 		'''
 
 		return []
+
+
+
+	def _commit_transaction(self):
+		'''Commits a transaction and clears transaction URI members.
+
+		@return None
+		'''
+
+		if self.connectors['lconn'].commit_transaction(self.tx_uri):
+			self.tx_uri = None
+			self.uri_in_tx = None
+
+
+
+
+	def _rollback_transaction(self):
+		'''Rolls back a transaction and clears transaction URI members.
+
+		@return None
+		'''
+
+		if self.connectors['lconn'].rollback_transaction(self.tx_uri):
+			self.tx_uri = None
+			self.uri_in_tx = None
+
+
+
+
