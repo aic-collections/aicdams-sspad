@@ -402,9 +402,8 @@ class SspadModel(metaclass=ABCMeta):
 
 
     def _open_transaction(self):
-        '''Opens a transaction in LAKE and sets the #_tx_uri private class variable.
+        '''Opens a transaction in LAKE and sets the #tx_uri property.
 
-        The #tx_uri public property calls this method if #_tx_uri is not set.
         NOTE: It is advisable to use the #temp_uri instead of #uri or #tx_uri where applicable.
 
         @return None
