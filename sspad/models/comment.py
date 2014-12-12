@@ -91,7 +91,7 @@ class Comment(Annotation):
 			subject_uri, self.cont_name, uuid.uuid4()
 		)
 
-		comment_uri = cherrypy.request.app.config['connectors']['lconn'].create_or_update_node(
+		comment_uri = self.connectors['lconn'].create_or_update_node(
 			uri = req_uri,
 			props = self._build_prop_tuples(
 				insert_props = {

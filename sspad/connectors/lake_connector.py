@@ -50,7 +50,7 @@ class LakeConnector:
 		@throw HTTPError If the request is invalid (i.e. any other HTTP error than 404)
 		'''
 
-		res = requests.get(uri, headers = self.headers)
+		res = requests.head(uri, headers = self.headers)
 		cherrypy.log('Check if node exists: {}'.format(res.status_code))
 		if res.status_code == 404:
 			return False

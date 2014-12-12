@@ -55,6 +55,7 @@ class Asset(Resource):
 			'pref_agent_pkey', # Integer
 			'pref_place_pkey', # Integer
 			'pref_exhib_pkey', # Integer
+			'has_source', # String (uri)
 			'has_master', # String (uri)
 			'has_instance', # String (uri)
 		)
@@ -77,6 +78,7 @@ class Asset(Resource):
 			(ns_collection['aic'].isPrimaryRepresentationOf, 'uri'),
 			(ns_collection['aic'].isPrimaryRepresentationOf, 'uri'),
 			(ns_collection['aic'].isPrimaryRepresentationOf, 'uri'),
+			(ns_collection['aic'].hasSource, 'uri'),
 			(ns_collection['aic'].hasMaster, 'uri'),
 			(ns_collection['aic'].hasInstance, 'uri'),
 		)
@@ -149,7 +151,7 @@ class Asset(Resource):
 					raise cherrypy.HTTPError('409 Conflict', 'A node with legacy UID \'{}\' exists already.'.format(legacy_uid))
 
 		# Create a new UID
-		uid = self.mint_uid(mid)
+		self.uid = self.mint_uid(mid)
 
 		# Generate master if not existing
 		dstreams = self._generate_master(dstreams)
@@ -204,39 +206,43 @@ class Asset(Resource):
 		@return (dict) Message with updated asset node information.
 		'''
 
-		#self._set_connection()
-		dsnames = sorted(dstreams.keys())
-		for dsname in dsnames:
-			ds = _get_iostream_from_req(dstreams[dsname])
-			src_format, src_size, src_mimetype = self._validate_datastream(ds)
+		if props:
+			# @TODO Replace all props
+			self.replace_props(props)
 
-			#cherrypy.log('UID: ' + uid + '; dsname: ' + dsname + ' mimetype: ' + src_mimetype)
-			#cherrypy.log('mimetype guess: ' + self._guess_file_ext(src_mimetype))
-			#ds.seek(0)
-			with ds.read() as src_data:
-				content_uri = self.create_or_update_instance(
-					parent_uri = self.uri,
-					name = dsname,
-					ds = src_data,
-					mimetype = src_mimetype
-				)
+		if dstreams:
+			# Generate master if not existing and if source is provided
+			dstreams = self._generate_master(dstreams)
 
-				if dsname == 'source' and 'master' not in dsnames:
-					# Recreate master file automatically if source is provided
-					# without master
-					cherrypy.log('No master file provided with source, re-creating master.')
-					cherrypy.log('DS: '+str(ds))
-					master = self._generateMasterFile(src_data, uid + '_master.jpg')
-					content_uri = self.create_or_update_instance(
-						parent_uri = self.uri,
-						name = dsname,
-						ds=master.read(),
-						mimetype = self.master_mimetype
-					)
-				src_data = None # Flush datastream
+			# First validate all datastreams
+			dsmeta = self._validate_dstreams(dstreams)
+
+			# Open Fedora transaction
+			self.tx_uri = self.connectors['lconn'].open_transaction()
+			self.uri_in_tx = self.uri.replace(lake_rest_api['base_url'], self.tx_uri + '/')
+
+			# Loop over all datastreams and ingest them
+			self._ingest_instances(dstreams, dsmeta)
+
+			# Commit transaction
+			self._commit_transaction()
 
 		# @TODO Actually verify the URI from response headers.
 		return {"message": "Resource updated.", "data": {"location": self.uri}}
+
+
+
+	def replace_props(self, props):
+		'''Replace the whole property set of a node.
+
+		@param props (list) List of prpoerty dicts.
+
+		@return (boolean) Whether the operation was successful.
+
+		@TODO Stub.
+		'''
+
+		pass
 
 
 
@@ -343,11 +349,14 @@ class Asset(Resource):
 				ds_binary = self.connectors['lconn'].get_binary_stream(dstreams['ref_source'])
 
 				dstreams['master'] = self._generateMasterFile(ds_binary.content, self.uid + '_master.jpg')
-			else:
+			elif 'source' in dstreams.keys():
 				dstreams['master'] = self._generateMasterFile(
 					self._get_iostream_from_req(dstreams['source']),
 					self.uid + '_master.jpg'
 				)
+			else:
+				cherrypy.log('No source or ref_source provided. Not changing the list.')
+
 		else:
 			cherrypy.log('Master file provided.')
 
@@ -413,7 +422,7 @@ class Asset(Resource):
 
 	def _ingest_instances(self, dstreams, dsmeta):
 		'''Loops over datastreams and ingests them by
-			calling #create_or_update_instance() iteratively within a transaction.
+			calling #_create_or_update_instance() iteratively within a transaction.
 
 		@param dstreams (dict) Dict of datastreams. Keys are datastream names and values are datastreams.
 		@param dsmeta (dict) Dict of datastream metadata.
@@ -449,7 +458,7 @@ class Asset(Resource):
 
 
 
-	def create_or_update_instance(
+	def _create_or_update_instance(
 			self, parent_uri, name, ref=None, file_name=None, ds=None, path=None, mimetype='application/octet-stream'
 			):
 		'''Creates or updates an instance.
@@ -457,10 +466,12 @@ class Asset(Resource):
 		@param parent_uri (string) URI of the container Asset node for the instance.
 		@param name (string) Name of the datastream, e.g. 'master' or 'source'.
 		@param ref (string, optional) Reference URI for remote source.
-		@param file_name (string, optional) File name for the downloaded datastream. If empty, this is built from the asset UID and instance name (default).
+		@param file_name (string, optional) File name for the downloaded datastream.
+				If empty, this is built from the asset UID and instance name (default).
 		@param ds (BytesIO, optional) Raw datastream.
 		@param path (string, optional) Reference path for source file in current filesystem.
-		@param mimetype (string, optional) MIME type of provided datastream. Default is 'application/octet-stream'.
+		@param mimetype (string, optional) MIME type of provided datastream.
+				Default is 'application/octet-stream'.
 
 		@return (string) New instance URI.
 		'''
@@ -470,25 +481,30 @@ class Asset(Resource):
 				else \
 				ns_collection['aic'].Instance
 
-		rel_name = 'has_master' \
-			if name == 'master' \
-			else \
-			'has_instance'
+		if name == 'source' or name == 'ref_source':
+			rel_name = 'has_source'
+		elif name == 'master':
+			rel_name = 'has_master'
+		else:
+			rel_name = 'has_instance'
 
-		uri = parent_uri + '/aic:ds_' + name
-		inst_uri = self.connectors['lconn'].create_or_update_node(
-			uri = parent_uri + '/aic:ds_' + name,
-			props = self._build_prop_tuples(
-				insert_props = {
-					'type' :  [rdf_type],
-					'label' : [self.uid + '_' + name],
-				},
-				init_insert_tuples = []
+		inst_uri = parent_uri + '/aic:ds_' + name
+
+		# If instance is not found, create the container
+		if not self.connectors['lconn'].assert_node_exists(inst_uri):
+			inst_uri = self.connectors['lconn'].create_or_update_node(
+				uri = inst_uri,
+				props = self._build_prop_tuples(
+					insert_props = {
+						'type' :  [rdf_type],
+						'label' : [self.uid + '_' + name],
+					},
+					init_insert_tuples = []
+				)
 			)
-		)
-		cherrypy.log('Created instance: {}'.format(inst_uri))
+			cherrypy.log('Created instance: {}'.format(inst_uri))
 
-		# Create content datastream.
+		# Create or replace content datastream.
 		if not file_name:
 			file_name = '{}_{}{}'.format(
 				os.path.basename(inst_uri), name, self._guess_file_ext(mimetype)
@@ -496,13 +512,13 @@ class Asset(Resource):
 
 		if ref:
 			inst_content_uri = self.connectors['lconn'].create_or_update_ref_datastream(
-					uri = inst_uri + '/aic:content', ref = ref
-					)
+				uri = inst_uri + '/aic:content', ref = ref
+			)
 		else:
 			inst_content_uri = self.connectors['lconn'].create_or_update_datastream(
-					uri = inst_uri + '/aic:content',
-					file_name = file_name, ds = ds, path = path, mimetype = mimetype
-					)
+				uri = inst_uri + '/aic:content',
+				file_name=file_name, ds=ds, path=path, mimetype=mimetype
+			)
 
 
 		# Add relationship in parent node.

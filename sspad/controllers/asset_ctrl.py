@@ -112,7 +112,7 @@ class AssetCtrl(SspadController):
 
 		@return (dict) Message with node information.
 
-		@TODO Replacing property set is not supported yet, and might not be needed anyway.
+		@TODO Replacing property set is not supported yet.
 		'''
 
 		cherrypy.log('\n')
@@ -142,9 +142,9 @@ class AssetCtrl(SspadController):
 
 			# If a URI is found, update the node.
 			try:
-				model.update(uri=model.uri, props=props_dict, **dstreams)
-			except Exception as e:
-				raise cherrypy.HTTPError(500, str(e))
+				ret = model.update(props=props_dict, **dstreams)
+			except:
+				raise
 
 			cherrypy.response.status = 204
 			cherrypy.response.headers['Location'] = model.uri
@@ -184,7 +184,6 @@ class AssetCtrl(SspadController):
 			raise cherrypy.HTTPError('400 Bad Request')
 
 		cherrypy.response.status = 204
-		# @TODO Actually verify the URI from response headers.
 		cherrypy.response.headers['Location'] = model.uri
 
 		return {"message": "Asset updated."}
