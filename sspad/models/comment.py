@@ -91,7 +91,7 @@ class Comment(Annotation):
             subject_uri, self.cont_name, uuid.uuid4()
         )
 
-        comment_uri = self.connectors['lconn'].create_or_update_node(
+        comment_uri = self.lconn.create_or_update_node(
             uri = req_uri,
             props = self._build_prop_tuples(
                 insert_props = {
@@ -105,7 +105,7 @@ class Comment(Annotation):
         )
 
         # Add relationship to comment.
-        self.connectors['lconn'].update_node_properties(
+        self.lconn.update_node_properties(
             subject_uri,
             insert_props=[(
                 self._build_rdf_object(*Resource().props['comment']),

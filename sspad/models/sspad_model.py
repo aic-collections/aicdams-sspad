@@ -18,6 +18,8 @@ class SspadModel(metaclass=ABCMeta):
     '''SspadModel class.
 
     This is the base class for all Fedora nodes.
+    This class is initialized by instantiation from a controller. Therefore, its constructor
+    method can refer to cherrypy request parameters.
 
     @package sspad.models
     '''
@@ -159,15 +161,17 @@ class SspadModel(metaclass=ABCMeta):
     def __init__(self):
         '''Sets up connections to external services.
 
+        Connector objects are available via the #connectors dict.
+        If this method needs to be redefined in subclasses, make sure that this superclass __init__
+        is called first, to make sure that connections to external services are appropriately established.
+
         @return None
         '''
 
         cherrypy.log('Setting connectors...')
-        cherrypy.request.app.config['connectors']['lconn'] = LakeConnector()
-        cherrypy.request.app.config['connectors']['dgconn'] = DatagrinderConnector()
-        cherrypy.request.app.config['connectors']['tsconn']  = TstoreConnector()
-
-        self.connectors = cherrypy.request.app.config['connectors']
+        self.lconn = LakeConnector()
+        self.dgconn = DatagrinderConnector()
+        self.tsconn = TstoreConnector()
 
 
 
@@ -184,7 +188,9 @@ class SspadModel(metaclass=ABCMeta):
         if not self.tx_uri:
             self._open_connection()
 
-        self.uri_in_tx = self.connectors['lconn'].create_or_update_node(parent='{}/{}'.format(self.tx_uri,self.path))
+        self.uri_in_tx = self.lconn.create_or_update_node(
+            parent='{}/{}'.format(self.tx_uri,self.path)
+        )
 
         self.uri = self._tx_uri_to_notx_uri(self.uri_in_tx)
 
@@ -206,7 +212,7 @@ class SspadModel(metaclass=ABCMeta):
         #cherrypy.log('Delete props:' + str(delete_props))
 
         # Open Fedora transaction
-        self.tx_uri = self.connectors['lconn'].open_transaction()
+        self.tx_uri = self.lconn.open_transaction()
         self.uri_in_tx = self.uri.replace(lake_rest_api['base_url'], self.tx_uri + '/')
 
         # Collect properties
@@ -304,7 +310,7 @@ class SspadModel(metaclass=ABCMeta):
                     # Check if property is a relationship
                     if req_name in self.reqprops_to_rels:
                         rel_type = self.reqprops_to_rels[req_name]
-                        ref_uri = self.connectors['tsconn'].get_node_uri_by_prop(ns_collection['aicdb'] + 'citi_pkey', value)
+                        ref_uri = self.tsconn.get_node_uri_by_prop(ns_collection['aicdb'] + 'citi_pkey', value)
                         if not ref_uri:
                             if ignore_broken_rels:
                                 continue
@@ -359,7 +365,8 @@ class SspadModel(metaclass=ABCMeta):
         '''Updates a node inserting and deleting related nodes if necessary.
 
         @param uri (stirng) URI of the node to be updated.
-        @param tuples (dict) Map of properties and nodes to be updated, to be passed to #_build_prop_tuples.
+        @param tuples (dict) Map of properties and nodes to be updated,
+        to be passed to #_build_prop_tuples.
 
         @return None
         '''
@@ -371,17 +378,16 @@ class SspadModel(metaclass=ABCMeta):
 
         for node_type in delete_nodes.keys():
             for del_uri in delete_nodes[node_type]:
-                self.connectors['lconn'].delete_node(del_uri)
+                self.lconn.delete_node(del_uri)
 
         for node_type in insert_nodes.keys():
             insert_tuples += self._insert_nodes_in_tuples(node_type, insert_nodes[node_type])
 
-        self.connectors['lconn'].update_node_properties(
+        self.lconn.update_node_properties(
             uri,
             delete_props=delete_tuples,
             insert_props=insert_tuples,
-            where_props=where_tuples
-        )
+            where_props=where_tuples)
 
 
 
@@ -409,7 +415,7 @@ class SspadModel(metaclass=ABCMeta):
         @return None
         '''
 
-        self.tx_uri = self.connectors['lconn'].open_transaction()
+        self.tx_uri = self.lconn.open_transaction()
 
 
 
@@ -419,7 +425,7 @@ class SspadModel(metaclass=ABCMeta):
         @return None
         '''
 
-        if self.connectors['lconn'].commit_transaction(self.tx_uri):
+        if self.lconn.commit_transaction(self.tx_uri):
             self.tx_uri = None
             self.uri_in_tx = None
 
@@ -432,7 +438,7 @@ class SspadModel(metaclass=ABCMeta):
         @return None
         '''
 
-        if self.connectors['lconn'].rollback_transaction(self.tx_uri):
+        if self.lconn.rollback_transaction(self.tx_uri):
             self.tx_uri = None
             self.uri_in_tx = None
 

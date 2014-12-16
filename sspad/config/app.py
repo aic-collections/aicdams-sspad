@@ -5,10 +5,5 @@ rest_conf = {
         'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
         'request.methods_with_bodies': ('POST', 'PUT', 'PATCH'),
     },
-    'connectors' : {
-        'lconn' : None,
-        'dgconn' : None,
-        'tsconn' : None,
-    }
 }
 

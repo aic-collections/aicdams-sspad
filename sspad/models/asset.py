@@ -143,7 +143,7 @@ class Asset(Resource):
         # If that is the case, throw a 409 Conflict HTTP error.
         if 'legacy_uid' in props:
             for legacy_uid in props['legacy_uid']:
-                check_uri = self.connectors['tsconn'].get_node_uri_by_prop(
+                check_uri = self.tsconn.get_node_uri_by_prop(
                     ns_collection['aic'] + 'legacyUid', legacy_uid
                 )
                 if check_uri:
@@ -160,7 +160,7 @@ class Asset(Resource):
         dsmeta = self._validate_dstreams(dstreams)
 
         # Open Fedora transaction
-        self.tx_uri = self.connectors['lconn'].open_transaction()
+        self.tx_uri = self.lconn.open_transaction()
         #cherrypy.log('Created TX: {}'.format(self.tx_uri))
 
         try:
@@ -218,7 +218,7 @@ class Asset(Resource):
             dsmeta = self._validate_dstreams(dstreams)
 
             # Open Fedora transaction
-            self.tx_uri = self.connectors['lconn'].open_transaction()
+            self.tx_uri = self.lconn.open_transaction()
             self.uri_in_tx = self.uri.replace(lake_rest_api['base_url'], self.tx_uri + '/')
 
             # Loop over all datastreams and ingest them
@@ -281,7 +281,7 @@ class Asset(Resource):
 
         # First check the URI.
         if uri:
-            if self.connectors['lconn'].assert_node_exists(uri):
+            if self.lconn.assert_node_exists(uri):
                 self.uri = uri
                 return True
             else:
@@ -296,7 +296,7 @@ class Asset(Resource):
             check_prop = ns_collection['aic'] + 'legacyUid'
             check_uid = legacy_uid
 
-        check_uri = self.connectors['tsconn'].get_node_uri_by_prop(check_prop, check_uid)
+        check_uri = self.tsconn.get_node_uri_by_prop(check_prop, check_uid)
 
         if check_uri:
             self.uri = check_uri
@@ -320,11 +320,11 @@ class Asset(Resource):
             raise ValueError('Neither uid or legacy_uid were provided. Cannot check for duplicates.')
 
         if uid:
-            uri_uid = self.connectors['tsconn'].find_node_uri_by_prop(ns_collection['aic'] + 'uid', uid)
+            uri_uid = self.tsconn.find_node_uri_by_prop(ns_collection['aic'] + 'uid', uid)
             if not self.uri == uri_uid:
                 return {'uid' : uri_uid}
         if legacy_uid:
-            uri_legacy_uid = self.connectors['tsconn'].get_node_uri_by_prop(ns_collection['aic'] + 'legacyUid', legacy_uid)
+            uri_legacy_uid = self.tsconn.get_node_uri_by_prop(ns_collection['aic'] + 'legacyUid', legacy_uid)
             if not self.uri == uri_legacy_uid:
                 return {'legacy_uid' : uri_uid}
 
@@ -345,7 +345,7 @@ class Asset(Resource):
             cherrypy.log('Master file not provided.')
             if 'ref_source' in dstreams.keys():
                 cherrypy.log('Requesting {}...'.format(dstreams['ref_source']))
-                ds_binary = self.connectors['lconn'].get_binary_stream(dstreams['ref_source'])
+                ds_binary = self.lconn.get_binary_stream(dstreams['ref_source'])
 
                 dstreams['master'] = self._generateMasterFile(ds_binary.content, self.uid + '_master.jpg')
             elif 'source' in dstreams.keys():
@@ -495,8 +495,8 @@ class Asset(Resource):
             )
 
         # If instance is not found, create the container
-        if not self.connectors['lconn'].assert_node_exists(inst_uri):
-            inst_uri = self.connectors['lconn'].create_or_update_node(
+        if not self.lconn.assert_node_exists(inst_uri):
+            inst_uri = self.lconn.create_or_update_node(
                 uri = inst_uri,
                 props = self._build_prop_tuples(
                     insert_props = {
@@ -510,11 +510,11 @@ class Asset(Resource):
 
         # Create or replace content datastream.
         if ref:
-            inst_content_uri = self.connectors['lconn'].create_or_update_ref_datastream(
+            inst_content_uri = self.lconn.create_or_update_ref_datastream(
                 uri = inst_uri + '/aic:content', ref = ref
             )
         else:
-            inst_content_uri = self.connectors['lconn'].create_or_update_datastream(
+            inst_content_uri = self.lconn.create_or_update_datastream(
                 uri = inst_uri + '/aic:content',
                 file_name=file_name, ds=ds, path=path, mimetype=mimetype
             )
