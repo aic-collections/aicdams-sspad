@@ -175,7 +175,7 @@ class Asset(Resource):
             cherrypy.log('Asset create init tuples: {}'.format(init_tuples))
 
             cherrypy.log('Asset create properties: {}'.format(props))
-            self._update_node(
+            self.update_node(
                 self.temp_uri,
                 props = {
                     'insert_props' : props,
