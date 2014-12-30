@@ -10,6 +10,7 @@ from rdflib import URIRef, Literal, XSD
 
 from sspad.config.datasources import lake_rest_api
 from sspad.connectors.uidminter_connector import UidminterConnector
+from sspad.models.instance import Instance
 from sspad.models.resource import Resource
 from sspad.resources.rdf_lexicon import ns_collection, ns_mgr
 
@@ -437,8 +438,8 @@ class Asset(Resource):
                 # Create a reference node.
                 in_dsname = dsname [4:]
                 cherrypy.log('Creating a reference ds with name: aic:ds_{}'.format(in_dsname))
-                inst_uri = self._create_or_update_instance(
-                    parent_uri = self.temp_uri,
+                inst_uri = Instance().create_or_update(
+                    asset_uri = self.temp_uri,
                     name = in_dsname,
                     ref = dstreams[dsname]
                 )
@@ -448,85 +449,12 @@ class Asset(Resource):
                 # Create an actual datastream.
                 ds = self._get_iostream_from_req(dstreams[dsname])
                 ds.seek(0)
-                inst_uri = self._create_or_update_instance(
-                    parent_uri = self.temp_uri,
+                inst_uri = Instance().create_or_update(
+                    asset_uri = self.temp_uri,
                     name = in_dsname,
                     ds = ds,
                     mimetype = dsmeta[dsname]['mimetype']
                 )
 
 
-
-    def _create_or_update_instance(
-            self, parent_uri, name, ref=None, file_name=None, ds=None, path=None, mimetype='application/octet-stream'
-            ):
-        '''Creates or updates an instance.
-
-        @param parent_uri (string) URI of the container Asset node for the instance.
-        @param name (string) Name of the datastream, e.g. 'master' or 'source'.
-        @param ref (string, optional) Reference URI for remote source.
-        @param file_name (string, optional) File name for the downloaded datastream.
-                If empty, this is built from the asset UID and instance name (default).
-        @param ds (BytesIO, optional) Raw datastream.
-        @param path (string, optional) Reference path for source file in current filesystem.
-        @param mimetype (string, optional) MIME type of provided datastream.
-                Default is 'application/octet-stream'.
-
-        @return (string) New instance URI.
-        '''
-
-        rdf_type = ns_collection['aic'].Master\
-                if name == 'master' \
-                else \
-                ns_collection['aic'].Instance
-
-        if name == 'source' or name == 'ref_source':
-            rel_name = 'has_source'
-        elif name == 'master':
-            rel_name = 'has_master'
-        else:
-            rel_name = 'has_instance'
-
-        inst_uri = parent_uri + '/aic:ds_' + name
-
-        if not file_name:
-            file_name = '{}_{}{}'.format(
-                os.path.basename(inst_uri), name, self._guess_file_ext(mimetype)
-            )
-
-        # If instance is not found, create the container
-        if not self.connectors['lconn'].assert_node_exists(inst_uri):
-            inst_uri = self.connectors['lconn'].create_or_update_node(
-                uri = inst_uri,
-                props = self._build_prop_tuples(
-                    insert_props = {
-                        'type' :  [rdf_type],
-                        'label' : [self.uid + '_' + name],
-                    },
-                    init_insert_tuples = []
-                )
-            )
-            cherrypy.log('Created instance: {}'.format(inst_uri))
-
-        # Create or replace content datastream.
-        if ref:
-            inst_content_uri = self.connectors['lconn'].create_or_update_ref_datastream(
-                uri = inst_uri + '/aic:content', ref = ref
-            )
-        else:
-            inst_content_uri = self.connectors['lconn'].create_or_update_datastream(
-                uri = inst_uri + '/aic:content',
-                file_name=file_name, ds=ds, path=path, mimetype=mimetype
-            )
-
-        # Add relationship in parent node.
-        self._update_node(
-            uri = parent_uri,
-            props = {
-                'insert_props' : {rel_name : [inst_uri]},
-                'init_insert_tuples' : [],
-            }
-        )
-
-        return inst_uri
 

@@ -40,7 +40,8 @@ class Resource(SspadModel):
     @property
     def prop_req_names(self):
         return super().prop_req_names + (
-            'title', # Unused. Use aic:label instead.
+            'label',
+            'title',
             'comment', # For insert: Dict: {'cat' : <String>, 'content' : <String>} - For delete: String (comment URI)
         )
 
@@ -49,6 +50,7 @@ class Resource(SspadModel):
     @property
     def prop_lake_names(self):
         return super().prop_lake_names + (
+            (ns_collection['dc'].title, 'literal', XSD.string),
             (ns_collection['aic'].label, 'literal', XSD.string),
             (ns_collection['aic'].hasComment, 'uri'),
         )
