@@ -196,7 +196,7 @@ class SspadModel(metaclass=ABCMeta):
         '''Updates a node inserting and deleting related nodes if necessary.
 
         @param uri (stirng) URI of the node to be updated.
-        @param tuples (dict) Map of properties and nodes to be updated, to be passed to #_build_prop_tuples.
+        @param props (dict) Map of properties and nodes to be updated, to be passed to #_build_prop_tuples.
 
         @return None
         '''

@@ -118,7 +118,7 @@ class Instance(Resource):
             self._create_container(asset_uri, name, type)
 
         self._create_or_update_content(
-                name, ref, file_name, ds, path, mimetype
+                os.path.basename(asset_uri), name, ref, file_name, ds, path, mimetype
                 )
 
 
@@ -133,14 +133,17 @@ class Instance(Resource):
         @param type (string) The instance type. It corresponds to a RDF type.
         '''
 
+        # Avoid circular dependencies.
+        from sspad.models.asset import Asset
+
         rdf_type = ns_collection['aic'].Master\
                 if name == 'master' \
                 else \
                 ns_collection['aic'].Instance
 
         asset_uid = os.path.basename(asset_uri)
-        inst_uri = self.connectors['lconn'].create_or_update_node(
-            uri = inst_uri,
+        self.uri = self.connectors['lconn'].create_or_update_node(
+            uri = self.uri,
             props = self._build_prop_tuples(
                 insert_props = {
                     'type' :  [rdf_type],
@@ -149,7 +152,7 @@ class Instance(Resource):
                 init_insert_tuples = []
             )
         )
-        #cherrypy.log('Created instance: {}'.format(inst_uri))
+        #cherrypy.log('Created instance: {}'.format(self.uri))
 
         if type == 'Original':
             rel_name = 'has_original'
@@ -170,7 +173,7 @@ class Instance(Resource):
 
 
     def _create_or_update_content(
-            self, name, ref, file_name, ds, path, mimetype
+            self, asset_uid, name, ref, file_name, ds, path, mimetype
             ):
         '''Create or replace content datastream.
 
@@ -188,20 +191,20 @@ class Instance(Resource):
 
         if not file_name:
             file_name = '{}_{}{}'.format(
-                os.path.basename(inst_uri), name, self._guess_file_ext(mimetype)
+                asset_uid, name, self._guess_file_ext(mimetype)
             )
 
         if ref:
-            inst_content_uri = self.connectors['lconn'].create_or_update_ref_datastream(
-                uri = inst_uri + '/aic:content', ref = ref
+            content_uri = self.connectors['lconn'].create_or_update_ref_datastream(
+                uri = self.uri + '/aic:content', ref = ref
             )
         else:
-            inst_content_uri = self.connectors['lconn'].create_or_update_datastream(
-                uri = inst_uri + '/aic:content',
+            content_uri = self.connectors['lconn'].create_or_update_datastream(
+                uri = self.uri + '/aic:content',
                 file_name=file_name, ds=ds, path=path, mimetype=mimetype
             )
 
         # Add relationship in parent node.
 
-        return inst_content_uri
+        return content_uri
 
