@@ -56,7 +56,7 @@ class Asset(Resource):
             'pref_agent_pkey', # Integer
             'pref_place_pkey', # Integer
             'pref_exhib_pkey', # Integer
-            'has_source', # String (uri)
+            'has_original', # String (uri)
             'has_master', # String (uri)
             'has_instance', # String (uri)
         )
@@ -79,7 +79,7 @@ class Asset(Resource):
             (ns_collection['aic'].isPrimaryRepresentationOf, 'uri'),
             (ns_collection['aic'].isPrimaryRepresentationOf, 'uri'),
             (ns_collection['aic'].isPrimaryRepresentationOf, 'uri'),
-            (ns_collection['aic'].hasSource, 'uri'),
+            (ns_collection['aic'].hasOriginal, 'uri'),
             (ns_collection['aic'].hasMaster, 'uri'),
             (ns_collection['aic'].hasInstance, 'uri'),
         )
@@ -132,8 +132,8 @@ class Asset(Resource):
         '''
 
         # If neither source nor ref_source is present, throw error
-        if 'source' not in dstreams.keys() and 'ref_source' not in dstreams.keys():
-            raise cherrypy.HTTPError('400 Bad Request', 'Required source datastream missing.')
+        if 'original' not in dstreams.keys() and 'ref_original' not in dstreams.keys():
+            raise cherrypy.HTTPError('400 Bad Request', 'Required original datastream missing.')
 
         # Wrap string props in one-element lists
         for p in props:
@@ -212,7 +212,7 @@ class Asset(Resource):
             self.replace_props(props)
 
         if dstreams:
-            # Generate master if not existing and if source is provided
+            # Generate master if not existing and if original is provided
             dstreams = self._generate_master(dstreams)
 
             # First validate all datastreams
@@ -334,7 +334,7 @@ class Asset(Resource):
 
 
     def _generate_master(self, dstreams):
-        '''Generates master datastream from source if missing and returns the complete list of datastreams.
+        '''Generates master datastream from original if missing and returns the complete list of datastreams.
 
         @param dstreams (dict) Dict of datastreams where keys are datastream names and values are datastreams.
 
@@ -344,18 +344,18 @@ class Asset(Resource):
         if 'master' not in dstreams.keys() and 'ref_master' not in dstreams.keys():
             # Generate master if not present
             cherrypy.log('Master file not provided.')
-            if 'ref_source' in dstreams.keys():
-                cherrypy.log('Requesting {}...'.format(dstreams['ref_source']))
-                ds_binary = self.connectors['lconn'].get_binary_stream(dstreams['ref_source'])
+            if 'ref_original' in dstreams.keys():
+                cherrypy.log('Requesting {}...'.format(dstreams['ref_original']))
+                ds_binary = self.connectors['lconn'].get_binary_stream(dstreams['ref_original'])
 
                 dstreams['master'] = self._generateMasterFile(ds_binary.content, self.uid + '_master.jpg')
-            elif 'source' in dstreams.keys():
+            elif 'original' in dstreams.keys():
                 dstreams['master'] = self._generateMasterFile(
-                    self._get_iostream_from_req(dstreams['source']),
+                    self._get_iostream_from_req(dstreams['original']),
                     self.uid + '_master.jpg'
                 )
             else:
-                cherrypy.log('No source or ref_source provided. Not changing the list.')
+                cherrypy.log('No original or ref_original provided. Not changing the list.')
 
         else:
             cherrypy.log('Master file provided.')
@@ -396,7 +396,7 @@ class Asset(Resource):
 
 
     def _get_iostream_from_req(self, ds):
-        '''Normalize the behaviour of a datastream object regardless of its source.
+        '''Normalize the behaviour of a datastream object regardless of its original.
 
         If ds is a byte stream instead of a Part instance, wrap it in an
         anonymous object as a 'file' property.
@@ -441,6 +441,7 @@ class Asset(Resource):
                 inst_uri = Instance().create_or_update(
                     asset_uri = self.temp_uri,
                     name = in_dsname,
+                    type = in_dsname.capitalize(),
                     ref = dstreams[dsname]
                 )
             else:
@@ -452,6 +453,7 @@ class Asset(Resource):
                 inst_uri = Instance().create_or_update(
                     asset_uri = self.temp_uri,
                     name = in_dsname,
+                    type = in_dsname.capitalize(),
                     ds = ds,
                     mimetype = dsmeta[dsname]['mimetype']
                 )

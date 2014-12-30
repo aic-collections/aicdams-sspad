@@ -174,7 +174,7 @@ class Instance(Resource):
             ):
         '''Create or replace content datastream.
 
-        @param name (string) Name of the datastream, e.g. 'master' or 'source'.
+        @param name (string) Name of the datastream, e.g. 'master' or 'original'.
         @param ref (string, optional) Reference URI for remote source.
         @param file_name (string, optional) File name for the downloaded datastream.
                 If empty, this is built from the asset UID and instance name (default).
