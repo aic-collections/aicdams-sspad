@@ -73,28 +73,14 @@ class SspadModel(metaclass=ABCMeta):
 
 
     @property
-    def prop_req_names(self):
-        '''Properties as specified in requests.
-
-        These map to #prop_lake_names.
-
-        @return tuple
-        '''
-
-        return (
-            'type',
-            'label',
-        )
-
-
-
-    @property
-    def prop_lake_names(self):
+    def props(self):
         '''Tuples defining properties stored in LAKE for this model.
 
         First tuple element is the property URI.
-        Second element is a string defining property type, which can be 'literal', 'uri' or 'variable'.
-        Third element is optional and only available for 'literal' data type and defines the XMLSchema data type.
+        Second element is a string defining property type, which can be
+            'literal', 'uri' or 'variable'.
+        Third element is optional and only available for 'literal' data type
+            and defines the XMLSchema data type.
 
         @return tuple
 
@@ -105,12 +91,6 @@ class SspadModel(metaclass=ABCMeta):
             (ns_collection['rdf'].type, 'uri'),
             (ns_collection['aic'].label, 'literal', XSD.string),
         )
-
-
-
-    @property
-    def props(self):
-        return dict(zip(self.prop_req_names, self.prop_lake_names))
 
 
 

@@ -37,25 +37,10 @@ class Comment(Annotation):
 
 
     @property
-    def prop_req_names(self):
-        return super().prop_req_names + (
-            'category', # String @TODO URI
-        )
-
-
-
-    @property
-    def prop_lake_names(self):
-        return super().prop_lake_names + (
+    def props(self):
+        return super().props + (
             (ns_collection['aic'].category, 'literal', XSD.string),
         )
-
-
-
-    #@property
-    #def reqprops_to_rels(self):
-    #   return {
-    #   }
 
 
 

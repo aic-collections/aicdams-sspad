@@ -23,6 +23,8 @@ class Asset(Resource):
 
     @property
     def node_type(self):
+        '''@sa SspadModel::node_type'''
+
         return ns_collection['aic'].Asset
 
 
@@ -41,43 +43,15 @@ class Asset(Resource):
 
 
     @property
-    def prop_req_names(self):
-        return super().prop_req_names + (
-            'legacy_uid', # String
-            'batch_uid', # String
-            'tag', # For insert: String, in the following format: <category>/<tag label> - For delete: String (tag URI)
-            #'has_ext_content',
-            'citi_obj_pkey', # Integer
-            'citi_obj_acc_no', # Integer
-            'citi_agent_pkey', # Integer
-            'citi_place_pkey', # Integer
-            'citi_exhib_pkey', # Integer
-            'pref_obj_pkey', # Integer
-            'pref_agent_pkey', # Integer
-            'pref_place_pkey', # Integer
-            'pref_exhib_pkey', # Integer
-            'has_original', # String (uri)
-            'has_master', # String (uri)
-            'has_instance', # String (uri)
-        )
+    def props(self):
+        '''@sa SspadModel::props'''
 
-
-
-    @property
-    def prop_lake_names(self):
-        return super().prop_lake_names + (
+        return super().props + (
             (ns_collection['aic'].legacyUid, 'literal', XSD.string),
             (ns_collection['aic'].batchUid, 'literal', XSD.string),
             (ns_collection['aic'].hasTag, 'uri'),
             #(ns_collection['fcrepo'].hasExternalContent, 'uri'),
             (ns_collection['aic'].represents, 'uri'),
-            (ns_collection['aic'].represents, 'uri'),
-            (ns_collection['aic'].represents, 'uri'),
-            (ns_collection['aic'].represents, 'uri'),
-            (ns_collection['aic'].represents, 'uri'),
-            (ns_collection['aic'].isPrimaryRepresentationOf, 'uri'),
-            (ns_collection['aic'].isPrimaryRepresentationOf, 'uri'),
-            (ns_collection['aic'].isPrimaryRepresentationOf, 'uri'),
             (ns_collection['aic'].isPrimaryRepresentationOf, 'uri'),
             (ns_collection['aic'].hasOriginal, 'uri'),
             (ns_collection['aic'].hasMaster, 'uri'),

@@ -19,6 +19,8 @@ class TagCat(SspadModel):
 
     @property
     def node_type(self):
+        '''@sa SspadModel::node_type'''
+
         return ns_collection['aiclist'].TagCat
 
 
@@ -35,16 +37,10 @@ class TagCat(SspadModel):
 
 
     @property
-    def prop_req_names(self):
-        return super().prop_req_names + (
-            'label',
-        )
+    def props(self):
+        '''@sa SspadModel::props'''
 
-
-
-    @property
-    def prop_lake_names(self):
-        return super().prop_lake_names + (
+        return super().props + (
             (ns_collection['aic'].label, 'literal', 'string'),
         )
 

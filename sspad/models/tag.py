@@ -19,20 +19,17 @@ class Tag(SspadModel):
 
     @property
     def node_type(self):
+        '''@sa SspadModel::node_type'''
+
         return ns_collection['aiclist'].Tag
 
 
 
     @property
-    def prop_req_names(self):
-        return super().prop_req_names + (
-            'category',
-        )
+    def props(self):
+        '''@sa SspadModel::props'''
 
-
-    @property
-    def prop_lake_names(self):
-        return super().prop_lake_names + (
+        return super().props + (
             (ns_collection['aic'].category, 'uri'),
         )
 

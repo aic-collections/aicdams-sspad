@@ -33,20 +33,10 @@ class StaticImage(Asset):
 
 
     @property
-    def prop_req_names(self):
-        '''@sa SspadModel::prop_req_names'''
+    def props(self):
+        '''@sa SspadModel::props'''
 
-        return super().prop_req_names + (
-            'citi_imgdbank_pkey',
-        )
-
-
-
-    @property
-    def prop_lake_names(self):
-        '''@sa SspadModel::prop_lake_names'''
-
-        return super().prop_lake_names + (
+        return super().props + (
             (ns_collection['aic'].citiImgDBankUid, 'literal', XSD.string),
         )
 
