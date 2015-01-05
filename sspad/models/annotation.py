@@ -72,7 +72,7 @@ class Annotation(SspadModel):
             subject_uri, self.cont_name, uuid.uuid4()
         )
 
-        ann_uri = cherrypy.request.app.config['connectors']['lconn'].\
+        ann_uri = self.lconn.\
                 create_or_update_node(
             parent = parent_uri,
             props = self._build_prop_tuples(

@@ -59,7 +59,7 @@ class TagCat(SspadModel):
             (nsc['aic'].label, Literal(label, datatype=XSD.string)),
         ]
 
-        return cherrypy.request.app.config['connectors']['tsconn'].get_node_uri_by_props(props)
+        return self.tsconn.get_node_uri_by_props(props)
 
 
     def list(self):
@@ -78,7 +78,7 @@ class TagCat(SspadModel):
             nsc['fcrepo'].hasParent,
             self.node_type,
         )
-        res = cherrypy.request.app.config['connectors']['tsconn'].query(q)
+        res = elf.sconn.query(q)
         #cherrypy.log('Res: {}'.format(res))
 
         return res
@@ -92,8 +92,7 @@ class TagCat(SspadModel):
             (nsc['aic'].label, Literal(label, datatype=XSD.string)),
         ]
         return True \
-                if cherrypy.request.app.config['connectors']['tsconn']\
-                        .get_node_uri_by_props(props) \
+                if self.tsconn.get_node_uri_by_props(props) \
                 else False
 
 
@@ -108,7 +107,7 @@ class TagCat(SspadModel):
         if self.assert_exists(label):
             raise cherrypy.HTTPError('409 Conflict', 'Category with label \'{}\' exist already.'.format(label))
         else:
-            uri = cherrypy.request.app.config['connectors']['lconn'].create_or_update_node(
+            uri = self.lconn.create_or_update_node(
                 parent = self.cont_uri,
                 props = self._build_prop_tuples(
                     insert_props = {

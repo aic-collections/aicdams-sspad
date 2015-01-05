@@ -51,7 +51,7 @@ class StaticImage(Asset):
         @return (BytesIO) master file.
         '''
         # @TODO put these values in constants
-        ret = cherrypy.request.app.config['connectors']['dgconn'].resizeImageFromData(file, fname, 4096, 4096)
+        ret = self.dgconn.resizeImageFromData(file, fname, 4096, 4096)
         return ret
 
 

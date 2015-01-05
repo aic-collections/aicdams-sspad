@@ -40,7 +40,7 @@ class AssetCtrl(SspadController):
         if uid:
             return {'message': '*stub* This is Asset #{}.'.format(uid)}
         elif legacy_uid:
-            if model.connectors['tsconn'].assert_node_exists_by_prop(
+            if model.tsconn.assert_node_exists_by_prop(
                 ns_collection['aic'] + 'legacyUid', legacy_uid
             ):
                 return {

@@ -75,7 +75,7 @@ class Asset(Resource):
                 'uid' : 'citi_pkey',
                 'rel' : nsc['aic'].represents,
             },
-            nsc['aic'].citiExhibPKey, : {
+            nsc['aic'].citiExhibPKey : {
                 'type' : nsc['aic'].Object,
                 'uid' : 'citi_pkey',
                 'rel' : nsc['aic'].represents,
@@ -157,7 +157,7 @@ class Asset(Resource):
         # If that is the case, throw a 409 Conflict HTTP error.
         if 'legacy_uid' in props:
             for legacy_uid in props['legacy_uid']:
-                check_uri = self.connectors['tsconn'].get_node_uri_by_prop(
+                check_uri = self.tsconn.get_node_uri_by_prop(
                     nsc['aic'] + 'legacyUid', legacy_uid
                 )
                 if check_uri:
@@ -174,7 +174,7 @@ class Asset(Resource):
         dsmeta = self._validate_dstreams(dstreams)
 
         # Open Fedora transaction
-        self.tx_uri = self.connectors['lconn'].open_transaction()
+        self.tx_uri = self.lconn.open_transaction()
         #cherrypy.log('Created TX: {}'.format(self.tx_uri))
 
         try:
@@ -232,7 +232,7 @@ class Asset(Resource):
             dsmeta = self._validate_dstreams(dstreams)
 
             # Open Fedora transaction
-            self.tx_uri = self.connectors['lconn'].open_transaction()
+            self.tx_uri = self.lconn.open_transaction()
             self.uri_in_tx = self.uri.replace(lake_rest_api['base_url'], self.tx_uri + '/')
 
             # Loop over all datastreams and ingest them
@@ -295,7 +295,7 @@ class Asset(Resource):
 
         # First check the URI.
         if uri:
-            if self.connectors['lconn'].assert_node_exists(uri):
+            if self.lconn.assert_node_exists(uri):
                 self.uri = uri
                 return True
             else:
@@ -310,7 +310,7 @@ class Asset(Resource):
             check_prop = nsc['aic'] + 'legacyUid'
             check_uid = legacy_uid
 
-        check_uri = self.connectors['tsconn'].get_node_uri_by_prop(check_prop, check_uid)
+        check_uri = self.tsconn.get_node_uri_by_prop(check_prop, check_uid)
 
         if check_uri:
             self.uri = check_uri
@@ -334,11 +334,11 @@ class Asset(Resource):
             raise ValueError('Neither uid or legacy_uid were provided. Cannot check for duplicates.')
 
         if uid:
-            uri_uid = self.connectors['tsconn'].find_node_uri_by_prop(nsc['aic'] + 'uid', uid)
+            uri_uid = self.tsconn.find_node_uri_by_prop(nsc['aic'] + 'uid', uid)
             if not self.uri == uri_uid:
                 return {'uid' : uri_uid}
         if legacy_uid:
-            uri_legacy_uid = self.connectors['tsconn'].get_node_uri_by_prop(nsc['aic'] + 'legacyUid', legacy_uid)
+            uri_legacy_uid = self.tsconn.get_node_uri_by_prop(nsc['aic'] + 'legacyUid', legacy_uid)
             if not self.uri == uri_legacy_uid:
                 return {'legacy_uid' : uri_uid}
 
@@ -359,7 +359,7 @@ class Asset(Resource):
             cherrypy.log('Master file not provided.')
             if 'ref_original' in dstreams.keys():
                 cherrypy.log('Requesting {}...'.format(dstreams['ref_original']))
-                ds_binary = self.connectors['lconn'].get_binary_stream(dstreams['ref_original'])
+                ds_binary = self.lconn.get_binary_stream(dstreams['ref_original'])
 
                 dstreams['master'] = self._generateMasterFile(ds_binary.content, self.uid + '_master.jpg')
             elif 'original' in dstreams.keys():

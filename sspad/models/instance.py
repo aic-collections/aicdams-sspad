@@ -91,7 +91,7 @@ class Instance(Resource):
 
         self.uri = '{}/{}/{}'.format(asset_uri, self.inst_path, name)
 
-        if self.connectors['lconn'].assert_node_exists(self.uri):
+        if self.lconn.assert_node_exists(self.uri):
             raise cherrypy.HTTPError('409 Conflict', 'Node with URI {} already exists.'\
                     .format(self.uri))
 
@@ -114,7 +114,7 @@ class Instance(Resource):
 
         self.uri = '{}/{}/{}'.format(asset_uri, self.inst_path, name)
 
-        if not self.connectors['lconn'].assert_node_exists(self.uri):
+        if not self.lconn.assert_node_exists(self.uri):
             self._create_container(asset_uri, name, type)
 
         self._create_or_update_content(
@@ -142,7 +142,7 @@ class Instance(Resource):
                 nsc['aic'].Instance
 
         asset_uid = os.path.basename(asset_uri)
-        self.uri = self.connectors['lconn'].create_or_update_node(
+        self.uri = self.lconn.create_or_update_node(
             uri = self.uri,
             props = self._build_prop_tuples(
                 insert_props = {
@@ -195,11 +195,11 @@ class Instance(Resource):
             )
 
         if ref:
-            content_uri = self.connectors['lconn'].create_or_update_ref_datastream(
+            content_uri = self.lconn.create_or_update_ref_datastream(
                 uri = self.uri + '/aic:content', ref = ref
             )
         else:
-            content_uri = self.connectors['lconn'].create_or_update_datastream(
+            content_uri = self.lconn.create_or_update_datastream(
                 uri = self.uri + '/aic:content',
                 file_name=file_name, ds=ds, path=path, mimetype=mimetype
             )

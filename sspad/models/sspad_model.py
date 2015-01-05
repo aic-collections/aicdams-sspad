@@ -203,12 +203,12 @@ class SspadModel(metaclass=ABCMeta):
 
         for node_type in delete_nodes.keys():
             for del_uri in delete_nodes[node_type]:
-                self.connectors['lconn'].delete_node(del_uri)
+                self.lconn.delete_node(del_uri)
 
         for node_type in insert_nodes.keys():
             insert_tuples += self._insert_nodes_in_tuples(node_type, insert_nodes[node_type])
 
-        self.connectors['lconn'].update_node_properties(
+        self.lconn.update_node_properties(
             uri,
             delete_props=delete_tuples,
             insert_props=insert_tuples,

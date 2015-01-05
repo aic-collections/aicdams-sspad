@@ -65,7 +65,7 @@ class Tag(SspadModel):
             nsc['fcrepo'].hasParent,
             nsc['aiclist'].TagCat, cat_cond
         )
-        res = cherrypy.request.app.config['connectors']['tsconn'].query(q)
+        res = self.tsconn.query(q)
         cherrypy.log('Res: {}'.format(res))
 
         return res
@@ -95,7 +95,7 @@ class Tag(SspadModel):
             ),
         ]
 
-        return cherrypy.request.app.config['connectors']['tsconn'].get_node_uri_by_props(props)
+        return self.tsconn.get_node_uri_by_props(props)
 
 
     def create(self, cat_label, label):
@@ -121,8 +121,7 @@ class Tag(SspadModel):
                         format(label, cat_label)
             )
         else:
-            tag_uri = cherrypy.request.app.config['connectors']['lconn'].\
-                    create_or_update_node(
+            tag_uri = self.lconn.create_or_update_node(
                 parent = cat_uri,
                 props = self._build_prop_tuples(
                     insert_props = {
