@@ -387,6 +387,29 @@ class SspadModel(metaclass=ABCMeta):
 
 
 
+    def _build_fquri_from_prefixed(name):
+        '''Build a fully-qualify URI from a namespace prefixed name.
+
+        This method uses the global namespace manager to determine prefixes.
+
+        @param name (string) The namespaced URI (e.g. "aic:Asset")
+
+        @return string The fully qualified URI.
+        '''
+
+        if not re.match('^[a-zA-Z0-9_\-]+:[a-zA-Z0-9_\-]+$', name):
+            raise ValueError('\'{}\' is not a valid namespaced URI.'.format(name))
+
+        parts = name.split(':')
+        pfx = parts[0]
+
+        if not pfx in ns_collection.keys():
+            raise KeyError('Namespace prefix \'{}\' is not a known namespace prefix.'.format(pfx))
+
+        return ns_collection[pfx] + parts[1]
+
+
+
     def _open_transaction(self):
         '''Opens a transaction in LAKE and sets the #tx_uri property.
 
