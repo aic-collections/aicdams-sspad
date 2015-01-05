@@ -32,7 +32,7 @@ class LakeConnector:
     def __init__(self):
         '''Class constructor.
 
-        Sets authorization parameters based on incoming auth headers.
+        Set authorization parameters based on incoming auth headers.
 
         @return None
         '''
@@ -84,7 +84,7 @@ class LakeConnector:
 
 
     def get_binary_stream(self, uri):
-        '''Gets a binary stream.'''
+        '''Get a binary stream.'''
 
         res = requests.get(uri, headers=self.headers)
         res.raise_for_status()
@@ -94,11 +94,14 @@ class LakeConnector:
 
 
     def create_or_update_node(self, uri=None, parent='/', props=None):
-        '''Creates a container node if it does not exist, or updates it if it exists already.
+        '''Create a container node if it does not exist,
+            or update it if it exists already.
 
         @param uri (string, optional) URI of the node to be created or updated.
-        @param parent (string, optional) Parent path relative to repository root. Default is '/'.
-        @param props (dict, optional) Dictionary of properties to be associated with the node.
+        @param parent (string, optional) Parent path relative to
+            repository root. Default is '/'.
+        @param props (dict, optional) Dictionary of properties to be
+            associated with the node.
 
         @return (string) New node URI.
         '''
@@ -141,15 +144,17 @@ class LakeConnector:
 
 
     def create_or_update_datastream(
-            self, uri, file_name, ds=None, path=None, mimetype='application/octet-stream'
-            ):
-        '''Creates a datastream under an existing container node if it does not exist,\
-        or updates it if it exists already.
+            self, uri, file_name, ds=None, path=None,
+            mimetype='application/octet-stream'):
+        '''Create a datastream under an existing container
+            node if it does not exist, or update it if it exists already.
 
         @param uri (string) URI of the datastream node to be created or updated.
         @param file_name (string) Name of the datastream as a downloaded file.
-        @param ds (BytesIO, optional) Datastream to be ingested. Alternative to \p path.
-        @param path (string, optional) Path to the datastream. Alternative to \p ds.
+        @param ds (BytesIO, optional) Datastream to be ingested.
+            Alternative to \p path.
+        @param path (string, optional) Path to the datastream.
+            Alternative to \p ds.
         @param mimetype (string, optional) MIME type of the datastream.
             Default: application/octet-stream
 
@@ -158,12 +163,15 @@ class LakeConnector:
 
         # @TODO Optimize with with
         if not ds and not path:
-            raise cherrypy.HTTPError('500 Internal Server Error', "No datastream or file path given.")
+            raise cherrypy.HTTPError(
+                '500 Internal Server Error', "No datastream or file path given."
+            )
 
         data = ds or open(path, 'rb')
         #cherrypy.log('Data peek: {}'.format(data))
 
-        cherrypy.log('Ingesting datastream from class type: ' + data.__class__.__name__)
+        cherrypy.log('Ingesting datastream from class type: {}'\
+                .format(data.__class__.__name__))
         res = requests.put(
             uri,
             data = data.read(),
@@ -187,7 +195,7 @@ class LakeConnector:
 
 
     def create_or_update_ref_datastream(self, uri, ref):
-        '''Creates or updates a datastream with an externally referenced content.
+        '''Create or update a datastream with an externally referenced content.
 
         @param uri (string) URI of the datastream node to be created or updated.
         @param ref (string) External source as a HTTP URL.
@@ -219,7 +227,7 @@ class LakeConnector:
 
 
     def update_node_properties(self, uri, delete_props=[], insert_props=[], where_props=[]):
-        '''Updates the properties of an existing node from a set of insert, delete
+        '''Update the properties of an existing node from a set of insert, delete
             and where tuples formatted by Node::_build_prop_tuples .
 
         @param uri (string) Node URI.
@@ -278,7 +286,7 @@ class LakeConnector:
 
 
     def commit_transaction(self, tx_uri):
-        '''Commits an open transaction.
+        '''Commit an open transaction.
 
         @param tx_uri The full transaction URI.
 
@@ -299,12 +307,13 @@ class LakeConnector:
 
 
     def rollback_transaction(self, tx_uri):
-        '''Rolls back an open transaction.
+        '''Roll back an open transaction.
 
         @param tx_uri The full transaction URI.
 
         @return (boolean) True on success.
         '''
+
         cherrypy.log.error('Rolling back transaction: {}'.format(tx_uri.split('tx:')[-1]))
         res = requests.post(
             tx_uri + '/fcr:tx/fcr:rollback',

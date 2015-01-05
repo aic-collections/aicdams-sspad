@@ -198,6 +198,36 @@ class SspadModel(metaclass=ABCMeta):
 
 
 
+    def update_node(self, uri, props):
+        '''Updates a node inserting and deleting related nodes if necessary.
+
+        @param uri (stirng) URI of the node to be updated.
+        @param props (dict) Map of properties and nodes to be updated, to be passed to #_build_prop_tuples.
+
+        @return None
+        '''
+
+        tuples = self._build_prop_tuples(**props)
+
+        delete_nodes, insert_nodes = tuples['nodes']
+        delete_tuples, insert_tuples, where_tuples = tuples['tuples']
+
+        for node_type in delete_nodes.keys():
+            for del_uri in delete_nodes[node_type]:
+                self.connectors['lconn'].delete_node(del_uri)
+
+        for node_type in insert_nodes.keys():
+            insert_tuples += self._insert_nodes_in_tuples(node_type, insert_nodes[node_type])
+
+        self.connectors['lconn'].update_node_properties(
+            uri,
+            delete_props=delete_tuples,
+            insert_props=insert_tuples,
+            where_props=where_tuples
+        )
+
+
+
     def patch(self, insert_props={}, delete_props={}):
         '''Adds or removes properties and mixins in a node.
 
@@ -217,7 +247,7 @@ class SspadModel(metaclass=ABCMeta):
 
         # Collect properties
         try:
-            self._update_node(
+            self.update_node(
                 self.temp_uri,
                 props = {
                     'insert_props' : insert_props,
@@ -359,36 +389,6 @@ class SspadModel(metaclass=ABCMeta):
             return Variable(value)
         else:
             return Literal(value, datatype=datatype)
-
-
-    def _update_node(self, uri, props):
-        '''Updates a node inserting and deleting related nodes if necessary.
-
-        @param uri (stirng) URI of the node to be updated.
-        @param tuples (dict) Map of properties and nodes to be updated,
-        to be passed to #_build_prop_tuples.
-
-        @return None
-        '''
-
-        tuples = self._build_prop_tuples(**props)
-
-        delete_nodes, insert_nodes = tuples['nodes']
-        delete_tuples, insert_tuples, where_tuples = tuples['tuples']
-
-        for node_type in delete_nodes.keys():
-            for del_uri in delete_nodes[node_type]:
-                self.lconn.delete_node(del_uri)
-
-        for node_type in insert_nodes.keys():
-            insert_tuples += self._insert_nodes_in_tuples(node_type, insert_nodes[node_type])
-
-        self.lconn.update_node_properties(
-            uri,
-            delete_props=delete_tuples,
-            insert_props=insert_tuples,
-            where_props=where_tuples)
-
 
 
     def _insert_nodes_in_tuples(self, type, props):

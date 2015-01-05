@@ -14,9 +14,9 @@ class Comment(Annotation):
 
     This is a specific type of Annotation which has an additional category name.
 
-        @package sspad.models
-        @author Stefano Cossu <scossu@artic.edu>
-        @date 12/11/2014
+    @package sspad.models
+    @author Stefano Cossu <scossu@artic.edu>
+    @date 12/11/2014
     '''
 
     @property
