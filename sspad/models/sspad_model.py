@@ -11,7 +11,7 @@ from sspad.config.datasources import lake_rest_api
 from sspad.connectors.datagrinder_connector import DatagrinderConnector
 from sspad.connectors.lake_connector import LakeConnector
 from sspad.connectors.tstore_connector import TstoreConnector
-from sspad.resources.rdf_lexicon import ns_collection
+from sspad.resources.rdf_lexicon import ns_collection as nsc
 
 
 class SspadModel(metaclass=ABCMeta):
@@ -35,7 +35,7 @@ class SspadModel(metaclass=ABCMeta):
         @return rdflib.URIRef
         '''
 
-        return ns_collection['fedora'].Resource
+        return nsc['fedora'].Resource
 
 
 
@@ -58,11 +58,20 @@ class SspadModel(metaclass=ABCMeta):
 
 
     @property
-    def reqprops_to_rels(self):
-        '''Request properties to resource prefix mapping.
+    def special_rels(self):
+        '''Properties to resource prefix mapping.
 
-        Keys are properties in prop_req_names.
-        Values are prefixes assigned to the resource that the Asset should be linked to.
+        This list allows to create relationships with nodes in special locations such as federated
+        database records, by entering an external identifier which is not thenode URI.
+        The node is searched by that identifier and, if it exists, its URI is used to build
+        the relationships.
+
+        Dict keys correspond to keys in SspadModel::props.
+        Values are dicts containing the following keys:
+            - 'type' is a rdf:type that uniquely identifies the group of nodes searched.
+            - 'uid' is the property name of the external identifier that should be unique
+                within the 'type' parameter above.
+            - 'rel' is the name of the actual relationship that is created.
 
         @return dict
         '''
@@ -88,8 +97,8 @@ class SspadModel(metaclass=ABCMeta):
         '''
 
         return (
-            (ns_collection['rdf'].type, 'uri'),
-            (ns_collection['aic'].label, 'literal', XSD.string),
+            (nsc['rdf'].type, 'uri'),
+            (nsc['aic'].label, 'literal', XSD.string),
         )
 
 
@@ -102,7 +111,7 @@ class SspadModel(metaclass=ABCMeta):
         '''
 
         return [
-            (ns_collection['rdf'].type, self.node_type),
+            (nsc['rdf'].type, self.node_type),
         ]
 
 
@@ -295,32 +304,34 @@ class SspadModel(metaclass=ABCMeta):
         delete_tuples, where_tuples = ([],[])
         insert_nodes, delete_nodes = ({},{})
 
-        for req_name in self.props.keys():
-            lake_name = self.props[req_name]
+        for prop in self.props:
+            prop_name = prop[0]
 
             # Delete tuples + nodes
-            if req_name in delete_props:
-                if isinstance(delete_props[req_name], list):
+            if prop_name in delete_props:
+                if isinstance(delete_props[prop_name], list):
                     # Delete one or more values from property
-                    for value in delete_props[req_name]:
-                        if req_name == 'comment':
-                            delete_nodes['comments'] = delete_props['comment']
-                        delete_tuples.append((lake_name[0], self._build_rdf_object(value, lake_name[1])))
+                    for value in delete_props[prop_name]:
+                        if prop_name == nsc['aic'].comment:
+                            delete_nodes['comments'] = value
+                        delete_tuples.append((prop, self._build_rdf_object(value, prop[1])))
 
-                elif delete_props[req_name] == '':
+                elif delete_props[prop_name] == '':
                     # Delete the whole property
-                    delete_tuples.append((lake_name[0], Variable(req_name)))
-                    where_tuples.append((lake_name[0], Variable(req_name)))
+                    delete_tuples.append((prop_name, Variable(prop_name)))
+                    where_tuples.append((prop_name, Variable(prop_name)))
 
             # Insert tuples + nodes
-            if req_name in insert_props:
-                cherrypy.log('Adding req. name {} from insert_props {}...'.format(req_name, insert_props))
+            if prop_name in insert_props:
+                cherrypy.log('Adding req. name {} from insert_props {}...'.format(prop_name, insert_props))
                 #cherrypy.log('Insert props: {}'.format(insert_props.__class__.__name__))
-                for value in insert_props[req_name]:
+                for value in insert_props[prop_name]:
                     # Check if property is a relationship
-                    if req_name in self.reqprops_to_rels:
-                        rel_type = self.reqprops_to_rels[req_name]
-                        ref_uri = self.tsconn.get_node_uri_by_prop(ns_collection['aicdb'] + 'citi_pkey', value)
+                    if prop_name in self.special_rels.keys():
+                        rel_type = self.special_rels[prop_name]
+                        ref_uri = self.tsconn.get_node_uri_by_props({
+                            (nsc['rdf'].type, URIRef()),
+                        })
                         if not ref_uri:
                             if ignore_broken_rels:
                                 continue
@@ -330,17 +341,17 @@ class SspadModel(metaclass=ABCMeta):
                                     'Referenced CITI resource with CITI Pkey {} does not exist. Cannot create relationship.'.format(value)
                                 )
                         value = ref_uri
-                    elif req_name == 'tag':
+                    elif prop_name == nsc['aic'].tag:
                         insert_nodes['tags'] = insert_props['tag']
                         #value = lake_rest_api['tags_base_url'] + value
                         continue
-                    elif req_name == 'comment':
+                    elif prop_name == nsc['aic'].comment:
                         insert_nodes['comments'] = insert_props['comment']
                         continue
-                    cherrypy.log('Value for {}: {}'.format(req_name, value))
+                    cherrypy.log('Value for {}: {}'.format(prop_name, value))
                     insert_tuples.append(
-                        (lake_name[0], self._build_rdf_object(
-                            value, lake_name[1], lake_name[2] if len(lake_name) > 2 else None
+                        (prop_name, self._build_rdf_object(
+                            value, prop[1], prop[2] if len(prop) > 2 else None
                         ))
                     )
 
@@ -403,10 +414,10 @@ class SspadModel(metaclass=ABCMeta):
         parts = name.split(':')
         pfx = parts[0]
 
-        if not pfx in ns_collection.keys():
+        if not pfx in nsc.keys():
             raise KeyError('Namespace prefix \'{}\' is not a known namespace prefix.'.format(pfx))
 
-        return ns_collection[pfx] + parts[1]
+        return nsc[pfx] + parts[1]
 
 
 

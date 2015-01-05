@@ -5,7 +5,7 @@ from rdflib import URIRef, Literal, XSD
 
 from sspad.config.datasources import lake_rest_api
 from sspad.models.sspad_model import SspadModel
-from sspad.resources.rdf_lexicon import ns_collection
+from sspad.resources.rdf_lexicon import ns_collection as nsc
 
 
 class TagCat(SspadModel):
@@ -21,7 +21,7 @@ class TagCat(SspadModel):
     def node_type(self):
         '''@sa SspadModel::node_type'''
 
-        return ns_collection['aiclist'].TagCat
+        return nsc['aiclist'].TagCat
 
 
 
@@ -41,7 +41,7 @@ class TagCat(SspadModel):
         '''@sa SspadModel::props'''
 
         return super().props + (
-            (ns_collection['aic'].label, 'literal', 'string'),
+            (nsc['aic'].label, 'literal', 'string'),
         )
 
 
@@ -55,8 +55,8 @@ class TagCat(SspadModel):
         '''
 
         props = [
-            (ns_collection['rdf'].type, ns_collection['aiclist'].TagCat),
-            (ns_collection['aic'].label, Literal(label, datatype=XSD.string)),
+            (nsc['rdf'].type, nsc['aiclist'].TagCat),
+            (nsc['aic'].label, Literal(label, datatype=XSD.string)),
         ]
 
         return cherrypy.request.app.config['connectors']['tsconn'].get_node_uri_by_props(props)
@@ -74,8 +74,8 @@ class TagCat(SspadModel):
             ?cat a <{}> .
         }}
         '''.format(
-            ns_collection['aic'].label,
-            ns_collection['fcrepo'].hasParent,
+            nsc['aic'].label,
+            nsc['fcrepo'].hasParent,
             self.node_type,
         )
         res = cherrypy.request.app.config['connectors']['tsconn'].query(q)
@@ -88,8 +88,8 @@ class TagCat(SspadModel):
         '''Checks if a tag category with a given label exists.'''
 
         props = [
-            (ns_collection['rdf'].type, ns_collection['aiclist'].TagCat),
-            (ns_collection['aic'].label, Literal(label, datatype=XSD.string)),
+            (nsc['rdf'].type, nsc['aiclist'].TagCat),
+            (nsc['aic'].label, Literal(label, datatype=XSD.string)),
         ]
         return True \
                 if cherrypy.request.app.config['connectors']['tsconn']\

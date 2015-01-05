@@ -6,7 +6,7 @@ import requests
 from rdflib import URIRef, Literal, XSD
 
 from sspad.models.annotation import Annotation
-from sspad.resources.rdf_lexicon import ns_collection
+from sspad.resources.rdf_lexicon import ns_collection as nsc
 
 
 class Comment(Annotation):
@@ -21,7 +21,7 @@ class Comment(Annotation):
 
     @property
     def node_type(self):
-        return ns_collection['aic'].Comment
+        return nsc['aic'].Comment
 
 
 
@@ -39,7 +39,7 @@ class Comment(Annotation):
     @property
     def props(self):
         return super().props + (
-            (ns_collection['aic'].category, 'literal', XSD.string),
+            (nsc['aic'].category, 'literal', XSD.string),
         )
 
 

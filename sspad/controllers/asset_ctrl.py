@@ -80,9 +80,9 @@ class AssetCtrl(SspadController):
         cherrypy.log('************************')
         cherrypy.log('')
 
-        props_dict = json.loads(props)
-
         model = self.model()
+
+        props_dict = model.convert_req_propnames(json.loads(props))
 
         try:
             ret = model.create(mid, props_dict, **dstreams)
@@ -121,11 +121,11 @@ class AssetCtrl(SspadController):
         cherrypy.log('*********************')
         cherrypy.log('')
 
-        props_dict = json.loads(props)
+        model = self.model()
+
+        props_dict = model.convert_req_propnames(json.loads(props))
 
         legacy_uid = props_dict['legacy_uid'] if 'legacy_uid' in props_dict else None
-
-        model = self.model()
 
         if not model.set_uri(uri, uid, legacy_uid):
             # If no URI could be set from given parameters, create new node.
@@ -169,8 +169,8 @@ class AssetCtrl(SspadController):
         model.set_uri(uri, uid)
 
         try:
-            insert_props = json.loads(insert_props)
-            delete_props = json.loads(delete_props)
+            insert_props_dict = model.convert_req_propnames(json.loads(insert_props))
+            delete_props_dict = model.convert_req_propnames(json.loads(delete_props))
         except:
             raise cherrypy.HTTPError(
                 '400 Bad Request',
@@ -178,7 +178,7 @@ class AssetCtrl(SspadController):
             )
 
         try:
-            model.patch(insert_props, delete_props)
+            model.patch(insert_props_dict, delete_props_dict)
         except:
             # @TODO
             raise cherrypy.HTTPError('400 Bad Request')

@@ -5,7 +5,7 @@ from rdflib import URIRef, Literal
 
 from sspad.models.sspad_model import SspadModel
 from sspad.models.tag_cat import TagCat
-from sspad.resources.rdf_lexicon import ns_collection
+from sspad.resources.rdf_lexicon import ns_collection as nsc
 
 
 class Tag(SspadModel):
@@ -21,7 +21,7 @@ class Tag(SspadModel):
     def node_type(self):
         '''@sa SspadModel::node_type'''
 
-        return ns_collection['aiclist'].Tag
+        return nsc['aiclist'].Tag
 
 
 
@@ -30,7 +30,7 @@ class Tag(SspadModel):
         '''@sa SspadModel::props'''
 
         return super().props + (
-            (ns_collection['aic'].category, 'uri'),
+            (nsc['aic'].category, 'uri'),
         )
 
 
@@ -48,7 +48,7 @@ class Tag(SspadModel):
         cat_cond = '''
         ?cat <{}> ?cl .
         FILTER(STR(?cl="{}")) .
-        '''.format(ns_collection['aic'].label, cat_label) \
+        '''.format(nsc['aic'].label, cat_label) \
                 if cat_label \
                 else ''
 
@@ -61,9 +61,9 @@ class Tag(SspadModel):
             {} }}
         '''.format(
             self.node_type,
-            ns_collection['aic'].label,
-            ns_collection['fcrepo'].hasParent,
-            ns_collection['aiclist'].TagCat, cat_cond
+            nsc['aic'].label,
+            nsc['fcrepo'].hasParent,
+            nsc['aiclist'].TagCat, cat_cond
         )
         res = cherrypy.request.app.config['connectors']['tsconn'].query(q)
         cherrypy.log('Res: {}'.format(res))

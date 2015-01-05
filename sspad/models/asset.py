@@ -12,7 +12,7 @@ from sspad.config.datasources import lake_rest_api
 from sspad.connectors.uidminter_connector import UidminterConnector
 from sspad.models.instance import Instance
 from sspad.models.resource import Resource
-from sspad.resources.rdf_lexicon import ns_collection, ns_mgr
+from sspad.resources.rdf_lexicon import ns_collection as nsc, ns_mgr
 
 
 class Asset(Resource):
@@ -25,7 +25,7 @@ class Asset(Resource):
     def node_type(self):
         '''@sa SspadModel::node_type'''
 
-        return ns_collection['aic'].Asset
+        return nsc['aic'].Asset
 
 
 
@@ -47,30 +47,69 @@ class Asset(Resource):
         '''@sa SspadModel::props'''
 
         return super().props + (
-            (ns_collection['aic'].legacyUid, 'literal', XSD.string),
-            (ns_collection['aic'].batchUid, 'literal', XSD.string),
-            (ns_collection['aic'].hasTag, 'uri'),
-            #(ns_collection['fcrepo'].hasExternalContent, 'uri'),
-            (ns_collection['aic'].represents, 'uri'),
-            (ns_collection['aic'].isPrimaryRepresentationOf, 'uri'),
-            (ns_collection['aic'].hasOriginal, 'uri'),
-            (ns_collection['aic'].hasMaster, 'uri'),
-            (ns_collection['aic'].hasInstance, 'uri'),
+            (nsc['aic'].batchUid, 'literal', XSD.string),
+            (nsc['aic'].citiAgentPKey, 'uri'),
+            (nsc['aic'].citiExhibPKey, 'uri'),
+            (nsc['aic'].citiObjPKey, 'uri'),
+            (nsc['aic'].citiPlacePKey, 'uri'),
+            (nsc['aic'].citiPrefAgentPKey, 'uri'),
+            (nsc['aic'].citiPrefExhibPKey, 'uri'),
+            (nsc['aic'].citiPrefObjPKey, 'uri'),
+            (nsc['aic'].citiPrefPlacePKey, 'uri'),
+            (nsc['aic'].hasInstance, 'uri'),
+            (nsc['aic'].hasMaster, 'uri'),
+            (nsc['aic'].hasOriginal, 'uri'),
+            (nsc['aic'].hasTag, 'uri'),
+            (nsc['aic'].isPrimaryRepresentationOf, 'uri'),
+            (nsc['aic'].legacyUid, 'literal', XSD.string),
+            (nsc['aic'].represents, 'uri'),
         )
 
 
 
     @property
-    def reqprops_to_rels(self):
+    def special_rels(self):
         return {
-            'citi_obj_pkey' : {'type' : ns_collection['aic'].Object, 'pfx' : 'OB'},
-            'pref_obj_pkey' : {'type' : ns_collection['aic'].Object, 'pfx' : 'OB'},
-            'citi_agent_pkey' : {'type' : ns_collection['aic'].Actor, 'pfx' : 'AC'},
-            'pref_agent_pkey' : {'type' : ns_collection['aic'].Actor, 'pfx' : 'AC'},
-            'citi_place_pkey' : {'type' : ns_collection['aic'].Place, 'pfx' : 'PL'},
-            'pref_place_pkey' : {'type' : ns_collection['aic'].Place, 'pfx' : 'PL'},
-            'citi_exhib_pkey' : {'type' : ns_collection['aic'].Event, 'pfx' : 'EV'},
-            'pref_exhib_pkey' : {'type' : ns_collection['aic'].Event, 'pfx' : 'EV'},
+            nsc['aic'].citiAgentPKey : {
+                'type' : nsc['aic'].Object,
+                'uid' : 'citi_pkey',
+                'rel' : nsc['aic'].represents,
+            },
+            nsc['aic'].citiExhibPKey, : {
+                'type' : nsc['aic'].Object,
+                'uid' : 'citi_pkey',
+                'rel' : nsc['aic'].represents,
+            },
+            nsc['aic'].citiObjPKey : {
+                'type' : nsc['aic'].Actor,
+                'uid' : 'citi_pkey',
+                'rel' : nsc['aic'].represents,
+            },
+            nsc['aic'].citiPlacePKey : {
+                'type' : nsc['aic'].Actor,
+                'uid' : 'citi_pkey',
+                'rel' : nsc['aic'].represents,
+            },
+            nsc['aic'].citiPrefAgentPKey : {
+                'type' : nsc['aic'].Place,
+                'uid' : 'citi_pkey',
+                'rel' : nsc['aic'].isPrimaryRepresentationOf,
+            },
+            nsc['aic'].citiPrefExhibPKey : {
+                'type' : nsc['aic'].Place,
+                'uid' : 'citi_pkey',
+                'rel' : nsc['aic'].isPrimaryRepresentationOf,
+            },
+            nsc['aic'].citiPrefObjPKey  : {
+                'type' : nsc['aic'].Event,
+                'uid' : 'citi_pkey',
+                'rel' : nsc['aic'].isPrimaryRepresentationOf,
+            },
+            nsc['aic'].citiPrefPlacePKey : {
+                'type' : nsc['aic'].Event,
+                'uid' : 'citi_pkey',
+                'rel' : nsc['aic'].isPrimaryRepresentationOf,
+            },
         }
 
 
@@ -119,7 +158,7 @@ class Asset(Resource):
         if 'legacy_uid' in props:
             for legacy_uid in props['legacy_uid']:
                 check_uri = self.connectors['tsconn'].get_node_uri_by_prop(
-                    ns_collection['aic'] + 'legacyUid', legacy_uid
+                    nsc['aic'] + 'legacyUid', legacy_uid
                 )
                 if check_uri:
                     cherrypy.response.headers['link'] = check_uri
@@ -144,8 +183,8 @@ class Asset(Resource):
 
             # Set node props
             init_tuples = self.base_prop_tuples + [
-                (ns_collection['dc'].title, Literal(self.uid, datatype=XSD.string)),
-                (ns_collection['aic'].uid, Literal(self.uid, datatype=XSD.string)),
+                (nsc['dc'].title, Literal(self.uid, datatype=XSD.string)),
+                (nsc['aic'].uid, Literal(self.uid, datatype=XSD.string)),
             ]
             cherrypy.log('Asset create init tuples: {}'.format(init_tuples))
 
@@ -264,11 +303,11 @@ class Asset(Resource):
 
         # If no URI is provided, check UID and legacy UID, in that order.
         if uid:
-            check_prop = ns_collection['aic'] + 'uid'
+            check_prop = nsc['aic'] + 'uid'
             check_uid = uid
             self.uid = uid
         else:
-            check_prop = ns_collection['aic'] + 'legacyUid'
+            check_prop = nsc['aic'] + 'legacyUid'
             check_uid = legacy_uid
 
         check_uri = self.connectors['tsconn'].get_node_uri_by_prop(check_prop, check_uid)
@@ -295,11 +334,11 @@ class Asset(Resource):
             raise ValueError('Neither uid or legacy_uid were provided. Cannot check for duplicates.')
 
         if uid:
-            uri_uid = self.connectors['tsconn'].find_node_uri_by_prop(ns_collection['aic'] + 'uid', uid)
+            uri_uid = self.connectors['tsconn'].find_node_uri_by_prop(nsc['aic'] + 'uid', uid)
             if not self.uri == uri_uid:
                 return {'uid' : uri_uid}
         if legacy_uid:
-            uri_legacy_uid = self.connectors['tsconn'].get_node_uri_by_prop(ns_collection['aic'] + 'legacyUid', legacy_uid)
+            uri_legacy_uid = self.connectors['tsconn'].get_node_uri_by_prop(nsc['aic'] + 'legacyUid', legacy_uid)
             if not self.uri == uri_legacy_uid:
                 return {'legacy_uid' : uri_uid}
 

@@ -11,7 +11,7 @@ from rdflib import URIRef, Literal, XSD
 from sspad.config.datasources import lake_rest_api
 from sspad.connectors.uidminter_connector import UidminterConnector
 from sspad.models.resource import Resource
-from sspad.resources.rdf_lexicon import ns_collection, ns_mgr
+from sspad.resources.rdf_lexicon import ns_collection as nsc, ns_mgr
 
 
 class Instance(Resource):
@@ -28,7 +28,7 @@ class Instance(Resource):
 
     @property
     def node_type(self):
-        return ns_collection['aic'].Instance
+        return nsc['aic'].Instance
 
 
 
@@ -136,10 +136,10 @@ class Instance(Resource):
         # Avoid circular dependencies.
         from sspad.models.asset import Asset
 
-        rdf_type = ns_collection['aic'].Master\
+        rdf_type = nsc['aic'].Master\
                 if name == 'master' \
                 else \
-                ns_collection['aic'].Instance
+                nsc['aic'].Instance
 
         asset_uid = os.path.basename(asset_uri)
         self.uri = self.connectors['lconn'].create_or_update_node(

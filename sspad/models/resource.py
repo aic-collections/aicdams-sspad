@@ -6,7 +6,7 @@ from rdflib import URIRef, XSD
 
 from sspad.models.sspad_model import SspadModel
 from sspad.models.comment import Comment
-from sspad.resources.rdf_lexicon import ns_collection, ns_mgr
+from sspad.resources.rdf_lexicon import ns_collection as nsc, ns_mgr
 
 class Resource(SspadModel):
     '''Resource class.
@@ -35,7 +35,7 @@ class Resource(SspadModel):
     def node_type(self):
         '''@sa SspadModel::node_type'''
 
-        return ns_collection['aic'].Resource
+        return nsc['aic'].Resource
 
 
 
@@ -44,9 +44,9 @@ class Resource(SspadModel):
         '''@sa SspadModel::props'''
 
         return super().props + (
-            (ns_collection['dc'].title, 'literal', XSD.string),
-            (ns_collection['aic'].label, 'literal', XSD.string),
-            (ns_collection['aic'].hasComment, 'uri'),
+            (nsc['dc'].title, 'literal', XSD.string),
+            (nsc['aic'].label, 'literal', XSD.string),
+            (nsc['aic'].hasComment, 'uri'),
         )
 
 

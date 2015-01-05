@@ -6,7 +6,7 @@ import requests
 from rdflib import URIRef, Literal, XSD
 
 from sspad.models.sspad_model import SspadModel
-from sspad.resources.rdf_lexicon import ns_collection
+from sspad.resources.rdf_lexicon import ns_collection as nsc
 
 
 class Annotation(SspadModel):
@@ -23,7 +23,7 @@ class Annotation(SspadModel):
     def node_type(self):
         '''@sa SspadModel::node_type'''
 
-        return ns_collection['aic'].Annotation
+        return nsc['aic'].Annotation
 
 
 
@@ -47,7 +47,7 @@ class Annotation(SspadModel):
         '''@sa SspadModel::props'''
 
         return super().props + (
-            (ns_collection['aic'].content, 'literal', XSD.string),
+            (nsc['aic'].content, 'literal', XSD.string),
         )
 
 

@@ -5,7 +5,7 @@ from wand import image
 
 from sspad.config.datasources import lake_rest_api, datagrinder_rest_api
 from sspad.models.asset import Asset
-from sspad.resources.rdf_lexicon import ns_collection
+from sspad.resources.rdf_lexicon import ns_collection as nsc
 
 
 class StaticImage(Asset):
@@ -28,7 +28,7 @@ class StaticImage(Asset):
     def node_type(self):
         '''@sa SspadModel::node_types'''
 
-        return ns_collection['aic'].StillImage
+        return nsc['aic'].StillImage
 
 
 
@@ -37,7 +37,7 @@ class StaticImage(Asset):
         '''@sa SspadModel::props'''
 
         return super().props + (
-            (ns_collection['aic'].citiImgDBankUid, 'literal', XSD.string),
+            (nsc['aic'].citiImgDBankUid, 'literal', XSD.string),
         )
 
 
