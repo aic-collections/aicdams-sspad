@@ -254,6 +254,19 @@ class SspadModel(metaclass=ABCMeta):
 
 
 
+    def convert_req_propnames(self, props):
+        '''Converts all property names passed in request as
+        namespaced string to fully-qualified URIRefs.'''
+
+        ret = {}
+        for p in props.keys():
+            fqp = self._build_fquri_from_prefixed(p)
+            ret[fqp] = props[p]
+
+        return ret
+
+
+
     ## PRIVATE METHODS ##
 
     def _tx_uri_to_notx_uri(self, tx_uri):
@@ -398,7 +411,7 @@ class SspadModel(metaclass=ABCMeta):
 
 
 
-    def _build_fquri_from_prefixed(name):
+    def _build_fquri_from_prefixed(self, name):
         '''Build a fully-qualify URI from a namespace prefixed name.
 
         This method uses the global namespace manager to determine prefixes.
