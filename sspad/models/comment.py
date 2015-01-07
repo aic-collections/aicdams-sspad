@@ -40,6 +40,7 @@ class Comment(Annotation):
     def props(self):
         return super().props + (
             (nsc['aic'].category, 'literal', XSD.string),
+            (nsc['aic'].content, 'literal', XSD.string),
         )
 
 
@@ -80,8 +81,8 @@ class Comment(Annotation):
             uri = req_uri,
             props = self._build_prop_tuples(
                 insert_props = {
-                    'content' : [content],
-                    'category' : [cat],
+                    nsc['aic'].content : [content],
+                    nsc['aic'].category : [cat],
 
                 },
                 delete_props = {},
@@ -93,7 +94,7 @@ class Comment(Annotation):
         self.lconn.update_node_properties(
             subject_uri,
             insert_props=[(
-                self._build_rdf_object(*Resource().props['comment']),
+                URIRef(nsc['aic'].hasComment),
                 URIRef(comment_uri)
             )],
         )

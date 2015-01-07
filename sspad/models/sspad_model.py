@@ -171,7 +171,7 @@ class SspadModel(metaclass=ABCMeta):
 
         @param uid      (string) UID of the node to be generated.
 
-        @return tuple Two resource URIs: one in the transaction and one outside of it.
+        @return None
         '''
 
         if not self.tx_uri:
@@ -183,14 +183,12 @@ class SspadModel(metaclass=ABCMeta):
 
         self.uri = self._tx_uri_to_notx_uri(self.uri_in_tx)
 
-        return True
-
 
 
     def update_node(self, uri, props):
         '''Updates a node inserting and deleting related nodes if necessary.
 
-        @param uri (stirng) URI of the node to be updated.
+        @param uri (string) URI of the node to be updated.
         @param props (dict) Map of properties and nodes to be updated, to be passed to #_build_prop_tuples.
 
         @return None
@@ -291,10 +289,10 @@ class SspadModel(metaclass=ABCMeta):
 
 
     def _build_prop_tuples(
-            self, insert_props={}, delete_props={}, init_insert_tuples=[], ignore_broken_rels=True
-            ):
-        '''Build delete, insert and where tuples suitable for #LakeConnector:update_node_properties
-            from a list of insert and delete properties.
+            self, insert_props={}, delete_props={},
+            init_insert_tuples=[], ignore_broken_rels=True):
+        '''Build delete, insert and where tuples suitable for
+            #LakeConnector:update_node_properties from a list of insert and delete properties.
             Also builds a list of nodes that need to be deleted and/or inserted to satisfy references.
 
             @param insert_props (dict, optional) Properties to be inserted.
@@ -312,20 +310,22 @@ class SspadModel(metaclass=ABCMeta):
                 and one of WHERE conditions.
         '''
 
-        cherrypy.log('Initial insert tuples: {}.'.format(init_insert_tuples))
+        cherrypy.log('Insert props received: {}.'.format(insert_props))
+        #cherrypy.log('Self props: {}.'.format(self.props))
         insert_tuples = init_insert_tuples
         delete_tuples, where_tuples = ([],[])
         insert_nodes, delete_nodes = ({},{})
 
         for prop in self.props:
             prop_name = prop[0]
+            cherrypy.log('Scanning property {}...'.format(prop_name))
 
             # Delete tuples + nodes
             if prop_name in delete_props:
                 if isinstance(delete_props[prop_name], list):
                     # Delete one or more values from property
                     for value in delete_props[prop_name]:
-                        if prop_name == nsc['aic'].comment:
+                        if prop_name == nsc['aic'].hasComment:
                             delete_nodes['comments'] = value
                         delete_tuples.append((prop, self._build_rdf_object(value, prop[1])))
 
@@ -354,12 +354,13 @@ class SspadModel(metaclass=ABCMeta):
                                     'Referenced CITI resource with CITI Pkey {} does not exist. Cannot create relationship.'.format(value)
                                 )
                         value = ref_uri
-                    elif prop_name == nsc['aic'].tag:
-                        insert_nodes['tags'] = insert_props['tag']
+                    elif prop_name == nsc['aic'].hasTag:
+                        insert_nodes['tags'] = insert_props[prop_name]
                         #value = lake_rest_api['tags_base_url'] + value
                         continue
-                    elif prop_name == nsc['aic'].comment:
-                        insert_nodes['comments'] = insert_props['comment']
+                    elif prop_name == nsc['aic'].hasComment:
+                        insert_nodes['comments'] = insert_props[prop_name]
+                        cherrypy.log('Found comments.')
                         continue
                     cherrypy.log('Value for {}: {}'.format(prop_name, value))
                     insert_tuples.append(
@@ -418,7 +419,7 @@ class SspadModel(metaclass=ABCMeta):
 
         @param name (string) The namespaced URI (e.g. "aic:Asset")
 
-        @return string The fully qualified URI.
+        @return rdflib.URIRef The fully qualified URI.
         '''
 
         if not re.match('^[a-zA-Z0-9_\-]+:[a-zA-Z0-9_\-]+$', name):
@@ -430,7 +431,7 @@ class SspadModel(metaclass=ABCMeta):
         if not pfx in nsc.keys():
             raise KeyError('Namespace prefix \'{}\' is not a known namespace prefix.'.format(pfx))
 
-        return nsc[pfx] + parts[1]
+        return URIRef(nsc[pfx] + parts[1])
 
 
 

@@ -46,7 +46,8 @@ class Resource(SspadModel):
         return super().props + (
             (nsc['dc'].title, 'literal', XSD.string),
             (nsc['aic'].label, 'literal', XSD.string),
-            (nsc['aic'].hasComment, 'uri'),
+            #(nsc['aic'].hasComment, 'uri'),
+            #(nsc['aic'].hasTag, 'uri'),
         )
 
 
@@ -96,7 +97,11 @@ class Resource(SspadModel):
             ## Create comment nodes.
             for comment_props in props:
                 cherrypy.log('Inserting comment in props: {}'.format(comment_props))
-                comment_uri = Comment().create(self.temp_uri, comment_props['content'], comment_props['category'])
-                prop_list.append((self._build_rdf_object(*self.props['comment']), URIRef(comment_uri)))
+                comment_uri = Comment().create(
+                    self.temp_uri,
+                    comment_props['aic:content'],
+                    comment_props['aic:category']
+                )
+                prop_list.append((nsc['aic'].hasComment, URIRef(comment_uri)))
 
         return prop_list

@@ -112,6 +112,7 @@ class Instance(Resource):
         @return (string) Instance URI.
         '''
 
+        cherrypy.log('Updating instance \'{}\' of Asset {}'.format(name, asset_uri))
         self.uri = '{}/{}/{}'.format(asset_uri, self.inst_path, name)
 
         if not self.lconn.assert_node_exists(self.uri):
@@ -155,11 +156,11 @@ class Instance(Resource):
         #cherrypy.log('Created instance: {}'.format(self.uri))
 
         if type == 'Original':
-            rel_name = 'has_original'
+            rel_name = nsc['aic'].hasOriginal
         elif type == 'Master':
-            rel_name = 'has_master'
+            rel_name = nsc['aic'].hasMaster
         else:
-            rel_name = 'has_instance'
+            rel_name = nsc['aic'].hasInstance
 
         return Asset().update_node(
             uri = asset_uri,

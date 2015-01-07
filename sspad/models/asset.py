@@ -56,6 +56,7 @@ class Asset(Resource):
             (nsc['aic'].citiPrefExhibPKey, 'uri'),
             (nsc['aic'].citiPrefObjPKey, 'uri'),
             (nsc['aic'].citiPrefPlacePKey, 'uri'),
+            (nsc['aic'].hasComment, 'uri'),
             (nsc['aic'].hasInstance, 'uri'),
             (nsc['aic'].hasMaster, 'uri'),
             (nsc['aic'].hasOriginal, 'uri'),
@@ -186,9 +187,10 @@ class Asset(Resource):
                 (nsc['dc'].title, Literal(self.uid, datatype=XSD.string)),
                 (nsc['aic'].uid, Literal(self.uid, datatype=XSD.string)),
             ]
-            cherrypy.log('Asset create init tuples: {}'.format(init_tuples))
 
+            cherrypy.log('Asset create init tuples: {}'.format(init_tuples))
             cherrypy.log('Asset create properties: {}'.format(props))
+
             self.update_node(
                 self.temp_uri,
                 props = {
