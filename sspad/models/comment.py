@@ -21,7 +21,7 @@ class Comment(Annotation):
 
     @property
     def node_type(self):
-        return nsc['aic'].Comment
+        return nsc['laketype'].Comment
 
 
 

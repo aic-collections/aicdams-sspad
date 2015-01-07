@@ -21,7 +21,7 @@ class Tag(SspadModel):
     def node_type(self):
         '''@sa SspadModel::node_type'''
 
-        return nsc['aiclist'].Tag
+        return nsc['laketype'].Tag
 
 
 

@@ -28,7 +28,7 @@ class Instance(Resource):
 
     @property
     def node_type(self):
-        return nsc['aic'].Instance
+        return nsc['laketype'].Instance
 
 
 

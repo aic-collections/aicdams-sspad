@@ -28,7 +28,7 @@ class StaticImage(Asset):
     def node_type(self):
         '''@sa SspadModel::node_types'''
 
-        return nsc['aic'].StillImage
+        return nsc['laketype'].StillImage
 
 
 

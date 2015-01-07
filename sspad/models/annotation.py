@@ -23,7 +23,7 @@ class Annotation(SspadModel):
     def node_type(self):
         '''@sa SspadModel::node_type'''
 
-        return nsc['aic'].Annotation
+        return nsc['laketype'].Annotation
 
 
 

@@ -35,7 +35,7 @@ class Resource(SspadModel):
     def node_type(self):
         '''@sa SspadModel::node_type'''
 
-        return nsc['aic'].Resource
+        return nsc['laketype'].Resource
 
 
 
