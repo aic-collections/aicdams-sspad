@@ -5,11 +5,11 @@ from rdflib.namespace import Namespace, NamespaceManager
 from sspad.config.datasources import lake_rest_api
 
 ns_collection = {
-    'aic':              Namespace('http://definitions.artic.edu/1.0/ontology/'),
-    'aicdb':            Namespace('http://definitions.artic.edu/1.0/ontology/dbconn/'),
-    'aiclist':          Namespace('http://definitions.artic.edu/1.0/ontology/auth_list/'),
-    'aicmeta':          Namespace('http://definitions.artic.edu/1.0/ontology/metadata/'),
-    'aicmix':           Namespace('http://definitions.artic.edu/1.0/ontology/mixin/'),
+    'aic':              Namespace('http://definitions.artic.edu/ontology/1.0/'),
+    'aicdb':            Namespace('http://definitions.artic.edu/ontology/1.0/dbconn/'),
+    'aiclist':          Namespace('http://definitions.artic.edu/ontology/1.0/auth_list/'),
+    'aicmeta':          Namespace('http://definitions.artic.edu/ontology/1.0/metadata/'),
+    'aicmix':           Namespace('http://definitions.artic.edu/ontology/1.0/mixin/'),
     'authz':            Namespace('http://fedora.info/definitions/v4/authorization#'),
     'cidoc':            Namespace('http://www.cidoc-crm.org/cidoc-crm/'),
     'dc':               rdflib.namespace.DC,
@@ -22,8 +22,8 @@ ns_collection = {
     'foaf':             rdflib.namespace.FOAF,
     'image':            Namespace('http://www.modeshape.org/images/1.0'),
     'indexing':         Namespace('http://fedora.info/definitions/v4/indexing#'),
-    'lake':             Namespace('{}'.format(lake_rest_api['base_url'])),
-    'laketype':         Namespace('{}support/node_types/'.format(lake_rest_api['base_url'])),
+    'lake':             Namespace('http://definitions.artic.edu/lake/1.0/'),
+    'laketype':         Namespace('http://definitions.artic.edu/lake/1.0/node_type/'),
     'ldp':              Namespace('http://www.w3.org/ns/ldp#'),
     'mix':              Namespace('http://www.jcp.org/jcr/mix/1.0'),
     'mode':             Namespace('http://www.modeshape.org/1.0'),
