@@ -1,3 +1,4 @@
+import requests
 from itertools import chain
 
 from os.path import basename
@@ -54,14 +55,13 @@ class LakeConnector(HttpConnector):
         @throw HTTPError If the request is invalid (i.e. any other HTTP error than 404)
         '''
 
-        res = self.request('head',uri, headers = self.headers)
-        cherrypy.log('Check if node exists: {}'.format(res.status_code))
-        if res.status_code == 404:
-            return False
-        elif res.status_code < 399:
-            return True
-        else:
-            res.raise_for_status()
+        try:
+            res = self.request('head',uri, headers = self.headers)
+        except requests.exceptions.HTTPError as e:
+            if str(e)[:3] == '404':
+                return False
+            else:
+                raise
 
 
 
@@ -264,7 +264,6 @@ class LakeConnector(HttpConnector):
             .format(delete_triples, insert_triples, where_triples)
         cherrypy.log.error('Executing SPARQL update: ' + body)
 
-        cherrypy.log('URI: {}'.format(uri))
         res = self.request('patch',
             uri,
             data = body.encode('utf-8'),

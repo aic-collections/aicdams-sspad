@@ -137,10 +137,15 @@ class Instance(Resource):
         # Avoid circular dependencies.
         from sspad.models.asset import Asset
 
-        rdf_type = nsc['aic'].Master\
-                if name == 'master' \
-                else \
-                nsc['aic'].Instance
+        if type == 'Original':
+            rdf_type = nsc['laketype'].OriginalInstance
+            rel_name = nsc['aic'].hasOriginal
+        elif type == 'Master':
+            rdf_type = nsc['laketype'].MasterInstance
+            rel_name = nsc['aic'].hasMaster
+        else:
+            rdf_type = nsc['laketype'].Instance
+            rel_name = nsc['aic'].hasInstance
 
         asset_uid = os.path.basename(asset_uri)
         self.uri = self.lconn.create_or_update_node(
@@ -154,13 +159,6 @@ class Instance(Resource):
             )
         )
         #cherrypy.log('Created instance: {}'.format(self.uri))
-
-        if type == 'Original':
-            rel_name = nsc['aic'].hasOriginal
-        elif type == 'Master':
-            rel_name = nsc['aic'].hasMaster
-        else:
-            rel_name = nsc['aic'].hasInstance
 
         return Asset().update_node(
             uri = asset_uri,
