@@ -147,8 +147,8 @@ class Instance(Resource):
             uri = self.uri,
             props = self._build_prop_tuples(
                 insert_props = {
-                    'type' :  [rdf_type],
-                    'label' : [asset_uid + '_' + name],
+                    nsc['rdf'].type :  [rdf_type],
+                    nsc['skos'].prefLabel : [asset_uid + '_' + name],
                 },
                 init_insert_tuples = []
             )

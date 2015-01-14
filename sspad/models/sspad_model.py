@@ -318,7 +318,7 @@ class SspadModel(metaclass=ABCMeta):
 
         for prop in self.props:
             prop_name = prop[0]
-            cherrypy.log('Scanning property {}...'.format(prop_name))
+            #cherrypy.log('Scanning property {}...'.format(prop_name))
 
             # Delete tuples + nodes
             if prop_name in delete_props:

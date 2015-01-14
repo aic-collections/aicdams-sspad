@@ -75,7 +75,7 @@ class LakeConnector:
             self.conf['base_url'] + 'fcr:tx',
             headers = self.headers
         )
-        #cherrypy.log('Requesting URL:', res.url)
+        #cherrypy.log('Requesting URL: {}'.format(res.url))
         cherrypy.log('Open transaction response: {}'.format(res.status_code))
         res.raise_for_status()
 
@@ -183,7 +183,7 @@ class LakeConnector:
                 ]
             ))
         )
-        cherrypy.log('Requesting URL:' + res.url)
+        cherrypy.log('Requesting URL: {}'.format(res.url))
         #cherrypy.log('Request headers: {}'.format(res.request.headers))
         #cherrypy.log('Response headers: {}'.format(res.headers))
         cherrypy.log('Create/update datastream response:' + str(res.status_code))
@@ -217,7 +217,7 @@ class LakeConnector:
         )
         res.raise_for_status()
 
-        #cherrypy.log('Requesting URL:' + res.url)
+        #cherrypy.log('Requesting URL: {}'.format(res.url))
         #cherrypy.log('Create/update datastream response:' + str(res.status_code))
 
         cherrypy.log('Response headers for reference DS:' + str(res.headers))
@@ -275,7 +275,7 @@ class LakeConnector:
                 [('Content-type', 'application/sparql-update')]
             ))
         )
-        cherrypy.log('Requesting URL:' + res.url)
+        cherrypy.log('Requesting URL: {}'.format(res.url))
         cherrypy.log('Update datastream properties response:' + str(res.status_code))
         if res.status_code > 399:
             cherrypy.log('HTTP Error: {}'.format(res.text))
@@ -298,7 +298,6 @@ class LakeConnector:
             tx_uri + '/fcr:tx/fcr:commit',
             headers=self.headers
         )
-        #cherrypy.log('Requesting URL:', res.url)
         cherrypy.log.error('Commit transaction response: {}'.format(res.status_code))
         res.raise_for_status()
 
@@ -319,7 +318,7 @@ class LakeConnector:
             tx_uri + '/fcr:tx/fcr:rollback',
             headers=self.headers
         )
-        #cherrypy.log('Requesting URL:', res.url)
+        #cherrypy.log('Requesting URL: {}'.format(res.url))
         cherrypy.log.error('Rollback transaction response: {}'.format(res.status_code))
         res.raise_for_status()
 

@@ -125,9 +125,9 @@ class Tag(SspadModel):
                 parent = cat_uri,
                 props = self._build_prop_tuples(
                     insert_props = {
-                        'type' :  [self.node_type],
-                        'label' : [label],
-                        'category' : [cat_uri],
+                        nsc['rdf'].type :  [self.node_type],
+                        nsc['skos'].prefLabel : [label],
+                        nsc['aic'].category : [cat_uri],
 
                     },
                     delete_props = {},

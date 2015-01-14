@@ -111,8 +111,8 @@ class TagCat(SspadModel):
                 parent = self.cont_uri,
                 props = self._build_prop_tuples(
                     insert_props = {
-                        'type' :  [self.node_type],
-                        'label' : [label],
+                        nsc['rdf'].type :  [self.node_type],
+                        nsc['skos'].prefLabel : [label],
 
                     },
                     delete_props = {},
