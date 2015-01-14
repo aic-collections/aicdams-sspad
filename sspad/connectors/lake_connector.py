@@ -3,15 +3,15 @@ from itertools import chain
 from os.path import basename
 
 import cherrypy
-import requests
 
 from rdflib import Graph, URIRef, Literal
 from rdflib.plugins.sparql.processor import prepareQuery
 
 from sspad.config.datasources import lake_rest_api
+from sspad.connectors.http_connector import HttpConnector
 from sspad.resources.rdf_lexicon import ns_collection, ns_mgr
 
-class LakeConnector:
+class LakeConnector(HttpConnector):
     '''@package sspad.connectors
 
     Handles communication with the LAKE (Fedora) REST API.
@@ -54,7 +54,7 @@ class LakeConnector:
         @throw HTTPError If the request is invalid (i.e. any other HTTP error than 404)
         '''
 
-        res = requests.head(uri, headers = self.headers)
+        res = self.request('head',uri, headers = self.headers)
         cherrypy.log('Check if node exists: {}'.format(res.status_code))
         if res.status_code == 404:
             return False
@@ -71,11 +71,11 @@ class LakeConnector:
         @return (string) The transaction URI.
         '''
 
-        res = requests.post(
+        res = self.request(
+            'post',
             self.conf['base_url'] + 'fcr:tx',
             headers = self.headers
         )
-        #cherrypy.log('Requesting URL: {}'.format(res.url))
         cherrypy.log('Open transaction response: {}'.format(res.status_code))
         res.raise_for_status()
 
@@ -86,7 +86,7 @@ class LakeConnector:
     def get_binary_stream(self, uri):
         '''Get a binary stream.'''
 
-        res = requests.get(uri, headers=self.headers)
+        res = self.request('get',uri, headers=self.headers)
         res.raise_for_status()
 
         return res
@@ -117,7 +117,7 @@ class LakeConnector:
 
         if uri:
             #cherrypy.log('Creating node by PUT with RDF properties: {}'.format(body))
-            res = requests.put(
+            res = self.request('put',
                 uri,
                 data = body,
                 headers = dict(chain(self.headers.items(),
@@ -126,14 +126,13 @@ class LakeConnector:
             )
         else:
             cherrypy.log('Creating node by POST with RDF properties: {}'.format(body))
-            res = requests.post(
+            res = self.request('post',
                 parent,
                 data = body,
                 headers = dict(chain(self.headers.items(),
                     [('Content-type', 'text/turtle')]
                 ))
             )
-        cherrypy.log('Requesting URL: {}'.format(res.url))
         cherrypy.log('Create/update node response:' + str(res.status_code))
         if res.status_code > 399:
             cherrypy.log('HTTP Error: {}'.format(res.text))
@@ -172,7 +171,7 @@ class LakeConnector:
 
         cherrypy.log('Ingesting datastream from class type: {}'\
                 .format(data.__class__.__name__))
-        res = requests.put(
+        res = self.request('put',
             uri,
             data = data.read(),
             headers = dict(chain(
@@ -183,7 +182,6 @@ class LakeConnector:
                 ]
             ))
         )
-        cherrypy.log('Requesting URL: {}'.format(res.url))
         #cherrypy.log('Request headers: {}'.format(res.request.headers))
         #cherrypy.log('Response headers: {}'.format(res.headers))
         cherrypy.log('Create/update datastream response:' + str(res.status_code))
@@ -205,10 +203,10 @@ class LakeConnector:
 
         cherrypy.log('Creating an externally referenced node: ' + uri)
         # Check that external reference exists
-        check = requests.head(ref, headers=self.headers)
+        check = self.request('head',ref, headers=self.headers)
         check.raise_for_status()
 
-        res = requests.put(
+        res = self.request('put',
             uri,
             headers = dict(chain(
                 self.headers.items(),
@@ -217,7 +215,6 @@ class LakeConnector:
         )
         res.raise_for_status()
 
-        #cherrypy.log('Requesting URL: {}'.format(res.url))
         #cherrypy.log('Create/update datastream response:' + str(res.status_code))
 
         cherrypy.log('Response headers for reference DS:' + str(res.headers))
@@ -268,14 +265,13 @@ class LakeConnector:
         cherrypy.log.error('Executing SPARQL update: ' + body)
 
         cherrypy.log('URI: {}'.format(uri))
-        res = requests.patch(
+        res = self.request('patch',
             uri,
             data = body.encode('utf-8'),
             headers = dict(chain(self.headers.items(),
                 [('Content-type', 'application/sparql-update')]
             ))
         )
-        cherrypy.log('Requesting URL: {}'.format(res.url))
         cherrypy.log('Update datastream properties response:' + str(res.status_code))
         if res.status_code > 399:
             cherrypy.log('HTTP Error: {}'.format(res.text))
@@ -294,7 +290,7 @@ class LakeConnector:
         '''
 
         cherrypy.log.error('Committing transaction: {}'.format(tx_uri.split('tx:')[-1]))
-        res = requests.post(
+        res = self.request('post',
             tx_uri + '/fcr:tx/fcr:commit',
             headers=self.headers
         )
@@ -314,11 +310,10 @@ class LakeConnector:
         '''
 
         cherrypy.log.error('Rolling back transaction: {}'.format(tx_uri.split('tx:')[-1]))
-        res = requests.post(
+        res = self.request('post',
             tx_uri + '/fcr:tx/fcr:rollback',
             headers=self.headers
         )
-        #cherrypy.log('Requesting URL: {}'.format(res.url))
         cherrypy.log.error('Rollback transaction response: {}'.format(res.status_code))
         res.raise_for_status()
 

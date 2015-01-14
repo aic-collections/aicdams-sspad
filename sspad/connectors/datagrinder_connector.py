@@ -1,11 +1,10 @@
-import cherrypy, io, requests
-from cherrypy import log
-#from requests_toolbelt import MultipartEncoder
+import cherrypy, io
 
 from sspad.config.datasources import datagrinder_rest_api
+from sspad.connectors.http_connector import HttpConnector
 
 
-class DatagrinderConnector:
+class DatagrinderConnector(HttpConnector):
     '''Datagrinder connector class.
 
     Handles requests to datagrinder for multimedia processing.
@@ -61,7 +60,7 @@ class DatagrinderConnector:
         '''
 
         params = {'file': url, 'width': w, 'height': h}
-        res = requests.get(
+        res = self.request('get',
             self._base_url + 'resize.jpg',
             params = params
         )
@@ -85,7 +84,7 @@ class DatagrinderConnector:
         data = {'width': w, 'height': h}
         files = {'file': (fname, image)}
 
-        res = requests.post(
+        res = self.request('post',
             self._base_url + 'resize.jpg',
             files = files,
             data = data

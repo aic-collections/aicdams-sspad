@@ -1,5 +1,4 @@
 import cherrypy
-import requests
 import xml.etree.ElementTree as ET
 
 from itertools import chain
@@ -9,10 +8,11 @@ from rdflib.plugins.sparql.processor import prepareQuery
 from urllib.parse import quote, unquote
 
 from sspad.config.datasources import tstore_rest_api, tstore_schema_rest_api
+from sspad.connectors.http_connector import HttpConnector
 from sspad.resources.rdf_lexicon import ns_collection
 
 
-class TstoreConnector:
+class TstoreConnector(HttpConnector):
     '''TstoreConnector class.
 
     Handles operations related to the triplestore indexer and schema.
@@ -84,7 +84,8 @@ class TstoreConnector:
         else: # select
             accept = 'application/sparql-results+xml'
 
-        res = requests.get(
+        res = self.request(
+            'get',
             self.conf['base_url'],
             headers = dict(chain(self.headers.items(),
                 [(
@@ -94,7 +95,6 @@ class TstoreConnector:
             )),
             params = {'query': q}
         )
-        #cherrypy.log('Requesting URL: ' + res.url)
         #cherrypy.log('Query response: ' + str(res.text))
         res.raise_for_status()
 
