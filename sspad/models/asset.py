@@ -56,8 +56,8 @@ class Asset(Resource):
             (nsc['aic'].citiPrefExhibPKey, 'uri'),
             (nsc['aic'].citiPrefObjPKey, 'uri'),
             (nsc['aic'].citiPrefPlacePKey, 'uri'),
-			(nsc['aic'].created, 'literal', XSD:dateTime),
-			(nsc['aic'].createdBy, 'literal', XSD:string),
+			(nsc['aic'].created, 'literal', XSD.dateTime),
+			(nsc['aic'].createdBy, 'literal', XSD.string),
             (nsc['aic'].hasComment, 'uri'),
             (nsc['aic'].hasInstance, 'uri'),
             (nsc['aic'].hasMasterInstance, 'uri'),
@@ -65,8 +65,8 @@ class Asset(Resource):
             (nsc['aic'].hasTag, 'uri'),
             (nsc['aic'].isPrimaryRepresentationOf, 'uri'),
             (nsc['aic'].legacyUid, 'literal', XSD.string),
-			(nsc['aic'].lastModified, 'literal', XSD:dateTime),
-			(nsc['aic'].lastModifiedBy, 'literal', XSD:string),
+			(nsc['aic'].lastModified, 'literal', XSD.dateTime),
+			(nsc['aic'].lastModifiedBy, 'literal', XSD.string),
             (nsc['aic'].represents, 'uri'),
         )
 
