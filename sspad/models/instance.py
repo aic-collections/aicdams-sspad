@@ -139,10 +139,10 @@ class Instance(Resource):
 
         if type == 'Original':
             rdf_type = nsc['laketype'].OriginalInstance
-            rel_name = nsc['aic'].hasOriginal
+            rel_name = nsc['aic'].hasOriginalInstance
         elif type == 'Master':
             rdf_type = nsc['laketype'].MasterInstance
-            rel_name = nsc['aic'].hasMaster
+            rel_name = nsc['aic'].hasMasterInstance
         else:
             rdf_type = nsc['laketype'].Instance
             rel_name = nsc['aic'].hasInstance
