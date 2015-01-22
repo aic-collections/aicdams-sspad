@@ -23,6 +23,7 @@ ns_collection = {
     'image':            Namespace('http://www.modeshape.org/images/1.0'),
     'indexing':         Namespace('http://fedora.info/definitions/v4/indexing#'),
     'lake':             Namespace('http://definitions.artic.edu/lake/1.0/'),
+    'lakeschema':       Namespace('http://definitions.artic.edu/lake/1.0/schema/'),
     'laketype':         Namespace('http://definitions.artic.edu/lake/1.0/node_type/'),
     'ldp':              Namespace('http://www.w3.org/ns/ldp#'),
     'mix':              Namespace('http://www.jcp.org/jcr/mix/1.0'),
@@ -43,6 +44,9 @@ ns_collection = {
 }
 
 ns_mgr = NamespaceManager(Graph())
+ns_pfx_sparql = dict()
+
 for ns,uri in ns_collection.items():
     ns_mgr.bind(ns, uri, override=False)
+    ns_pfx_sparql[ns] = 'PREFIX {}: <{}>'.format(ns, uri)
 

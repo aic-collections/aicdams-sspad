@@ -1,0 +1,223 @@
+@prefix aic: <http://definitions.artic.edu/ontology/1.0/> .
+@prefix aicmeta: <http://definitions.artic.edu/ontology/1.0/metadata/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix lakeschema: <http://definitions.artic.edu/lake/1.0/schema/> .
+@prefix laketype: <http://definitions.artic.edu/lake/1.0/node_type/> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix sesame: <http://www.openrdf.org/schema/sesame#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix fn: <http://www.w3.org/2005/xpath-functions#> .
+@prefix exif: <http://www.w3.org/2003/12/exif/ns#> .
+@prefix fcrepo: <http://fedora.info/definitions/v4/repository#> .
+@prefix nt: <http://www.jcp.org/jcr/mix/1.0> .
+@prefix lakeschema: <http://definitions.artic.edu/lake/1.0/schema/> .
+@prefix laketype: <http://definitions.artic.edu/lake/1.0/node_type/> .
+
+
+
+lakeschema:vProperties {
+
+	# Query Subjects.
+
+	laketype:Asset lakeschema:hasQuerySubject [
+		lakeschema:id "_self" ;
+		lakeschema:class laketype:Asset ;
+		lakeschema:order 1 ;
+		skos:prefLabel "Asset Properties"@en
+	] ,
+	[
+		lakeschema:id "instance" ;
+		lakeschema:class laketype:Instance ;
+		lakeschema:subjectPath "?ent aic:hasInstance ?subj ." ;
+		lakeschema:order 2 ;
+		skos:prefLabel "Any Instance"@en
+	] ,
+	[
+		lakeschema:id "originalInstance" ;
+		lakeschema:class laketype:OriginalInstance ;
+		lakeschema:subjectPath "?ent aic:hasOriginalInstance ?subj ." ;
+		lakeschema:order 3 ;
+		skos:prefLabel "> Original Instance"@en
+	] ,
+	[
+		lakeschema:id "masterInstance" ;
+		lakeschema:class laketype:MasterInstance ;
+		lakeschema:subjectPath "?ent aic:hasMasterInstance ?subj ." ;
+		lakeschema:order 4 ;
+		skos:prefLabel "> Master Instance"@en
+	] ,
+	[
+		lakeschema:id "resource" ;
+		lakeschema:class laketype:Resource ;
+		lakeschema:subjectPath "?ent ?rel ?subj .\n?subj a laketype:Resource ." ;
+		lakeschema:order 5 ;
+		skos:prefLabel "Any Related Resource"@en
+	] ,
+	[
+		lakeschema:id "asset" ;
+		lakeschema:class laketype:Asset ;
+		lakeschema:subjectPath "?ent ?rel ?subj .\n?subj a laketype:Asset ." ;
+		lakeschema:order 6 ;
+		skos:prefLabel "> Asset"@en
+	] ,
+	[
+		lakeschema:id "object" ;
+		lakeschema:class laketype:Object ;
+		lakeschema:subjectPath "?ent ?rel ?subj .\n?subj a laketype:Object ." ;
+		lakeschema:order 7 ;
+		skos:prefLabel "> Object"@en
+	] ,
+	[
+		lakeschema:id "agent" ;
+		lakeschema:class laketype:Agent ;
+		lakeschema:subjectPath "?ent ?rel ?subj .\n?subj a laketype:Agent ." ;
+		lakeschema:order 8 ;
+		skos:prefLabel "> Agent"@en
+	] ,
+	[
+		lakeschema:id "place" ;
+		lakeschema:class laketype:Place ;
+		lakeschema:subjectPath "?ent ?rel ?subj .\n?subj a laketype:Place ." ;
+		lakeschema:order 9 ;
+		skos:prefLabel "> Place"@en
+	] ,
+	[
+		lakeschema:id "exhibition" ;
+		lakeschema:class laketype:Exhibition ;
+		lakeschema:subjectPath "?ent ?rel ?subj .\n?subj a laketype:Exhibition ." ;
+		lakeschema:order 10 ;
+		skos:prefLabel "> Exhibition"@en
+	] ,
+	[
+		lakeschema:id "transaction" ;
+		lakeschema:class laketype:Transaction ;
+		lakeschema:subjectPath "?ent ?rel ?subj .\n?subj a laketype:Transaction ." ;
+		lakeschema:order 11 ;
+		skos:prefLabel "> Transaction"@en
+	] .
+
+
+	# Subject is the class that is domain of the queried property
+	laketype:Asset lakeschema:hasVProperty [
+		# Object is the property to be queried
+		lakeschema:property aic:legacyUid ;
+		# Object is the "subject" query term
+		lakeschema:subjClass laketype:Asset
+	] .
+
+	nt:created lakeschema:hasVProperty [
+		lakeschema:property fcrepo:createdBy ,
+			fcrepo:created ;
+		lakeschema:subjClass nt:created
+	] .
+
+	nt:lastModified lakeschema:hasVProperty [
+		lakeschema:property fcrepo:lastModifiedBy ,
+			fcrepo:lastModified ;
+		lakeschema:subjClass nt:lastModified
+	] .
+
+
+	laketype:Resource lakeschema:hasVProperty [
+		lakeschema:property aic:uid ,
+			skos:prefLabel ;
+		lakeschema:subjClass laketype:Resource
+	] .
+
+	laketype:Event lakeschema:hasVProperty [
+		lakeschema:property aic:startDate ,
+			aic:endDate ,
+			aic:description ;
+		lakeschema:subjClass laketype:Event
+	] .
+
+	laketype:Place lakeschema:hasVProperty [
+		lakeschema:property aic:name ;
+		lakeschema:subjClass laketype:Place
+	] .
+
+	laketype:Actor lakeschema:hasVProperty [
+		lakeschema:property aic:name ;
+		lakeschema:subjClass laketype:Actor
+	] .
+
+	laketype:Place lakeschema:hasVProperty [
+		lakeschema:property aic:geoLocX ,
+			aic:geoLocY ;
+		lakeschema:subjClass laketype:Place
+	] .
+
+	laketype:Package lakeschema:hasVProperty [
+		lakeschema:property aic:summary ;
+		lakeschema:subjClass laketype:Package ;
+	] .
+
+	laketype:Overlay lakeschema:hasVProperty [
+		lakeschema:property aic:initZoom ,
+			aic:initPosX ,
+			aic:initPosY ,
+			aic:layers;
+		lakeschema:subjClass laketype:Overlay
+	] .
+
+	laketype:Asset lakeschema:hasVProperty [
+		lakeschema:property aic:batchUid ;
+		lakeschema:subjClass laketype:Asset
+	] .
+
+	laketype:Resource lakeschema:hasVProperty [
+		lakeschema:property aic:deptCreated ;
+		lakeschema:subjClass laketype:Resource
+	] .
+
+	laketype:Actor lakeschema:hasVProperty [
+		lakeschema:subjClass laketype:Actor ;
+		lakeschema:property aic:birthDate ,
+			aic:deathDate ;
+	] .
+
+
+
+	laketype:Asset lakeschema:hasVProperty [
+		lakeschema:subjClass laketype:Instance ;
+		lakeschema:path "?subj aic:hasMetadata ?pCont ." ;
+		lakeschema:property exif:colorSpace ,
+			aicmeta:height ,
+			aicmeta:width ,
+			exif:height ,
+			exif:width ,
+			exif:xResolution ,
+			exif:yResolution ,
+			exif:orientation ,
+			exif:software
+	] .
+
+	laketype:Annotation lakeschema:hasVProperty [
+		lakeschema:subjClass laketype:Asset ;
+		lakeschema:path "?subj ?prop ?pCont . ?prop rdfs:subPropertyOf aic:hasAnnotation ." ;
+		lakeschema:compoundProperty [
+			lakeschema:property aic:content ;
+			skos:prefLabel "Annotation"@en
+		]
+	] .
+
+	laketype:Comment lakeschema:hasVProperty [
+		lakeschema:subjClass laketype:Asset ;
+		lakeschema:path "?subj aic:hasComment ?pCont ." ;
+		lakeschema:compoundProperty [
+			lakeschema:property aic:content ;
+			skos:prefLabel "Comment"@en
+		]
+	] .
+
+	laketype:Caption lakeschema:hasVProperty [
+		lakeschema:subjClass laketype:Asset ;
+		lakeschema:path "?subj aic:hasCaption ?pCont ." ;
+		lakeschema:compoundProperty [
+			lakeschema:property aic:content ;
+			skos:prefLabel "Caption"@en
+		]
+	] .
+}

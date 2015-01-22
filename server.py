@@ -3,7 +3,7 @@ import cherrypy
 from cherrypy.process.plugins import Daemonizer, PIDFile
 
 from sspad.config import host, server, app
-from sspad.controllers import comment_ctrl, static_image_ctrl, tag_cat_ctrl, tag_ctrl
+from sspad.controllers import comment_ctrl, static_image_ctrl, tag_cat_ctrl, tag_ctrl, search_ctrl
 
 
 class Webapp():
@@ -18,6 +18,7 @@ class Webapp():
     tagCat = tag_cat_ctrl.TagCatCtrl()
     tag = tag_ctrl.TagCtrl()
     comment = comment_ctrl.CommentCtrl()
+    search = search_ctrl.SearchCtrl()
 
     def GET(self):
         '''Homepage - does nothing'''

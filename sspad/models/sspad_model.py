@@ -157,7 +157,7 @@ class SspadModel(metaclass=ABCMeta):
         @return None
         '''
 
-        cherrypy.log('Setting connectors...')
+        #cherrypy.log('Setting connectors...')
         self.lconn = LakeConnector()
         self.dgconn = DatagrinderConnector()
         self.tsconn = TstoreConnector()
