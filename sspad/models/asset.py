@@ -56,6 +56,7 @@ class Asset(Resource):
             (nsc['aic'].citiPrefExhibPKey, 'uri'),
             (nsc['aic'].citiPrefObjPKey, 'uri'),
             (nsc['aic'].citiPrefPlacePKey, 'uri'),
+            (nsc['aic'].citiUid, 'literal', XSD.string),
 			(nsc['aic'].created, 'literal', XSD.dateTime),
 			(nsc['aic'].createdBy, 'literal', XSD.string),
             (nsc['aic'].hasComment, 'uri'),
