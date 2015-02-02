@@ -66,10 +66,13 @@ class AssetCtrl(SspadController):
         @param props    (dict) Properties to be associated with new node.
         @param **dstreams   (BytesIO) Arbitrary datastream(s).
             Name of the parameter is the datastream name.
-            If the datastream is to be ingested directly into LAKE, the variable value is the actual data.
+            If the datastream is to be ingested directly into LAKE, the
+            variable value is the actual data.
             If the datastream is in an external URL and must be a reference,
-            the variable name is prefixed with ref_ and the value is a URL (e.g. 'ref_source' will ingest a reference ds called 'source').
-            Only the 'source' datastream is mandatory (or 'ref_source' if it is a reference).
+            the variable name is prefixed with ref_ and the value is a URL
+            (e.g. 'ref_source' will ingest a reference ds called 'source').
+            Only the 'source' datastream is mandatory (or 'ref_source'
+            if it is a reference).
 
         @return (dict) Message with new node information.
         '''

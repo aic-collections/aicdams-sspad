@@ -26,3 +26,23 @@ class SspadController(metaclass=ABCMeta):
         return SspadModel
 
 
+
+    def OPTIONS(self):
+        '''OPTIONS method.
+
+        Display HTTP methods, model properties and types(mixins) available.
+
+        @return string JSON-encoded dict.
+        '''
+
+        return {
+            'avaiable_methods' : [
+                # @TODO use introspection & docstring methods
+            ],
+            'available_props' : self.model().props,
+            'available_types' : self.model().mixins,
+        }
+
+
+
+

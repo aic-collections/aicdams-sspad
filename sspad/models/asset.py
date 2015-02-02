@@ -125,7 +125,9 @@ class Asset(Resource):
         return super().mixins + (
             'aicmix:Derivable',
             'aicmix:Overlayable',
-            'aicmix:Publ_Web',
+            'aicmix:PublishedWebColl',
+            'aicmix:PublishedWebExhib',
+            'aicmix:PublishedOsci',
         )
 
 
