@@ -54,7 +54,7 @@ class Resource(SspadModel):
 
     @property
     def mixins(self):
-        '''Mix-ins considered for updating.
+        '''Types (mixins) available for updating.
 
         @return tuple
         '''

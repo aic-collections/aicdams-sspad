@@ -18,6 +18,7 @@ class HttpConnector:
         cherrypy.log('HttpConnector: {} {}'.format(method.upper(), url))
 
         ret = requests.request(method.lower(), url, **kwargs)
+        cherrypy.log('HttpConnector: return code: {}'.format(ret.status_code))
         ret.raise_for_status()
 
         return ret

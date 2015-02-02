@@ -61,23 +61,40 @@ class Search():
     @property
     def comp_expressions(self):
         return {
-            'contains' : '{} <{}> ?p .\nFILTER(contains(?p, "{}"))',
-            'not_contains' : '{} <{}> ?p .\nFILTER NOT EXISTS{{FILTER(contains(?p, "{}"))}}',
-            'starts_with' : '{} <{}> ?p .\nFILTER(strStarts(?p, "{}"))',
-            'not_starts_with' : '{} <{}> ?p .\nFILTER NOT EXISTS{{FILTER(strStarts(?p, "{}"))}}',
-            'ends_with' : '{} <{}> ?p .\nFILTER(strEnds(?p, "{}"))',
-            'not_ends_with' : '{} <{}> ?p .\nFILTER NOT EXISTS{{FILTER(strEnds(?p, "{}"))}}',
-            'str_matches' : '{} <{}> ?p .\nFILTER(?p="{}")',
-            'eq' : '{} <{}> ?p .\nFILTER(?p="{}")',
-            'ne' : '{} <{}> ?p .\nFILTER NOT EXSITS{FILTER(?p="{}")}',
-            'lt' : '{} <{}> ?p .\nFILTER(?p<"{}")',
-            'lte' : '{} <{}> ?p .\nFILTER(?p<="{}")',
-            'gt' : '{} <{}> ?p .\nFILTER(?p>"{}")',
-            'gte' : '{} <{}> ?p .\nFILTER(?p>="{}")',
-            'before' : '{} <{}> ?p .\nFILTER(?p<"{}"^^xsd:dateTime)',
-            'after' : '{} <{}> ?p .\nFILTER(?p>"{}"^^xsd:dateTime)',
-            'date_matches' : '{} <{}> ?p .\nFILTER(?p="{}"^^xsd:date)',
-            'uri' : '{} <{}> <{}>',
+            'contains' :\
+		'{} <{}> ?p .\nFILTER(contains(?p, "{}"))',
+            'not_contains' :\
+		'{} <{}> ?p .\nFILTER NOT EXISTS{{FILTER(contains(?p, "{}"))}}',
+            'starts_with' :\
+		'{} <{}> ?p .\nFILTER(strStarts(?p, "{}"))',
+            'not_starts_with' :\
+		'{} <{}> ?p .\nFILTER NOT EXISTS{{FILTER(strStarts(?p, "{}"))}}',
+            'ends_with' :\
+		'{} <{}> ?p .\nFILTER(strEnds(?p, "{}"))',
+            'not_ends_with' :\
+		'{} <{}> ?p .\nFILTER NOT EXISTS{{FILTER(strEnds(?p, "{}"))}}',
+            'str_matches' :\
+		'{} <{}> ?p .\nFILTER(?p="{}")',
+            'eq' :\
+		'{} <{}> ?p .\nFILTER(?p="{}")',
+            'ne' :\
+		'{} <{}> ?p .\nFILTER NOT EXSITS{FILTER(?p="{}")}',
+            'lt' :\
+		'{} <{}> ?p .\nFILTER(?p<"{}")',
+            'lte' :\
+		'{} <{}> ?p .\nFILTER(?p<="{}")',
+            'gt' :\
+		'{} <{}> ?p .\nFILTER(?p>"{}")',
+            'gte' :\
+		'{} <{}> ?p .\nFILTER(?p>="{}")',
+            'before' :\
+		'{} <{}> ?p .\nFILTER(?p<"{}"^^xsd:dateTime)',
+            'after' :\
+		'{} <{}> ?p .\nFILTER(?p>"{}"^^xsd:dateTime)',
+            'date_matches' :\
+		'{} <{}> ?p .\nFILTER(?p="{}"^^xsd:date)',
+            'uri' :\
+		'{} <{}> <{}>',
         }
 
 
