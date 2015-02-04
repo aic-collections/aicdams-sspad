@@ -105,13 +105,17 @@ class AssetCtrl(SspadController):
 
         Adds or replaces datastreams or replaces the whole property set of an Asset.
 
-        @param uid      (string) Asset UID. Specify this or 'uri' only if the node is known to exist,
-           otherwise a 404 Not Found will be thrown.
-        @param uri      (string) Asset URI. If this is not provided, node will be searched by UID.
-        @param props    (dict) Properties to be associated with new or updated node.
-           The optional 'legacy_uid' property is searched for conflicts or to find nodes when neither 'uri' or 'uid' are known.
-        @param **dstreams   (BytesIO) Arbitrary datastream(s). Name of the parameter is the datastream name.
-        Only the 'source' datastream is mandatory. @sa POST
+        @param uid      (string) Asset UID. Specify this or 'uri' only if the
+        node is known to exist, otherwise a 404 Not Found will be thrown.
+        @param uri      (string) Asset URI. If this is not provided, node will
+        be searched by UID.
+        @param props    (dict) Properties to be associated with new
+            or updated node.
+            The optional 'legacy_uid' property is searched for conflicts or to
+            find nodes when neither 'uri' or 'uid' are known.
+        @param **dstreams   (BytesIO) Arbitrary datastream(s).
+            Name of the parameter is the datastream name.
+            Only the 'source' datastream is mandatory. @sa POST
 
         @return (dict) Message with node information.
 
