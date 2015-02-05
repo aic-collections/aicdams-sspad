@@ -3,8 +3,8 @@ import cherrypy
 from cherrypy.process.plugins import Daemonizer, PIDFile
 
 from sspad.config import host, server, app
-from sspad.controllers import sspad_controller, comment_ctrl, \
-        static_image_ctrl, tag_cat_ctrl, tag_ctrl, search_ctrl
+from sspad.controllers import comment_ctrl, search_ctrl, sspad_controller, \
+        static_image_ctrl, tag_cat_ctrl, tag_ctrl, text_ctrl
 
 
 class Webapp():
@@ -16,11 +16,12 @@ class Webapp():
     exposed = True
 
     routes = {
-        'si' : static_image_ctrl.StaticImageCtrl,
-        'tagCat' : tag_cat_ctrl.TagCatCtrl,
-        'tag' : tag_ctrl.TagCtrl,
         'comment' : comment_ctrl.CommentCtrl,
         'search' : search_ctrl.SearchCtrl,
+        'si' : static_image_ctrl.StaticImageCtrl,
+        'tag' : tag_ctrl.TagCtrl,
+        'tagCat' : tag_cat_ctrl.TagCatCtrl,
+        'tx' : text_ctrl.TextCtrl,
     }
 
 
