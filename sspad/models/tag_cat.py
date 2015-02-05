@@ -70,15 +70,14 @@ class TagCat(SspadModel):
 
         q = '''
         SELECT ?cat ?label WHERE {{
-            ?cat <{}>  .
             ?cat a <{}> .
+            ?cat <{}> ?label .
         }}
         '''.format(
-            nsc['aic'].label,
-            nsc['fcrepo'].hasParent,
             self.node_type,
+            nsc['skos'].prefLabel,
         )
-        res = elf.sconn.query(q)
+        res = self.tsconn.query(q)
         #cherrypy.log('Res: {}'.format(res))
 
         return res
