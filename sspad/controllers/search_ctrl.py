@@ -52,14 +52,16 @@ class SearchCtrl(SspadController):
         '''
 
         if result == 'terms':
-            return Search().get_terms(ent, subj, prop)
+            ret = Search().get_terms(ent, subj, prop)
         elif result == 'items':
-            return Search().query(ent, json.loads(conditions))
+            ret = Search().query(ent, json.loads(conditions))
         else:
             raise cherrypy.HTTPError(
                 '400 Bad Request',
                 'Search for \'{}\' is not supported.'.format(result)
             )
+
+        return self.output(ret)
 
 
 

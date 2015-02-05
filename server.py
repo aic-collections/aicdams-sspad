@@ -3,7 +3,8 @@ import cherrypy
 from cherrypy.process.plugins import Daemonizer, PIDFile
 
 from sspad.config import host, server, app
-from sspad.controllers import comment_ctrl, static_image_ctrl, tag_cat_ctrl, tag_ctrl, search_ctrl
+from sspad.controllers import sspad_controller, comment_ctrl, \
+        static_image_ctrl, tag_cat_ctrl, tag_ctrl, search_ctrl
 
 
 class Webapp():
@@ -13,6 +14,12 @@ class Webapp():
     '''
 
     exposed = True
+
+    out_fmt = (
+        'application/json',
+        'application/xml',
+        'text/plain',
+    )
 
 
     routes = {
@@ -28,7 +35,6 @@ class Webapp():
     def OPTIONS(self):
         '''Return list of documented resources.'''
 
-        #cherrypy.log('Dispatch handler: {}'.format(cherrypy.dispatch.RoutesDispatcher.find_handler('/')))
         ret = []
         for r in self.routes:
             ret.append({
@@ -36,22 +42,17 @@ class Webapp():
                     'info' : self.routes[r].__doc__
             })
 
-        return Webapp.output(ret)
+        return sspad_controller.SspadController().output(ret)
 
 
 
     def GET(self):
         '''Homepage - do nothing'''
 
-        return {'message': 'Nothing to see here.'}
+        return sspad_controller.SspadController().output(
+                {'message': 'Nothing to see here.'})
 
 
-
-    def output(data):
-        if 'prefer' in cherrypy.request.headers:
-            cherrypy.log('Prefer headers: {}'.format(cherrypy.request.headers['prefer']))
-
-        return data
 
 
 if __name__ == '__main__':

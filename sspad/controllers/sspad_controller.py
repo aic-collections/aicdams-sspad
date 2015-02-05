@@ -1,8 +1,11 @@
 import cherrypy
 
+from cherrypy.lib import cptools
+
 from abc import ABCMeta
 
 from sspad.models.sspad_model import SspadModel
+from sspad.modules.content_filter import ContentFilter
 
 
 class SspadController(metaclass=ABCMeta):
@@ -10,6 +13,13 @@ class SspadController(metaclass=ABCMeta):
 
     @package sspad.controllers
     '''
+
+    out_fmt = (
+        'application/json',
+        'application/xml',
+        'text/plain',
+    )
+
 
     @property
     def model(self):
@@ -42,7 +52,13 @@ class SspadController(metaclass=ABCMeta):
             'available_props' : self.model().props,
             'available_types' : self.model().mixins,
         }
+    def output(self, data):
+        fmt = cptools.accept(self.out_fmt)
+        cherrypy.log('Output format: {}'.format(fmt))
+        cherrypy.response.headers['Content-type'] = fmt
 
+        cherrypy.log('Output: {} '.format(ContentFilter.filter_output(data, fmt)))
+        return ContentFilter.filter_output(data, fmt)
 
 
 

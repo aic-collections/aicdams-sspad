@@ -34,7 +34,7 @@ class AnnotationCtrl(SspadController):
         @return (list) List of annotation dicts.
         '''
 
-        return self.model().list(subject)
+        return self.output(self.model().list(subject))
 
 
 
@@ -47,5 +47,5 @@ class AnnotationCtrl(SspadController):
         @return (dict) Message with new Annotation node information.
         '''
 
-        return self.model().create(subject, content)
+        return self.output(self.model().create(subject, content))
 
