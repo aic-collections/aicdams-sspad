@@ -37,10 +37,10 @@ class Comment(Annotation):
 
 
     @property
-    def props(self):
-        return super().props + (
-            (nsc['aic'].category, 'literal', XSD.string),
-            (nsc['aic'].content, 'literal', XSD.string),
+    def ns_props(self):
+        return super().ns_props + (
+            ('aic:category', 'literal', XSD.string),
+            ('aic:content', 'literal', XSD.string),
         )
 
 

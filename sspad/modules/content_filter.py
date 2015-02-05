@@ -1,5 +1,8 @@
+import cherrypy
 import json
 import dicttoxml
+
+from xml.dom.minidom import parseString
 
 class ContentFilter():
     '''@package sspad.modules
@@ -19,8 +22,11 @@ class ContentFilter():
         '''
 
         if mimetype == 'application/json':
-            return json.dumps(data).encode('utf8')
+            return json.dumps(data, indent=4).encode('utf8')
         elif mimetype == 'application/xml':
-            return dicttoxml.dicttoxml(data)
+            #dicttoxml.set_debug(filename=cherrypy.config['log.error_file'])
+            ret = dicttoxml.dicttoxml(data, custom_root='response')
+            dom = parseString(ret)
+            return dom.toprettyxml().encode('utf8')
         else:
             return data.__repr__().encode('utf8')

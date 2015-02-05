@@ -26,11 +26,11 @@ class Tag(SspadModel):
 
 
     @property
-    def props(self):
+    def ns_props(self):
         '''@sa SspadModel::props'''
 
-        return super().props + (
-            (nsc['aic'].category, 'uri'),
+        return super().ns_props + (
+            ('aic:category', 'uri'),
         )
 
 

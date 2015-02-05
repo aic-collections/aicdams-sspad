@@ -37,11 +37,11 @@ class TagCat(SspadModel):
 
 
     @property
-    def props(self):
+    def ns_props(self):
         '''@sa SspadModel::props'''
 
-        return super().props + (
-            (nsc['aic'].label, 'literal', 'string'),
+        return super().ns_props + (
+            ('skos:prefLabel', 'literal', XSD.string),
         )
 
 

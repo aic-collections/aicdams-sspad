@@ -43,32 +43,32 @@ class Asset(Resource):
 
 
     @property
-    def props(self):
+    def ns_props(self):
         '''@sa SspadModel::props'''
 
-        return super().props + (
-            (nsc['aic'].batchUid, 'literal', XSD.string),
-            (nsc['aic'].citiAgentPKey, 'uri'),
-            (nsc['aic'].citiExhibPKey, 'uri'),
-            (nsc['aic'].citiObjPKey, 'uri'),
-            (nsc['aic'].citiPlacePKey, 'uri'),
-            (nsc['aic'].citiPrefAgentPKey, 'uri'),
-            (nsc['aic'].citiPrefExhibPKey, 'uri'),
-            (nsc['aic'].citiPrefObjPKey, 'uri'),
-            (nsc['aic'].citiPrefPlacePKey, 'uri'),
-            (nsc['aic'].citiUid, 'literal', XSD.string),
-			(nsc['aic'].created, 'literal', XSD.dateTime),
-			(nsc['aic'].createdBy, 'literal', XSD.string),
-            (nsc['aic'].hasComment, 'uri'),
-            (nsc['aic'].hasInstance, 'uri'),
-            (nsc['aic'].hasMasterInstance, 'uri'),
-            (nsc['aic'].hasOriginalInstance, 'uri'),
-            (nsc['aic'].hasTag, 'uri'),
-            (nsc['aic'].isPrimaryRepresentationOf, 'uri'),
-            (nsc['aic'].legacyUid, 'literal', XSD.string),
-			(nsc['aic'].lastModified, 'literal', XSD.dateTime),
-			(nsc['aic'].lastModifiedBy, 'literal', XSD.string),
-            (nsc['aic'].represents, 'uri'),
+        return super().ns_props + (
+            ('aic:batchUid', 'literal', XSD.string),
+            ('aic:citiAgentPKey', 'literal', XSD.string),
+            ('aic:citiExhibPKey', 'literal', XSD.string),
+            ('aic:citiObjPKey', 'literal', XSD.string),
+            ('aic:citiPlacePKey', 'literal', XSD.string),
+            ('aic:citiPrefAgentPKey', 'literal', XSD.string),
+            ('aic:citiPrefExhibPKey', 'literal', XSD.string),
+            ('aic:citiPrefObjPKey', 'literal', XSD.string),
+            ('aic:citiPrefPlacePKey', 'literal', XSD.string),
+            ('aic:citiUid', 'literal', XSD.string),
+            ('aic:created', 'literal', XSD.dateTime),
+            ('aic:createdBy', 'literal', XSD.string),
+            ('aic:hasComment', 'uri'),
+            ('aic:hasInstance', 'uri'),
+            ('aic:hasMasterInstance', 'uri'),
+            ('aic:hasOriginalInstance', 'uri'),
+            ('aic:hasTag', 'uri'),
+            ('aic:isPrimaryRepresentationOf', 'uri'),
+            ('aic:legacyUid', 'literal', XSD.string),
+            ('aic:lastModified', 'literal', XSD.dateTime),
+            ('aic:lastModifiedBy', 'literal', XSD.string),
+            ('aic:represents', 'uri'),
         )
 
 

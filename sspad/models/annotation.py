@@ -43,11 +43,11 @@ class Annotation(SspadModel):
 
 
     @property
-    def props(self):
+    def ns_props(self):
         '''@sa SspadModel::props'''
 
-        return super().props + (
-            (nsc['aic'].content, 'literal', XSD.string),
+        return super().ns_props + (
+            ('aic:content', 'literal', XSD.string),
         )
 
 

@@ -80,12 +80,11 @@ class SspadModel(metaclass=ABCMeta):
 
 
 
-
     @property
-    def props(self):
+    def ns_props(self):
         '''Tuples defining properties stored in LAKE for this model.
 
-        First tuple element is the property URI.
+        First tuple element is the property URI with a namespaced prefix.
         Second element is a string defining property type, which can be
             'literal', 'uri' or 'variable'.
         Third element is optional and only available for 'literal' data type
@@ -97,9 +96,22 @@ class SspadModel(metaclass=ABCMeta):
         '''
 
         return (
-            (nsc['rdf'].type, 'uri'),
-            (nsc['aic'].label, 'literal', XSD.string),
+            ('rdf:type', 'uri'),
+            ('aic:label', 'literal', XSD.string),
         )
+
+
+
+    @property
+    def fq_props(self):
+        '''Returns list of properties defined in @sa ns_props
+        with a fully qualified URI derived from the namespace prefix.
+
+        @return list
+        '''
+
+        return [(self._build_fquri_from_prefixed(i[0]), i[1], \
+                i[2] if len(i)>2 else None) for i in self.fq_props]
 
 
 
@@ -316,7 +328,7 @@ class SspadModel(metaclass=ABCMeta):
         delete_tuples, where_tuples = ([],[])
         insert_nodes, delete_nodes = ({},{})
 
-        for prop in self.props:
+        for prop in self.fq_props:
             prop_name = prop[0]
             #cherrypy.log('Scanning property {}...'.format(prop_name))
 

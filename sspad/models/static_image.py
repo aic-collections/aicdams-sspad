@@ -33,11 +33,11 @@ class StaticImage(Asset):
 
 
     @property
-    def props(self):
+    def ns_props(self):
         '''@sa SspadModel::props'''
 
-        return super().props + (
-            (nsc['aic'].citiImgDBankUid, 'literal', XSD.string),
+        return super().ns_props + (
+            ('aic:citiImgDBankUid', 'literal', XSD.string),
         )
 
 

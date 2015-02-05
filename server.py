@@ -15,13 +15,6 @@ class Webapp():
 
     exposed = True
 
-    out_fmt = (
-        'application/json',
-        'application/xml',
-        'text/plain',
-    )
-
-
     routes = {
         'si' : static_image_ctrl.StaticImageCtrl,
         'tagCat' : tag_cat_ctrl.TagCatCtrl,

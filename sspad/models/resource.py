@@ -40,14 +40,14 @@ class Resource(SspadModel):
 
 
     @property
-    def props(self):
+    def ns_props(self):
         '''@sa SspadModel::props'''
 
-        return super().props + (
-            (nsc['dc'].title, 'literal', XSD.string),
-            (nsc['aic'].label, 'literal', XSD.string),
-            #(nsc['aic'].hasComment, 'uri'),
-            #(nsc['aic'].hasTag, 'uri'),
+        return super().ns_props + (
+            ('dc:title', 'literal', XSD.string),
+            ('skos:prefLabel', 'literal', XSD.string),
+            #('aic:hasComment' 'uri'),
+            #('aic:hasTag' 'uri'),
         )
 
 
