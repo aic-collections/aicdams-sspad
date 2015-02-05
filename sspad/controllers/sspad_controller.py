@@ -1,16 +1,13 @@
-import re
-
 import cherrypy
-
-from cherrypy.lib import cptools
+import re
 
 from abc import ABCMeta
 
 from sspad.models.sspad_model import SspadModel
-from sspad.modules.content_filter import ContentFilter
+from sspad.modules.negotiable import Negotiable
 
 
-class SspadController(metaclass=ABCMeta):
+class SspadController(Negotiable, metaclass=ABCMeta):
     ''' Main SSPAD controller.
 
     @package sspad.controllers
@@ -67,17 +64,7 @@ class SspadController(metaclass=ABCMeta):
         if hasattr(self.model, 'mixins'):
             docs['types'] = self.model().mixins
 
-        return self.output(docs)
-
-
-
-    def output(self, data):
-        fmt = cptools.accept(self.out_fmt)
-        cherrypy.log('Output format: {}'.format(fmt))
-        cherrypy.response.headers['Content-type'] = fmt
-
-        #cherrypy.log('Output: {} '.format(ContentFilter.filter_output(data, fmt)))
-        return ContentFilter.filter_output(data, fmt)
+        return self._output(docs)
 
 
 

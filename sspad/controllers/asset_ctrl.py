@@ -53,7 +53,7 @@ class AssetCtrl(SspadController):
                     'An asset with this legacy UID does not exist.'
                 )
         else:
-            return self.output({'message': '*stub* This is a list of Assets.'})
+            return self._output({'message': '*stub* This is a list of Assets.'})
 
 
 
@@ -96,7 +96,7 @@ class AssetCtrl(SspadController):
         cherrypy.response.status = 201
         cherrypy.response.headers['Location'] = model.uri
 
-        return self.output(ret)
+        return self._output(ret)
 
 
 
@@ -156,7 +156,7 @@ class AssetCtrl(SspadController):
             cherrypy.response.status = 204
             cherrypy.response.headers['Location'] = model.uri
 
-        return self.output(ret)
+        return self._output(ret)
 
 
 
@@ -193,5 +193,5 @@ class AssetCtrl(SspadController):
         cherrypy.response.status = 204
         cherrypy.response.headers['Location'] = model.uri
 
-        return self.output({"message": "Asset updated."})
+        return self._output({"message": "Asset updated."})
 

@@ -61,7 +61,7 @@ class SearchCtrl(SspadController):
                 'Search for \'{}\' is not supported.'.format(result)
             )
 
-        return self.output(ret)
+        return self._output(ret)
 
 
 

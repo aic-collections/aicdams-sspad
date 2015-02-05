@@ -328,7 +328,10 @@ class SspadModel(metaclass=ABCMeta):
         delete_tuples, where_tuples = ([],[])
         insert_nodes, delete_nodes = ({},{})
 
-        for prop in self.fq_props:
+        for ns_prop in self.ns_props:
+            cherrypy.log('Converting to fq prop: {}'.format(ns_prop))
+            prop = (self._build_fquri_from_prefixed(ns_prop[0]), ns_prop[1], \
+                    ns_prop[2] if len(ns_prop)>2 else None)
             prop_name = prop[0]
             #cherrypy.log('Scanning property {}...'.format(prop_name))
 
@@ -443,7 +446,7 @@ class SspadModel(metaclass=ABCMeta):
         if not pfx in nsc.keys():
             raise KeyError('Namespace prefix \'{}\' is not a known namespace prefix.'.format(pfx))
 
-        return URIRef(nsc[pfx] + parts[1])
+        return URIRef(nsc[pfx][parts[1]])
 
 
 

@@ -32,9 +32,11 @@ class TagCatCtrl(SspadController):
         @return (string | list) Category URI or list of categories.
         '''
 
-        return self.model().get_uri(label) \
+        ret = self.model().get_uri(label) \
                 if label \
                 else self.model().list()
+
+        return self._output(ret)
 
 
     def POST(self, label):
@@ -45,5 +47,5 @@ class TagCatCtrl(SspadController):
         @return (string) New category URI.
         '''
 
-        return self.model().create(label)
+        return self._output(self.model().create(label))
 

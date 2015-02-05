@@ -34,7 +34,7 @@ class CommentCtrl(AnnotationCtrl):
         @return (list) List of annotation dicts.
         '''
 
-        return self.output(self.model().list(subject, cat))
+        return self._output(self.model().list(subject, cat))
 
 
 
@@ -54,6 +54,6 @@ class CommentCtrl(AnnotationCtrl):
         cherrypy.log('*****************')
         cherrypy.log('')
 
-        return self.output(
+        return self._output(
                 self.model().create(subject, content, category))
 

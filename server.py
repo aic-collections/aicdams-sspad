@@ -3,11 +3,12 @@ import cherrypy
 from cherrypy.process.plugins import Daemonizer, PIDFile
 
 from sspad.config import host, server, app
-from sspad.controllers import comment_ctrl, search_ctrl, sspad_controller, \
+from sspad.controllers import comment_ctrl, search_ctrl, \
         static_image_ctrl, tag_cat_ctrl, tag_ctrl, text_ctrl
+from sspad.modules.negotiable import Negotiable
 
 
-class Webapp():
+class Webapp(Negotiable):
     '''Main Web app class.
 
     Contains the RESTful API and all its top-level locations.
@@ -36,15 +37,14 @@ class Webapp():
                     'info' : self.routes[r].__doc__
             })
 
-        return sspad_controller.SspadController().output(ret)
+        return self._output(ret)
 
 
 
     def GET(self):
         '''Homepage - do nothing'''
 
-        return sspad_controller.SspadController().output(
-                {'message': 'Nothing to see here.'})
+        return self._output({'message': 'Nothing to see here.'})
 
 
 
