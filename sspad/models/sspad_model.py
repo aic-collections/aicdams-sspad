@@ -305,21 +305,24 @@ class SspadModel(metaclass=ABCMeta):
             init_insert_tuples=[], ignore_broken_rels=True):
         '''Build delete, insert and where tuples suitable for
             #LakeConnector:update_node_properties from a list of insert and delete properties.
-            Also builds a list of nodes that need to be deleted and/or inserted to satisfy references.
+            Also builds a list of nodes that need to be deleted and/or
+            inserted to satisfy references.
 
             @param insert_props (dict, optional) Properties to be inserted.
             @param delete_props (dict, optional) Properties to be deleted.
-            @param init_insert_tuples (list, optional) Initial properties coming from default settings,
-                already formatted as tuples.
-            @param ignore_broken_rels (boolean, optional) If set to True (default), the application throws
-                an exception if a realtionship with a CITI object is broken.
-                If False, the property is skipped and the process goes forward.
-                WARNING: DO NOT SET TO TRUE IN PRODUCTION ENVIRONMENT!
+            @param init_insert_tuples (list, optional) Initial properties
+            coming from default settings, already formatted as tuples.
+            @param ignore_broken_rels (boolean, optional) If set to True (default),
+            the application throws an exception if a realtionship with a CITI
+            object is broken.
+            If False, the property is skipped and the process goes forward.
+            WARNING: DO NOT SET TO TRUE IN PRODUCTION ENVIRONMENT!
 
             @return (dict) Dict containing two elements:
-                'nodes' is a tuple containing a list of nodes to be deleted and a list of nodes to be created.
-                'tuples' is a tuple containing a list of tuples to be added, one of tuples to be removed,
-                and one of WHERE conditions.
+                'nodes' is a tuple containing a list of nodes to be deleted and
+                a list of nodes to be created.
+                'tuples' is a tuple containing a list of tuples to be added,
+                one of tuples to be removed, and one of WHERE conditions.
         '''
 
         cherrypy.log('Insert props received: {}.'.format(insert_props))
@@ -393,7 +396,8 @@ class SspadModel(metaclass=ABCMeta):
     def _build_rdf_object(self, value, type, datatype=None):
         '''Returns an RDF object from a value and a type.
 
-        Depending on the value of @p type, a literal object, a URI or a variable (?var) is created.
+        Depending on the value of @p type, a literal object, a URI or a
+        variable (?var) is created.
 
         @param value    (string) Value to be processed.
         @oaram type     (string) One of 'literal', 'uri', 'variable'.
@@ -417,7 +421,8 @@ class SspadModel(metaclass=ABCMeta):
         Override this method in sub-classes.
 
         @param type (string) Node type name.
-        @param props (list) List of dicts of properties (key: property name, value: property value)
+        @param props (list) List of dicts of properties
+            (key: property name, value: property value)
             to be added to node. Each dict makes up a distinct node.
 
         @return (list) Insert tuples for the additional nodes.
@@ -444,7 +449,9 @@ class SspadModel(metaclass=ABCMeta):
         pfx = parts[0]
 
         if not pfx in nsc.keys():
-            raise KeyError('Namespace prefix \'{}\' is not a known namespace prefix.'.format(pfx))
+            raise KeyError(
+                    '\'{}\' is not a known namespace prefix.'\
+                    .format(pfx))
 
         return URIRef(nsc[pfx][parts[1]])
 
@@ -453,7 +460,8 @@ class SspadModel(metaclass=ABCMeta):
     def _open_transaction(self):
         '''Opens a transaction in LAKE and sets the #tx_uri property.
 
-        NOTE: It is advisable to use the #temp_uri instead of #uri or #tx_uri where applicable.
+        NOTE: It is advisable to use the #temp_uri instead of #uri
+        or #tx_uri where applicable.
 
         @return None
         '''

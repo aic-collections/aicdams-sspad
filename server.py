@@ -6,6 +6,7 @@ from sspad.config import host, server, app
 from sspad.controllers import comment_ctrl, search_ctrl, \
         static_image_ctrl, tag_cat_ctrl, tag_ctrl, text_ctrl
 from sspad.modules.negotiable import Negotiable
+from sspad.resources.rdf_lexicon import ns_collection as nsc
 
 
 class Webapp(Negotiable):
@@ -30,12 +31,16 @@ class Webapp(Negotiable):
     def OPTIONS(self):
         '''Return list of documented resources.'''
 
-        ret = []
+        ret = {
+            'endpoints' : [],
+        }
         for r in self.routes:
-            ret.append({
+            ret['endpoints'].append({
                 'path' : '/' + r,
                     'info' : self.routes[r].__doc__
             })
+
+        ret['namespaces'] = [{v : str(nsc[v])} for v in nsc]
 
         return self._output(ret)
 

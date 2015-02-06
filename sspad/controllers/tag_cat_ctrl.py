@@ -39,6 +39,7 @@ class TagCatCtrl(SspadController):
         return self._output(ret)
 
 
+
     def POST(self, label):
         '''Create a tag category with a given label.
 

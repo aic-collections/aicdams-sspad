@@ -14,6 +14,13 @@ class Negotiable(metaclass=ABCMeta):
     Provides content negotiation based on Accept request headers.
     '''
 
+    out_fmt = [
+        'application/json',
+        'application/xml',
+        'text/plain',
+    ]
+
+
     def _output(self, data):
         fmt = cptools.accept(self.out_fmt)
         cherrypy.log('Output format: {}'.format(fmt))

@@ -13,13 +13,6 @@ class SspadController(Negotiable, metaclass=ABCMeta):
     @package sspad.controllers
     '''
 
-    out_fmt = (
-        'application/json',
-        'application/xml',
-        'text/plain',
-    )
-
-
     @property
     def model(self):
         '''Returns the model class associated with this controller.
