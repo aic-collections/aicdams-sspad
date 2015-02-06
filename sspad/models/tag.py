@@ -1,7 +1,7 @@
 import cherrypy
 import requests
 
-from rdflib import URIRef, Literal
+from rdflib import URIRef, Literal, XSD
 
 from sspad.models.sspad_model import SspadModel
 from sspad.models.tag_cat import TagCat
@@ -48,7 +48,7 @@ class Tag(SspadModel):
         cat_cond = '''
         ?cat <{}> ?cl .
         FILTER(STR(?cl="{}")) .
-        '''.format(nsc['aic'].label, cat_label) \
+        '''.format(nsc['skos'].prefLabel, cat_label) \
                 if cat_label \
                 else ''
 
@@ -61,9 +61,9 @@ class Tag(SspadModel):
             {} }}
         '''.format(
             self.node_type,
-            nsc['aic'].label,
+            nsc['skos'].prefLabel,
             nsc['fcrepo'].hasParent,
-            nsc['aiclist'].TagCat, cat_cond
+            nsc['laketype'].TagCat, cat_cond
         )
         res = self.tsconn.query(q)
         cherrypy.log('Res: {}'.format(res))
@@ -82,15 +82,15 @@ class Tag(SspadModel):
 
         props = [
             (
-                self._build_rdf_object(*self.props['label']),
+                URIRef(nsc['skos'].prefLabel),
                 Literal(label, datatype=XSD.string),
             ),
             (
-                self._build_rdf_object(self.props['type']),
+                URIRef(nsc['rdf'].type),
                 URIRef(self.node_type),
             ),
             (
-                self._build_rdf_object(self.props['category']),
+                URIRef(nsc['aic'].category),
                 URIRef(cat_uri),
             ),
         ]

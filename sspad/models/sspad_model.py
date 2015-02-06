@@ -97,7 +97,7 @@ class SspadModel(metaclass=ABCMeta):
 
         return (
             ('rdf:type', 'uri'),
-            ('aic:label', 'literal', XSD.string),
+            ('skos:prefLabel', 'literal', XSD.string),
         )
 
 

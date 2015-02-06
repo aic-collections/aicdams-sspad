@@ -11,7 +11,7 @@ from sspad.resources.rdf_lexicon import ns_collection as nsc
 class TagCat(SspadModel):
     '''Tag Category model class.
 
-    Tag categories are ordered lists containing aiclist:Tag nodes in LAKE.
+    Tag categories are ordered lists containing laketype:Tag nodes in LAKE.
 
     @package sspad.models
     '''
@@ -47,7 +47,7 @@ class TagCat(SspadModel):
 
 
     def get_uri(self, label):
-        '''Returns the URI of a category by label.
+        '''Return the URI of a category by label.
 
         @param label (string) Category label.
 
@@ -55,8 +55,8 @@ class TagCat(SspadModel):
         '''
 
         props = [
-            (nsc['rdf'].type, nsc['aiclist'].TagCat),
-            (nsc['aic'].label, Literal(label, datatype=XSD.string)),
+            (nsc['rdf'].type, nsc['laketype'].TagCat),
+            (nsc['skos'].prefLabel, Literal(label, datatype=XSD.string)),
         ]
 
         return self.tsconn.get_node_uri_by_props(props)
@@ -87,8 +87,8 @@ class TagCat(SspadModel):
         '''Checks if a tag category with a given label exists.'''
 
         props = [
-            (nsc['rdf'].type, nsc['aiclist'].TagCat),
-            (nsc['aic'].label, Literal(label, datatype=XSD.string)),
+            (nsc['rdf'].type, nsc['laketype'].TagCat),
+            (nsc['skos'].prefLabel, Literal(label, datatype=XSD.string)),
         ]
         return True \
                 if self.tsconn.get_node_uri_by_props(props) \
