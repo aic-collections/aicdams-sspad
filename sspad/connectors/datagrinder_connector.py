@@ -61,7 +61,7 @@ class DatagrinderConnector(HttpConnector):
 
         params = {'file': url, 'width': w, 'height': h}
         res = self.request('get',
-            self._base_url + 'resize.jpg',
+            self._base_url + '/resize.jpg',
             params = params
         )
 
@@ -85,7 +85,7 @@ class DatagrinderConnector(HttpConnector):
         files = {'file': (fname, image)}
 
         res = self.request('post',
-            self._base_url + 'resize.jpg',
+            self._base_url + '/resize.jpg',
             files = files,
             data = data
         )

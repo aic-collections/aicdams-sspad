@@ -73,7 +73,7 @@ class LakeConnector(HttpConnector):
 
         res = self.request(
             'post',
-            self.conf['base_url'] + 'fcr:tx',
+            self.conf['base_url'] + '/fcr:tx',
             headers = self.headers
         )
         cherrypy.log('Open transaction response: {}'.format(res.status_code))
