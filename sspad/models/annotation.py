@@ -69,13 +69,13 @@ class Annotation(SspadModel):
         @sa AnnotationCtrl::POST()
         '''
 
-        parent_uri = '{}/{}/{}'.format(
+        uri = '{}/{}/{}'.format(
             subject_uri, self.cont_name, uuid.uuid4()
         )
 
         ann_uri = self.lconn.\
                 create_or_update_node(
-            parent = parent_uri,
+            uri = uri,
             props = self._build_prop_tuples(
                 insert_props = {
                     'content' : [content],
