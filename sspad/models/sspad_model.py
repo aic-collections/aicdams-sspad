@@ -147,8 +147,8 @@ class SspadModel(metaclass=ABCMeta):
 
     @property
     def temp_uri(self):
-        '''Returns the current model's URI in the current transaction if a transaction
-            is open; otherwise it returns the permanent model URI.
+        '''Returns the current model's URI in the current transaction if a
+        transaction is open; otherwise it returns the permanent model URI.
 
         @return string
         '''
@@ -163,8 +163,9 @@ class SspadModel(metaclass=ABCMeta):
         '''Sets up connections to external services.
 
         Connector objects are available via the #connectors dict.
-        If this method needs to be redefined in subclasses, make sure that this superclass __init__
-        is called first, to make sure that connections to external services are appropriately established.
+        If this method needs to be redefined in subclasses, make sure that this
+        superclass __init__ is called first, to make sure that connections to
+        external services are appropriately established.
 
         @return None
         '''
@@ -201,7 +202,8 @@ class SspadModel(metaclass=ABCMeta):
         '''Updates a node inserting and deleting related nodes if necessary.
 
         @param uri (string) URI of the node to be updated.
-        @param props (dict) Map of properties and nodes to be updated, to be passed to #_build_prop_tuples.
+        @param props (dict) Map of properties and nodes to be updated, to be
+        passed to #_build_prop_tuples.
 
         @return None
         '''
@@ -216,7 +218,8 @@ class SspadModel(metaclass=ABCMeta):
                 self.lconn.delete_node(del_uri)
 
         for node_type in insert_nodes.keys():
-            insert_tuples += self._insert_nodes_in_tuples(node_type, insert_nodes[node_type])
+            insert_tuples += self._insert_nodes_in_tuples(
+                    node_type, insert_nodes[node_type])
 
         self.lconn.update_node_properties(
             uri,
@@ -242,7 +245,8 @@ class SspadModel(metaclass=ABCMeta):
 
         # Open Fedora transaction
         self.tx_uri = self.lconn.open_transaction()
-        self.uri_in_tx = self.uri.replace(lake_rest_api['base_url'], self.tx_uri + '/')
+        self.uri_in_tx = self.uri.replace(
+                lake_rest_api['base_url'], self.tx_uri + '/')
 
         # Collect properties
         try:
@@ -280,9 +284,10 @@ class SspadModel(metaclass=ABCMeta):
     ## PRIVATE METHODS ##
 
     def _tx_uri_to_notx_uri(self, tx_uri):
-        '''Converts node URI inside transaction to URI outside of transaction.'''
+        '''Converts node URI inside transaction to URI outside transaction.'''
 
-        return re.sub(r'/tx:[^\/]+/', '/', tx_uri) # FIXME Ugly. Use more reliable methods.
+        # FIXME Ugly. Use more reliable methods.
+        return re.sub(r'/tx:[^\/]+/', '/', tx_uri)
 
 
 
@@ -304,17 +309,17 @@ class SspadModel(metaclass=ABCMeta):
             self, insert_props={}, delete_props={},
             init_insert_tuples=[], ignore_broken_rels=True):
         '''Build delete, insert and where tuples suitable for
-            #LakeConnector:update_node_properties from a list of insert and delete properties.
-            Also builds a list of nodes that need to be deleted and/or
-            inserted to satisfy references.
+            #LakeConnector:update_node_properties from a list of insert and
+            delete properties. Also builds a list of nodes that need to be
+            deleted and/or inserted to satisfy references.
 
             @param insert_props (dict, optional) Properties to be inserted.
             @param delete_props (dict, optional) Properties to be deleted.
             @param init_insert_tuples (list, optional) Initial properties
             coming from default settings, already formatted as tuples.
-            @param ignore_broken_rels (boolean, optional) If set to True (default),
-            the application throws an exception if a realtionship with a CITI
-            object is broken.
+            @param ignore_broken_rels (boolean, optional) If set to True
+            (default), the application throws an exception if a realtionship
+            with a CITI object is broken.
             If False, the property is skipped and the process goes forward.
             WARNING: DO NOT SET TO TRUE IN PRODUCTION ENVIRONMENT!
 
@@ -345,7 +350,8 @@ class SspadModel(metaclass=ABCMeta):
                     for value in delete_props[prop_name]:
                         if prop_name == nsc['aic'].hasComment:
                             delete_nodes['comments'] = value
-                        delete_tuples.append((prop, self._build_rdf_object(value, prop[1])))
+                        delete_tuples.append(
+                                (prop, self._build_rdf_object(value, prop[1])))
 
                 elif delete_props[prop_name] == '':
                     # Delete the whole property
@@ -354,8 +360,8 @@ class SspadModel(metaclass=ABCMeta):
 
             # Insert tuples + nodes
             if prop_name in insert_props:
-                cherrypy.log('Adding req. name {} from insert_props {}...'.format(prop_name, insert_props))
-                #cherrypy.log('Insert props: {}'.format(insert_props.__class__.__name__))
+                cherrypy.log('Adding req. name {} from insert_props {}...'.\
+                        format(prop_name, insert_props))
                 for value in insert_props[prop_name]:
                     # Check if property is a relationship
                     if prop_name in self.special_rels.keys():
@@ -369,7 +375,10 @@ class SspadModel(metaclass=ABCMeta):
                             else:
                                 raise cherrypy.HTTPError(
                                     '404 Not Found',
-                                    'Referenced CITI resource with CITI Pkey {} does not exist. Cannot create relationship.'.format(value)
+                                    '''Referenced CITI resource with
+                                    CITI Pkey {} does not exist. Cannot
+                                    create relationship.
+                                    '''.format(value)
                                 )
                         value = ref_uri
                     elif prop_name == nsc['aic'].hasTag:
@@ -403,10 +412,12 @@ class SspadModel(metaclass=ABCMeta):
         @oaram type     (string) One of 'literal', 'uri', 'variable'.
         @oaram datatype (string, optional) Data type for 'literal' type.
 
-        @return (rdflib.URIRef | rdflib.Literal | rdflib.Variable) rdflib object.
+        @return (rdflib.URIRef | rdflib.Literal | rdflib.Variable)
+        rdflib object.
         '''
 
-        cherrypy.log('Converting value to RDF {} object: {}'.format(type, value))
+        cherrypy.log('Converting value to RDF {} object: {}'.\
+                format(type, value))
         if type == 'uri':
             return URIRef(value)
         elif type == 'variable':
@@ -443,7 +454,8 @@ class SspadModel(metaclass=ABCMeta):
         '''
 
         if not re.match('^[a-zA-Z0-9_\-]+:[a-zA-Z0-9_\-]+$', name):
-            raise ValueError('\'{}\' is not a valid namespaced URI.'.format(name))
+            raise ValueError('\'{}\' is not a valid namespaced URI.'.\
+                    format(name))
 
         parts = name.split(':')
         pfx = parts[0]

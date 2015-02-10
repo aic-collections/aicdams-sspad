@@ -52,11 +52,12 @@ class LakeConnector(HttpConnector):
 
         @return (boolean) Whether node exists.
 
-        @throw HTTPError If the request is invalid (i.e. any other HTTP error than 404)
+        @throw HTTPError If the request is invalid (i.e. any other HTTP
+        error than 404)
         '''
 
         try:
-            res = self.request('head',uri, headers = self.headers)
+            res = self.request('head', uri, headers=self.headers)
         except requests.exceptions.HTTPError as e:
             if str(e)[:3] == '404':
                 return False
@@ -116,7 +117,6 @@ class LakeConnector(HttpConnector):
             body = ''
 
         if uri:
-            #cherrypy.log('Creating node by PUT with RDF properties: {}'.format(body))
             res = self.request('put',
                 uri,
                 data = body,
@@ -125,7 +125,8 @@ class LakeConnector(HttpConnector):
                 ))
             )
         else:
-            cherrypy.log('Creating node by POST with RDF properties: {}'.format(body))
+            cherrypy.log('Creating node by POST with RDF properties: {}'.\
+                    format(body))
             res = self.request('post',
                 parent,
                 data = body,
@@ -257,7 +258,8 @@ class LakeConnector(HttpConnector):
             insert_triples += '\n\t<> {} {} .'.format(i[0].n3(), i[1].n3())
 
         for w in where_props:
-            where_triples_list.append('\n\t{{<> {} {}}}'.format(w[0].n3(), w[1].n3()))
+            where_triples_list.append('\n\t{{<> {} {}}}'.\
+                    format(w[0].n3(), w[1].n3()))
         where_triples = '\n\tUNION'.join(where_triples_list)
 
         body = 'DELETE {{{}\n}} INSERT {{{}\n}} WHERE {{{}\n}}'\
@@ -271,7 +273,6 @@ class LakeConnector(HttpConnector):
                 [('Content-type', 'application/sparql-update')]
             ))
         )
-        cherrypy.log('Update datastream properties response:' + str(res.status_code))
         if res.status_code > 399:
             cherrypy.log('HTTP Error: {}'.format(res.text))
         res.raise_for_status()
@@ -288,12 +289,12 @@ class LakeConnector(HttpConnector):
         @return (boolean) True on success.
         '''
 
-        cherrypy.log.error('Committing transaction: {}'.format(tx_uri.split('tx:')[-1]))
+        cherrypy.log.error('Committing transaction: {}'.\
+                format(tx_uri.split('tx:')[-1]))
         res = self.request('post',
             tx_uri + '/fcr:tx/fcr:commit',
             headers=self.headers
         )
-        cherrypy.log.error('Commit transaction response: {}'.format(res.status_code))
         res.raise_for_status()
 
         return True
@@ -308,12 +309,12 @@ class LakeConnector(HttpConnector):
         @return (boolean) True on success.
         '''
 
-        cherrypy.log.error('Rolling back transaction: {}'.format(tx_uri.split('tx:')[-1]))
+        cherrypy.log.error('Rolling back transaction: {}'.\
+                format(tx_uri.split('tx:')[-1]))
         res = self.request('post',
             tx_uri + '/fcr:tx/fcr:rollback',
             headers=self.headers
         )
-        cherrypy.log.error('Rollback transaction response: {}'.format(res.status_code))
         res.raise_for_status()
 
         return True

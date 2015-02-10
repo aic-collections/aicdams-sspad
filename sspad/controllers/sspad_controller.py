@@ -58,6 +58,3 @@ class SspadController(Negotiable, metaclass=ABCMeta):
             docs['types'] = self.model().mixins
 
         return self._output(docs)
-
-
-

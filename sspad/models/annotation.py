@@ -31,9 +31,10 @@ class Annotation(SspadModel):
     def cont_name(self):
         '''Container node name for all annotations under a node.
 
-        All annotations are assumed to have a 1-to-1 relationship with a Resource (called the subject).
-            Therefore they are stored in containers under the related subject node.
-            The full Annotation path is therefore: <subject URI>/<value of this variable>/<annotation ID>
+        All annotations are assumed to have a 1-to-1 relationship with a
+        Resource (called the subject). They are stored in containers
+        under the related subject node. The full Annotation path is therefore:
+        <subject URI>/<value of this variable>/<annotation ID>
 
         @return string
         '''

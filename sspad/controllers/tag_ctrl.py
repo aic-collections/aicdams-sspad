@@ -27,14 +27,15 @@ class TagCtrl(SspadController):
         '''Get a tag or list of tags.
 
         @param cat_label (string, optional) Category label. If empty (default),
-            a list of all tags is returned. Otherwise, a list of all tags for the
-            category bearing that label is returned.
+            a list of all tags is returned. Otherwise, a list of all tags
+            for the category bearing that label is returned.
             This parameter is mandatory if label is not emppty.
         @param label (string, optional) Tag label. If empty (default), a list
-            of tag is returned. Otherwise, the URI of a tag with the given label
-            is returned.
+            of tag is returned. Otherwise, the URI of a tag with
+            the given label is returned.
 
-        @return (string | list) List of tags URI, their labels and category URIs or a single tag URI.
+        @return (string | list) List of tags URI, their labels and
+        category URIs or a single tag URI.
         '''
 
         if label:
@@ -48,7 +49,7 @@ class TagCtrl(SspadController):
 
 
     def POST(self, cat, label):
-        '''Create a tag with a given label under a category with the given label.
+        '''Create a tag with a given label under a category with a given label.
 
         @param cat (string) Category label.
         @param label (string) Tag label.

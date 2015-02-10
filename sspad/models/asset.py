@@ -170,7 +170,11 @@ class Asset(Resource):
                 )
                 if check_uri:
                     cherrypy.response.headers['link'] = check_uri
-                    raise cherrypy.HTTPError('409 Conflict', 'A node with legacy UID \'{}\' exists already.'.format(legacy_uid))
+                    raise cherrypy.HTTPError(
+                        '409 Conflict',
+                        'A node with legacy UID \'{}\' exists already.'.\
+                                format(legacy_uid)
+                    )
 
         # Create a new UID
         self.uid = self.mint_uid(mid)
