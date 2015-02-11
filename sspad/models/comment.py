@@ -40,7 +40,6 @@ class Comment(Annotation):
     def ns_props(self):
         return super().ns_props + (
             ('aic:category', 'literal', XSD.string),
-            ('aic:content', 'literal', XSD.string),
         )
 
 

@@ -1,5 +1,6 @@
 import cherrypy
 import requests
+import uuid
 
 from rdflib import URIRef, Literal, XSD
 
@@ -104,10 +105,11 @@ class TagCat(SspadModel):
         '''
 
         if self.assert_exists(label):
-            raise cherrypy.HTTPError('409 Conflict', 'Category with label \'{}\' exist already.'.format(label))
+            raise cherrypy.HTTPError('409 Conflict',
+                    'Category with label \'{}\' exist already.'.format(label))
         else:
             uri = self.lconn.create_or_update_node(
-                parent = self.cont_uri,
+                uri = '{}/{}'.format(self.cont_uri, uuid.uuid4()),
                 props = self._build_prop_tuples(
                     insert_props = {
                         nsc['rdf'].type :  [self.node_type],

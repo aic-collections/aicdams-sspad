@@ -27,7 +27,9 @@ class CommentCtrl(AnnotationCtrl):
 
 
     def GET(self, subject, cat=None):
-        '''Lists all annotations for the given subject URI.
+        '''GET method.
+
+        Lists all annotations for the given subject URI.
 
         @param uri (string) Subject URI.
 
@@ -38,8 +40,10 @@ class CommentCtrl(AnnotationCtrl):
 
 
 
-    def POST(self, subject, content, category=None):
-        '''Create an Annotation.
+    def POST(self, subject, content, cat=None):
+        '''POST method.
+
+        Create an Annotation.
 
         @param subject (string) URI of subject Resource.
         @param content (string) Content of the Comment.
@@ -55,5 +59,5 @@ class CommentCtrl(AnnotationCtrl):
         cherrypy.log('')
 
         return self._output(
-                self.model().create(subject, content, category))
+                self.model().create(subject, content, cat))
 

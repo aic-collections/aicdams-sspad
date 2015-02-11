@@ -1,5 +1,6 @@
 import cherrypy
 import requests
+import uuid
 
 from rdflib import URIRef, Literal, XSD
 
@@ -36,13 +37,15 @@ class Tag(SspadModel):
 
 
     def list(self, cat_label=None):
-        '''Lists all tags, optionally narrowing down the selection to a category.
+        '''Lists all tags, optionally narrowing down the selection to
+        a category.
 
         @param cat_label (string, optional) Category label. If empty (default),
-            a list of all tags is returned. Otherwise, a list of all tags for the
-            category bearing that label is returned.
+            a list of all tags is returned. Otherwise, a list of all tags for
+            the category bearing that label is returned.
 
-        @return (list) List of dicts containing tag URI, label and category URI.
+        @return (list) List of dicts containing tag URI, label
+        and category URI.
         '''
 
         cat_cond = '''
@@ -111,8 +114,9 @@ class Tag(SspadModel):
         if not cat_uri:
             raise cherrypy.HTTPError(
                 '404 Not Found',
-                'Tag category with label \'{}\' does not exist. Cannot create tag.'\
-                        .format(cat_label)
+                '''Tag category with label \'{}\' does not exist.
+                Cannot create tag.
+                '''.format(cat_label)
             )
         if self.get_uri(label, cat_uri):
             raise cherrypy.HTTPError(
@@ -122,7 +126,7 @@ class Tag(SspadModel):
             )
         else:
             tag_uri = self.lconn.create_or_update_node(
-                parent = cat_uri,
+                uri = '{}/{}'.format(cat_uri, uuid.uuid4()),
                 props = self._build_prop_tuples(
                     insert_props = {
                         nsc['rdf'].type :  [self.node_type],
