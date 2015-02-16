@@ -363,6 +363,10 @@ class SspadModel(metaclass=ABCMeta):
                 cherrypy.log('Adding req. name {} from insert_props {}...'.\
                         format(prop_name, insert_props))
                 for value in insert_props[prop_name]:
+                    # Skip empty insert properties
+                    if not value:
+                        continue
+
                     # Check if property is a relationship
                     if prop_name in self.special_rels.keys():
                         rel_type = self.special_rels[prop_name]
