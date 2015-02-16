@@ -368,24 +368,24 @@ class SspadModel(metaclass=ABCMeta):
                         continue
 
                     # Check if property is a relationship
-                    if prop_name in self.special_rels.keys():
-                        rel_type = self.special_rels[prop_name]
-                        ref_uri = self.tsconn.get_node_uri_by_props({
-                            (nsc['rdf'].type, URIRef('')),
-                        })
-                        if not ref_uri:
-                            if ignore_broken_rels:
-                                continue
-                            else:
-                                raise cherrypy.HTTPError(
-                                    '404 Not Found',
-                                    '''Referenced CITI resource with
-                                    CITI Pkey {} does not exist. Cannot
-                                    create relationship.
-                                    '''.format(value)
-                                )
-                        value = ref_uri
-                    elif prop_name == nsc['aic'].hasTag:
+                    #if prop_name in self.special_rels.keys():
+                    #    rel_type = self.special_rels[prop_name]
+                    #    ref_uri = self.tsconn.get_node_uri_by_props({
+                    #        (nsc['rdf'].type, URIRef(rel_type['rel'])),
+                    #    })
+                    #    if not ref_uri:
+                    #        if ignore_broken_rels:
+                    #            continue
+                    #        else:
+                    #            raise cherrypy.HTTPError(
+                    #                '404 Not Found',
+                    #                '''Referenced CITI resource with
+                    #                CITI Pkey {} does not exist. Cannot
+                    #                create relationship.
+                    #                '''.format(value)
+                    #            )
+                    #    value = ref_uri
+                    if prop_name == nsc['aic'].hasTag:
                         insert_nodes['tags'] = insert_props[prop_name]
                         #value = lake_rest_api['tags_base_url'] + value
                         continue
