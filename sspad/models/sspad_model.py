@@ -371,7 +371,7 @@ class SspadModel(metaclass=ABCMeta):
                     if prop_name in self.special_rels.keys():
                         rel_type = self.special_rels[prop_name]
                         ref_uri = self.tsconn.get_node_uri_by_props({
-                            (nsc['rdf'].type, URIRef()),
+                            (nsc['rdf'].type, URIRef('')),
                         })
                         if not ref_uri:
                             if ignore_broken_rels:
