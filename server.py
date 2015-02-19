@@ -1,8 +1,11 @@
+import argparse
 import cherrypy
+import sys
 
 from cherrypy.process.plugins import Daemonizer, PIDFile
 
-from sspad.config import host, server, app
+from sspad.config import server, app
+from sspad.config.host import host
 from sspad.controllers import comment_ctrl, search_ctrl, \
         static_image_ctrl, tag_cat_ctrl, tag_ctrl, text_ctrl
 from sspad.modules.negotiable import Negotiable
@@ -58,7 +61,7 @@ if __name__ == '__main__':
     cherrypy.config.update(server.conf)
 
     Daemonizer(cherrypy.engine).subscribe()
-    PIDFile(cherrypy.engine, host.pidfile).subscribe()
+    PIDFile(cherrypy.engine, host['pidfile']).subscribe()
 
     # Set routes as class members as expected by Cherrypy
     for r in Webapp.routes:

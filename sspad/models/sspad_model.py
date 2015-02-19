@@ -337,7 +337,7 @@ class SspadModel(metaclass=ABCMeta):
         insert_nodes, delete_nodes = ({},{})
 
         for ns_prop in self.ns_props:
-            cherrypy.log('Converting to fq prop: {}'.format(ns_prop))
+            #cherrypy.log('Converting to fq prop: {}'.format(ns_prop))
             prop = (self._build_fquri_from_prefixed(ns_prop[0]), ns_prop[1], \
                     ns_prop[2] if len(ns_prop)>2 else None)
             prop_name = prop[0]

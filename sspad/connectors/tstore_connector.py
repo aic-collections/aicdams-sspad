@@ -7,7 +7,7 @@ from rdflib import Graph, URIRef, Literal, Variable
 from rdflib.plugins.sparql.processor import prepareQuery
 from urllib.parse import quote, unquote
 
-from sspad.config.datasources import tstore_rest_api, tstore_schema_rest_api
+from sspad.config.datasources import tstore_rest_api
 from sspad.connectors.http_connector import HttpConnector
 from sspad.resources.rdf_lexicon import ns_collection
 
@@ -28,17 +28,6 @@ class TstoreConnector(HttpConnector):
         '''
 
         return tstore_rest_api
-
-
-
-    @property
-    def sconf(self):
-        '''Triplestore config for repo schema information.
-
-        @return dict
-        '''
-
-        return tstore_schema_rest_api
 
 
 

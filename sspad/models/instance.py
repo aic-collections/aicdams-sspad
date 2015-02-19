@@ -70,7 +70,7 @@ class Instance(Resource):
             self, asset_uri, name, type='Instance', ref=None, file_name=None,
             ds=None, path=None, mimetype='application/octet-stream'
             ):
-        '''Creates an instance.
+        '''Create an instance.
 
         @param asset_uri (string) URI of the container Asset node for the instance.
         @param name (string) Name of the datastream, e.g. 'master' or 'source'.
@@ -95,6 +95,8 @@ class Instance(Resource):
             raise cherrypy.HTTPError('409 Conflict', 'Node with URI {} already exists.'\
                     .format(self.uri))
 
+        self._create_container(asset_uri, name, type)
+
         self._create_or_update_content(
                 name, ref, file_name, ds, path, mimetype
                 )
@@ -105,7 +107,7 @@ class Instance(Resource):
             self, asset_uri, name, type='Instance', ref=None, file_name=None,
             ds=None, path=None, mimetype='application/octet-stream'
             ):
-        '''Updates an instance or creates it if not existing.
+        '''Update an instance or creates it if not existing.
 
         @sa Instance::create()
 
