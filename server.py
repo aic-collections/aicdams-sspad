@@ -1,6 +1,4 @@
-import argparse
 import cherrypy
-import sys
 
 from cherrypy.process.plugins import Daemonizer, PIDFile
 

@@ -77,7 +77,6 @@ class LakeConnector(HttpConnector):
             self.conf['base_url'] + '/fcr:tx',
             headers = self.headers
         )
-        cherrypy.log('Open transaction response: {}'.format(res.status_code))
         res.raise_for_status()
 
         return res.headers['location']
@@ -134,7 +133,6 @@ class LakeConnector(HttpConnector):
                     [('Content-type', 'text/turtle')]
                 ))
             )
-        cherrypy.log('Create/update node response:' + str(res.status_code))
         if res.status_code > 399:
             cherrypy.log('HTTP Error: {}'.format(res.text))
         res.raise_for_status()
@@ -185,7 +183,6 @@ class LakeConnector(HttpConnector):
         )
         #cherrypy.log('Request headers: {}'.format(res.request.headers))
         #cherrypy.log('Response headers: {}'.format(res.headers))
-        cherrypy.log('Create/update datastream response:' + str(res.status_code))
         res.raise_for_status()
 
         if 'location' in res.headers:
@@ -218,7 +215,6 @@ class LakeConnector(HttpConnector):
 
         #cherrypy.log('Create/update datastream response:' + str(res.status_code))
 
-        cherrypy.log('Response headers for reference DS:' + str(res.headers))
         if 'location' in res.headers:
             return res.headers['location']
 
@@ -273,8 +269,8 @@ class LakeConnector(HttpConnector):
                 [('Content-type', 'application/sparql-update')]
             ))
         )
-        if res.status_code > 399:
-            cherrypy.log('HTTP Error: {}'.format(res.text))
+        #if res.status_code > 399:
+        #    cherrypy.log('HTTP Error: {}'.format(res.text))
         res.raise_for_status()
 
         return True

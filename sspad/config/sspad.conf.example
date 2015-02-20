@@ -1,0 +1,47 @@
+# Sample config file for SSPAD. This file should be copied to a location which only privileged users have haccess to
+# and adjusted to fit your system configuration. 
+#
+# Datagrinder is started by specifying the location of this config file with the '--config' or '-c' option:
+
+## Server settings
+
+[host]
+# app_env is either 'dev', 'test', 'staging' or 'prod'.
+app_env = dev
+# Application PID file.
+pidfile = /var/run/sspad.pid
+# IP address or range the server is listening to.
+listen_addr = 0.0.0.0
+# Listening port.
+listen_port = 5000
+# Maximum request size in bytes. Given example is for 1Gb.
+max_req_size = 1073741824
+
+
+## Remote data sources
+
+[uidminter_db]
+    host = 
+    port = 
+    username = 
+    password = 
+    db = 
+
+[datagrinder_rest_api]
+    proto = # Protocol - http, https, etc.
+    host = # hostname:port
+    root = # Path to datagrinder approot
+
+[lake_rest_api]
+    proto = 
+    host = 
+    root = 
+
+[tstore_rest_api]
+    proto = 
+    host = 
+    root = 
+
+[source_auth]
+    my_authenticated_source.edu  = username:password
+
